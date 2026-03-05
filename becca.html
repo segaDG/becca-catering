@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BECCA — Catering Order System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #f4f2ed;
+  --bg2:       #eceae3;
+  --surface:   #ffffff;
+  --surface2:  #f9f8f5;
+  --border:    #e0dbd2;
+  --border2:   #c8c2b6;
+  --accent:    #1e4d6b;
+  --accent2:   #2e6d96;
+  --accent-bg: #edf3f8;
+  --accent-lt: #d0e4f0;
+  --green:     #2a6b47;
+  --green-bg:  #eaf4ef;
+  --red:       #a8281e;
+  --red-bg:    #faeeed;
+  --amber:     #9a5a0a;
+  --amber-bg:  #fdf4e4;
+  --text:      #18150f;
+  --text2:     #3d3830;
+  --muted:     #857e74;
+  --font:      'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-disp: 'Cormorant Garamond', serif;
+  --sh-sm:  0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
+  --sh:     0 4px 16px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
+  --sh-lg:  0 20px 60px rgba(0,0,0,.11), 0 4px 16px rgba(0,0,0,.06);
+  --r:      12px;
+  --r-sm:   8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;min-height:100vh;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+
+/* ══ LOGIN ══════════════════════════════════════ */
+#login-screen{min-height:100vh;display:flex;background:var(--bg);position:relative;overflow:hidden;}
+#login-screen::before{content:'';position:absolute;right:-150px;top:-150px;width:600px;height:600px;background:radial-gradient(circle,rgba(30,77,107,.09) 0%,transparent 65%);border-radius:50%;}
+#login-screen::after{content:'';position:absolute;left:-80px;bottom:-120px;width:450px;height:450px;background:radial-gradient(circle,rgba(42,107,71,.06) 0%,transparent 65%);border-radius:50%;}
+
+.login-left{flex:1;display:flex;align-items:center;justify-content:center;padding:60px;position:relative;z-index:1;}
+.login-brand{max-width:400px;}
+.lb-logo{display:flex;align-items:center;gap:14px;margin-bottom:48px;}
+.lb-logo svg{flex-shrink:0;}
+.lb-logo .brand-text .name{font-family:var(--font-disp);font-size:26px;font-weight:700;color:var(--accent);letter-spacing:3px;line-height:1;}
+.lb-logo .brand-text .tagline{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:3px;}
+.login-brand h1{font-family:var(--font-disp);font-size:44px;font-weight:700;line-height:1.1;color:var(--text);margin-bottom:16px;letter-spacing:-0.5px;}
+.login-brand h1 em{color:var(--accent);font-style:normal;}
+.login-brand p{font-size:15px;color:var(--muted);line-height:1.75;margin-bottom:36px;}
+.login-feats{display:flex;flex-direction:column;gap:10px;}
+.lf-item{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.lf-item::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+.login-right{width:440px;background:var(--surface);display:flex;align-items:center;justify-content:center;padding:60px 48px;border-left:1px solid var(--border);position:relative;z-index:1;}
+.login-form{width:100%;}
+.login-form h2{font-size:22px;font-weight:700;margin-bottom:4px;}
+.login-form .sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+
+/* ══ FORMS ══ */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg.c3{grid-template-columns:1fr 1fr 1fr;}
+.span2{grid-column:span 2;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:10.5px;font-weight:600;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+input,select,textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 13px;color:var(--text);font-family:var(--font);font-size:13.5px;transition:all .2s;outline:none;-webkit-appearance:none;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23857e74' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;background-size:10px;padding-right:34px;cursor:pointer;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px rgba(30,77,107,.1);}
+textarea{resize:vertical;min-height:76px;}
+input:disabled,select:disabled{opacity:.55;cursor:not-allowed;}
+
+/* ══ BUTTONS ══ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r-sm);border:1.5px solid transparent;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all .18s;text-decoration:none;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{background:#163d57;box-shadow:0 4px 14px rgba(30,77,107,.3);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface);color:var(--text2);border-color:var(--border);}
+.btn-secondary:hover{border-color:var(--border2);background:var(--bg2);}
+.btn-ghost{background:transparent;color:var(--muted);border-color:transparent;}
+.btn-ghost:hover{background:var(--bg2);color:var(--text);}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#dbb0ab;}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-amber{background:var(--amber-bg);color:var(--amber);border-color:#e0c090;}
+.btn-amber:hover{background:var(--amber);color:#fff;}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#a8d0bc;}
+.btn-green:hover{background:var(--green);color:#fff;}
+.btn-full{width:100%;justify-content:center;}
+.btn-sm{padding:5px 11px;font-size:11.5px;border-radius:6px;gap:4px;}
+
+/* ══ DEMO BOX ══ */
+.demo-box{margin-top:24px;padding:14px;background:var(--bg);border-radius:var(--r-sm);border:1.5px solid var(--border);}
+.demo-box .dlbl{font-size:9.5px;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;}
+.demo-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;cursor:pointer;transition:background .15s;margin-bottom:3px;}
+.demo-row:hover{background:var(--bg2);}
+.demo-row .di{font-size:12px;font-family:var(--font-mono);color:var(--text2);}
+
+/* ══ BADGES ══ */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600;font-family:var(--font-mono);letter-spacing:.2px;border:1px solid transparent;}
+.b-real{background:var(--green-bg);color:var(--green);border-color:#a8d0bc;}
+.b-est{background:var(--amber-bg);color:var(--amber);border-color:#e0c090;}
+.b-rev{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-lt);}
+.role-chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:9.5px;font-weight:700;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.4px;}
+.rc-sa{background:#faeeed;color:var(--red);border:1px solid #dbb0ab;}
+.rc-ad{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-lt);}
+.rc-op{background:var(--green-bg);color:var(--green);border:1px solid #a8d0bc;}
+.rc-vi{background:var(--bg2);color:var(--muted);border:1px solid var(--border2);}
+.rev-chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-family:var(--font-mono);color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent-lt);padding:1px 7px;border-radius:99px;}
+
+/* ══ APP SHELL ══ */
+#app{display:none;min-height:100vh;background:var(--bg);}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:228px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.sb-head{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.sb-logo-wrap{display:flex;align-items:center;gap:10px;}
+.sb-logo-wrap .brand-t .bname{font-family:var(--font-disp);font-size:20px;font-weight:700;color:var(--accent);letter-spacing:2.5px;line-height:1;}
+.sb-logo-wrap .brand-t .bsub{font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+.user-pill{margin:10px;padding:9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;gap:9px;}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;}
+.user-pill .dn{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-pill .dr{font-size:9.5px;color:var(--muted);font-family:var(--font-mono);}
+nav.nav{flex:1;padding:6px;overflow-y:auto;}
+.ns{margin-bottom:1px;}
+.ns-lbl{font-size:8.5px;font-family:var(--font-mono);color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:8px 9px 3px;}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:1px;border:1px solid transparent;}
+.ni:hover{background:var(--bg2);color:var(--text);}
+.ni.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-lt);font-weight:600;}
+.ni .icon{font-size:14px;width:18px;text-align:center;}
+.sb-foot{padding:10px;border-top:1px solid var(--border);}
+
+/* ══ TOPBAR ══ */
+.main{margin-left:228px;min-height:100vh;}
+.topbar{position:sticky;top:0;background:rgba(255,255,255,.92);border-bottom:1px solid var(--border);padding:11px 26px;display:flex;align-items:center;justify-content:space-between;z-index:100;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+.tb-left{display:flex;align-items:center;gap:12px;}
+.hbg{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:4px 6px;border-radius:6px;transition:background .15s;}
+.hbg:hover{background:var(--bg2);color:var(--text);}
+.pg-title{font-size:16px;font-weight:700;}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.clock-chip{display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 11px;font-family:var(--font-mono);font-size:11px;color:var(--text2);}
+
+/* ══ CONTENT ══ */
+.content{padding:26px;}
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+
+/* ══ STATS ══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh-sm);transition:all .2s;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;border-radius:0 0 var(--r) var(--r);}
+.sc-blue::after{background:var(--accent);}
+.sc-green::after{background:var(--green);}
+.sc-amber::after{background:var(--amber);}
+.sc-red::after{background:var(--red);}
+.stat-card:hover{box-shadow:var(--sh);transform:translateY(-2px);}
+.si{font-size:22px;margin-bottom:8px;}
+.sv{font-size:26px;font-weight:700;font-family:var(--font-mono);letter-spacing:-1px;}
+.sl{font-size:10px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+
+/* ══ CARDS ══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-sm);overflow:hidden;margin-bottom:18px;}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;background:var(--surface2);}
+.card-title{font-size:13.5px;font-weight:600;}
+.card-body{padding:18px;}
+
+/* ══ TABLE ══ */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;padding:8px 11px;font-family:var(--font-mono);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;border-bottom:1.5px solid var(--border);background:var(--surface2);white-space:nowrap;}
+td{padding:9px 11px;border-bottom:1px solid var(--bg2);vertical-align:middle;color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.mono{font-family:var(--font-mono);font-size:11.5px;}
+.tmuted{color:var(--muted);}
+.taccent{color:var(--accent);font-weight:600;}
+.tgreen{color:var(--green);}
+
+/* ══ FILTER BAR ══ */
+.fbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.sbox{display:flex;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 11px;transition:border-color .2s;}
+.sbox:focus-within{border-color:var(--accent);background:var(--surface);}
+.sbox input{border:none;background:none;outline:none;font-family:var(--font);font-size:13px;color:var(--text);width:170px;}
+.sbox .si2{color:var(--muted);font-size:13px;}
+.sel{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 30px 6px 11px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23857e74' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;background-size:9px;transition:border-color .2s;}
+.sel:focus{border-color:var(--accent);}
+
+/* ══ FORM GRID ══ */
+.sec-div{grid-column:span 2;font-size:9.5px;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:12px 0 5px;border-top:1px solid var(--border);margin-top:4px;display:flex;align-items:center;gap:6px;}
+
+/* ══ MODAL ══ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(24,21,15,.32);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;width:90%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:var(--sh-lg);animation:mIn .22s cubic-bezier(.4,0,.2,1);}
+.modal.sm{max-width:460px;}
+@keyframes mIn{from{opacity:0;transform:translateY(14px) scale(.97);}to{opacity:1;transform:none;}}
+.mhead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.mhead .mtitle{font-size:16px;font-weight:700;}
+.mhead .msub{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--font-mono);}
+.mclose{background:var(--bg2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;flex-shrink:0;}
+.mclose:hover{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+
+/* ══ AUDIT ══ */
+.audit-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-top:6px;}
+.audit-row{display:flex;align-items:flex-start;gap:11px;padding:10px 13px;border-bottom:1px solid var(--bg2);}
+.audit-row:last-child{border-bottom:none;}
+.adot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.adot.c{background:var(--green);}
+.adot.e{background:var(--accent);}
+.a-ts{font-family:var(--font-mono);font-size:9.5px;color:var(--muted);white-space:nowrap;margin-left:auto;}
+.a-u{font-size:12px;font-weight:600;}
+.a-n{font-size:11px;color:var(--muted);font-style:italic;margin-top:1px;}
+
+/* ══ INPUT META ══ */
+.input-meta{display:flex;gap:10px;flex-wrap:wrap;background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:18px;font-size:12px;}
+.im-item{display:flex;align-items:center;gap:5px;color:var(--accent);}
+.im-item strong{font-weight:600;}
+
+/* ══ REPORT TABS ══ */
+.report-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--r-sm);padding:4px;width:fit-content;margin-bottom:16px;}
+.rtab{padding:7px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s;border:none;background:none;font-family:var(--font);}
+.rtab:hover{color:var(--text);}
+.rtab.active{background:var(--surface);color:var(--accent);font-weight:700;box-shadow:var(--sh-sm);}
+
+/* ══ REPORT PERIOD SELECTOR ══ */
+.period-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.period-bar label{font-size:11px;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+/* ══ REPORT SUMMARY ══ */
+.rsum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
+.rsum-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;text-align:center;}
+.rsum-card.total-card{background:var(--accent-bg);border-color:var(--accent-lt);}
+.rsum-val{font-size:20px;font-weight:700;font-family:var(--font-mono);}
+.rsum-card.total-card .rsum-val{color:var(--accent);}
+.rsum-lbl{font-size:9px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;margin-top:2px;letter-spacing:.5px;}
+
+/* ══ ALERT ══ */
+.alert{display:flex;align-items:flex-start;gap:8px;padding:10px 13px;border-radius:var(--r-sm);font-size:12.5px;margin-bottom:13px;}
+.alert-info{background:var(--accent-bg);border:1px solid var(--accent-lt);color:var(--accent);}
+.alert-warn{background:var(--amber-bg);border:1px solid #e0c090;color:var(--amber);}
+
+/* ══ USER CARD ══ */
+.ucard{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:7px;transition:all .15s;}
+.ucard:hover{border-color:var(--border2);box-shadow:var(--sh-sm);}
+.ucard .ui{flex:1;min-width:0;}
+.ucard .un{font-size:13px;font-weight:600;}
+.ucard .um{font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-top:1px;}
+.ucard .ua{display:flex;gap:5px;align-items:center;}
+
+/* ══ PRIV TABLE ══ */
+.ptbl{width:100%;border-collapse:collapse;}
+.ptbl th,.ptbl td{padding:8px 13px;border:1px solid var(--border);font-size:12px;}
+.ptbl th{background:var(--surface2);font-family:var(--font-mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);}
+.ptbl td:first-child{font-weight:500;color:var(--text);}
+.chk{color:var(--green);font-size:14px;font-weight:700;}
+.crs{color:var(--border2);font-size:14px;}
+
+/* ══ TOAST ══ */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 16px;font-size:13px;font-weight:500;z-index:9999;transform:translateX(130%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:var(--sh-lg);max-width:300px;display:flex;align-items:center;gap:9px;}
+#toast.show{transform:none;}
+#toast.success{border-left:3px solid var(--green);}
+#toast.error{border-left:3px solid var(--red);}
+#toast.info{border-left:3px solid var(--accent);}
+
+/* ══ EMPTY ══ */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty .ei{font-size:36px;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:none;box-shadow:var(--sh-lg);}
+  .main{margin-left:0;}
+  .fg{grid-template-columns:1fr;}
+  .fg.c3{grid-template-columns:1fr 1fr;}
+  .span2{grid-column:span 1;}
+  .sec-div{grid-column:span 1;}
+  .content{padding:14px;}
+  .login-left{display:none;}
+  .login-right{width:100%;border-left:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="lb-logo">
+        <!-- Professional BECCA SVG Logo -->
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="52" height="52" rx="13" fill="#1e4d6b"/>
+          <rect x="1" y="1" width="50" height="50" rx="12" stroke="white" stroke-opacity=".08" stroke-width="1"/>
+          <!-- B letter mark -->
+          <text x="10" y="38" font-family="Georgia, serif" font-size="32" font-weight="700" fill="white" opacity="1">B</text>
+          <!-- Accent dot -->
+          <circle cx="40" cy="14" r="5" fill="#5ba3cc"/>
+          <circle cx="40" cy="14" r="3" fill="white"/>
+        </svg>
+        <div class="brand-text">
+          <div class="name">BECCA</div>
+          <div class="tagline">Catering System</div>
+        </div>
+      </div>
+      <h1>Kelola Order<br>Catering dengan<br><em>Mudah & Akurat</em></h1>
+      <p>Sistem manajemen orderan catering terpusat. Input, revisi, audit trail, dan laporan lengkap dalam satu platform.</p>
+      <div class="login-feats">
+        <div class="lf-item">Input order real-time dengan timestamp & nama user</div>
+        <div class="lf-item">Riwayat revisi & audit trail setiap perubahan</div>
+        <div class="lf-item">Laporan harian, bulanan, dan tahunan</div>
+        <div class="lf-item">Kontrol akses 4 level privilege</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-form">
+      <!-- Compact logo for right panel -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <svg width="34" height="34" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="52" height="52" rx="13" fill="#1e4d6b"/>
+          <text x="10" y="38" font-family="Georgia, serif" font-size="32" font-weight="700" fill="white">B</text>
+          <circle cx="40" cy="14" r="5" fill="#5ba3cc"/>
+          <circle cx="40" cy="14" r="3" fill="white"/>
+        </svg>
+        <div>
+          <div style="font-family:var(--font-disp);font-size:17px;font-weight:700;color:var(--accent);letter-spacing:2px;">BECCA</div>
+          <div style="font-size:9px;font-family:var(--font-mono);color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;">Catering Order System</div>
+        </div>
+      </div>
+      <h2>Masuk ke Sistem</h2>
+      <p class="sub">Gunakan kredensial akun Anda untuk melanjutkan</p>
+      <div class="form-group"><label>Username</label><input type="text" id="li-u" placeholder="Masukkan username..."></div>
+      <div class="form-group"><label>Password</label><input type="password" id="li-p" placeholder="Masukkan password..."></div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Masuk ke BECCA →</button>
+      <div class="demo-box">
+        <div class="dlbl">⚡ Demo Accounts — klik untuk isi otomatis</div>
+        <div class="demo-row" onclick="fill('superadmin','admin123')"><span class="di">superadmin / admin123</span><span class="role-chip rc-sa">Super Admin</span></div>
+        <div class="demo-row" onclick="fill('admin','admin123')"><span class="di">admin / admin123</span><span class="role-chip rc-ad">Admin</span></div>
+        <div class="demo-row" onclick="fill('operator','op123')"><span class="di">operator / op123</span><span class="role-chip rc-op">Operator</span></div>
+        <div class="demo-row" onclick="fill('viewer','view123')"><span class="di">viewer / view123</span><span class="role-chip rc-vi">Viewer</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════ -->
+<div id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo-wrap">
+        <svg width="34" height="34" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="52" height="52" rx="13" fill="#1e4d6b"/>
+          <text x="10" y="38" font-family="Georgia, serif" font-size="32" font-weight="700" fill="white">B</text>
+          <circle cx="40" cy="14" r="5" fill="#5ba3cc"/>
+          <circle cx="40" cy="14" r="3" fill="white"/>
+        </svg>
+        <div class="brand-t">
+          <div class="bname">BECCA</div>
+          <div class="bsub">Catering System</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="user-pill">
+      <div class="avatar" id="nav-av"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="dn" id="nav-nm"></div>
+        <div class="dr" id="nav-rl"></div>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav-menu"></nav>
+
+    <div class="sb-foot">
+      <button class="btn btn-ghost btn-full" onclick="doLogout()" style="color:var(--red);justify-content:center;font-size:13px;">⎋&nbsp; Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-left">
+        <button class="hbg" onclick="toggleSB()">☰</button>
+        <div class="pg-title" id="pg-title">Dashboard</div>
+      </div>
+      <div class="tb-right">
+        <div class="clock-chip">🕐 <span id="clk"></span></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-grid" id="stat-grid"></div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📋 Order Terbaru</span>
+            <span class="tmuted mono" style="font-size:10.5px;" id="dash-ts"></span>
+          </div>
+          <div class="tw">
+            <table><thead><tr>
+              <th>Tgl Order</th><th>Perusahaan</th><th>Diinput Oleh</th><th>Waktu Input</th><th>Total</th><th>Rev</th><th>Tipe</th>
+            </tr></thead><tbody id="dash-tbl"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INPUT -->
+      <div id="page-input" class="page">
+        <div class="card">
+          <div class="card-head"><span class="card-title">➕ Input Order Baru</span></div>
+          <div class="card-body">
+            <div class="input-meta" id="imeta"></div>
+            <div class="fg">
+              <div class="form-group"><label>Tanggal Order *</label><input type="date" id="f-tgl"></div>
+              <div class="form-group"><label>Nama Perusahaan *</label><input type="text" id="f-coy" placeholder="PT. EXAMPLE"></div>
+              <div class="form-group"><label>Tipe Order</label><select id="f-tipe"><option value="real orderan">✅ Real Orderan</option><option value="estimasi orderan">📋 Estimasi Orderan</option></select></div>
+              <div class="form-group"><label>Catatan</label><input type="text" id="f-cat" placeholder="Catatan tambahan..."></div>
+              <div class="sec-div"><span>🌅</span> Breakfast & Shift 1</div>
+              <div class="form-group"><label>Breakfast</label><input type="number" id="f-bf" value="0" min="0"></div>
+              <div class="form-group"><label>Shift 1</label><input type="number" id="f-s1" value="0" min="0"></div>
+              <div class="form-group"><label>Spare 1</label><input type="number" id="f-sp1" value="0" min="0"></div>
+              <div class="form-group"><label>OT 1</label><input type="number" id="f-ot1" value="0" min="0"></div>
+              <div class="form-group"><label>Snack 1</label><input type="number" id="f-sn1" value="0" min="0"></div>
+              <div class="sec-div"><span>🌙</span> Shift 2</div>
+              <div class="form-group"><label>Shift 2</label><input type="number" id="f-s2" value="0" min="0"></div>
+              <div class="form-group"><label>Spare 2</label><input type="number" id="f-sp2" value="0" min="0"></div>
+              <div class="form-group"><label>OT 2</label><input type="number" id="f-ot2" value="0" min="0"></div>
+              <div class="form-group"><label>Snack 2</label><input type="number" id="f-sn2" value="0" min="0"></div>
+              <div class="sec-div"><span>🌃</span> Shift 3 & Lainnya</div>
+              <div class="form-group"><label>Shift 3</label><input type="number" id="f-s3" value="0" min="0"></div>
+              <div class="form-group"><label>Spare 3</label><input type="number" id="f-sp3" value="0" min="0"></div>
+              <div class="form-group"><label>OT 3</label><input type="number" id="f-ot3" value="0" min="0"></div>
+              <div class="form-group"><label>Snack 3</label><input type="number" id="f-sn3" value="0" min="0"></div>
+              <div class="form-group"><label>Snack Berat</label><input type="number" id="f-snb" value="0" min="0"></div>
+            </div>
+            <div style="display:flex;gap:9px;margin-top:18px;">
+              <button class="btn btn-primary" onclick="submitOrder()">💾 Simpan Order</button>
+              <button class="btn btn-secondary" onclick="resetForm()">↺ Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATA ORDER -->
+      <div id="page-orders" class="page">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📦 Semua Order</span>
+            <div class="fbar">
+              <div class="sbox"><span class="si2">🔍</span><input type="text" id="sq" placeholder="Cari perusahaan / pelapor..." oninput="filterOrders()"></div>
+              <select class="sel" id="st" onchange="filterOrders()"><option value="">Semua Tipe</option><option value="real orderan">Real</option><option value="estimasi orderan">Estimasi</option></select>
+              <select class="sel" id="sc" onchange="filterOrders()"><option value="">Semua Perusahaan</option></select>
+            </div>
+          </div>
+          <div class="tw">
+            <table><thead><tr>
+              <th>#</th><th>Tgl Order</th><th>Perusahaan</th><th>Diinput Oleh</th><th>Role</th><th>Waktu Input</th><th>Terakhir Edit</th>
+              <th>BF</th><th>S1</th><th>Sp1</th><th>OT1</th><th>Snk1</th>
+              <th>S2</th><th>Sp2</th><th>OT2</th><th>Snk2</th>
+              <th>S3</th><th>Sp3</th><th>OT3</th><th>Snk3</th><th>SnkB</th>
+              <th>Total</th><th>Rev</th><th>Tipe</th><th>Aksi</th>
+            </tr></thead><tbody id="ord-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAPORAN -->
+      <div id="page-reports" class="page">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📊 Laporan</span>
+            <div class="fbar">
+              <select class="sel" id="r-coy" onchange="renderReports()"><option value="">Semua Perusahaan</option></select>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- Tabs -->
+            <div class="report-tabs">
+              <button class="rtab active" id="tab-daily" onclick="setRTab('daily')">📅 Harian</button>
+              <button class="rtab" id="tab-monthly" onclick="setRTab('monthly')">📆 Bulanan</button>
+              <button class="rtab" id="tab-yearly" onclick="setRTab('yearly')">🗓 Tahunan</button>
+            </div>
+            <!-- Period selector -->
+            <div class="period-bar" id="period-bar"></div>
+            <!-- Report output -->
+            <div id="report-out"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div id="page-users" class="page">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+          <button class="btn btn-primary" onclick="openUserModal()">➕ Tambah User</button>
+        </div>
+        <div id="users-list"></div>
+        <div class="card" style="margin-top:18px;">
+          <div class="card-head"><span class="card-title">🔑 Privilege Matrix</span></div>
+          <div class="card-body"><div class="tw"><table class="ptbl"><thead><tr><th>Fitur</th><th>Super Admin</th><th>Admin</th><th>Operator</th><th>Viewer</th></tr></thead><tbody id="priv-body"></tbody></table></div></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div class="card">
+          <div class="card-head"><span class="card-title">⚙️ Pengaturan Akun</span></div>
+          <div class="card-body">
+            <div class="alert alert-info">ℹ️ Perubahan nama akan tercatat di semua riwayat order berikutnya.</div>
+            <div class="fg">
+              <div class="form-group"><label>Nama Lengkap</label><input type="text" id="set-nm"></div>
+              <div class="form-group"><label>Username</label><input type="text" id="set-un" disabled></div>
+              <div class="form-group"><label>Role</label><input type="text" id="set-rl" disabled></div>
+              <div class="form-group"><label>Password Baru</label><input type="password" id="set-pw" placeholder="Kosongkan jika tidak ingin ganti"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:11px;">💾 Simpan</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: EDIT ORDER ══ -->
+<div class="overlay" id="m-edit">
+  <div class="modal">
+    <div class="mhead">
+      <div><div class="mtitle" id="etitle">✏️ Edit Order</div><div class="msub" id="esub"></div></div>
+      <button class="mclose" onclick="closeM('m-edit')">✕</button>
+    </div>
+    <div class="alert alert-warn" id="ewarn" style="display:none;"></div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Catatan Revisi *</label>
+      <input type="text" id="e-note" placeholder="Jelaskan alasan perubahan ini...">
+    </div>
+    <div class="fg">
+      <div class="form-group"><label>Tanggal Order</label><input type="date" id="e-tgl"></div>
+      <div class="form-group"><label>Nama Perusahaan</label><input type="text" id="e-coy"></div>
+      <div class="form-group"><label>Tipe</label><select id="e-tipe"><option value="real orderan">✅ Real Orderan</option><option value="estimasi orderan">📋 Estimasi Orderan</option></select></div>
+      <div class="form-group"><label>Catatan</label><input type="text" id="e-cat"></div>
+      <div class="sec-div"><span>🌅</span> Breakfast & Shift 1</div>
+      <div class="form-group"><label>Breakfast</label><input type="number" id="e-bf" min="0"></div>
+      <div class="form-group"><label>Shift 1</label><input type="number" id="e-s1" min="0"></div>
+      <div class="form-group"><label>Spare 1</label><input type="number" id="e-sp1" min="0"></div>
+      <div class="form-group"><label>OT 1</label><input type="number" id="e-ot1" min="0"></div>
+      <div class="form-group"><label>Snack 1</label><input type="number" id="e-sn1" min="0"></div>
+      <div class="sec-div"><span>🌙</span> Shift 2</div>
+      <div class="form-group"><label>Shift 2</label><input type="number" id="e-s2" min="0"></div>
+      <div class="form-group"><label>Spare 2</label><input type="number" id="e-sp2" min="0"></div>
+      <div class="form-group"><label>OT 2</label><input type="number" id="e-ot2" min="0"></div>
+      <div class="form-group"><label>Snack 2</label><input type="number" id="e-sn2" min="0"></div>
+      <div class="sec-div"><span>🌃</span> Shift 3 & Lainnya</div>
+      <div class="form-group"><label>Shift 3</label><input type="number" id="e-s3" min="0"></div>
+      <div class="form-group"><label>Spare 3</label><input type="number" id="e-sp3" min="0"></div>
+      <div class="form-group"><label>OT 3</label><input type="number" id="e-ot3" min="0"></div>
+      <div class="form-group"><label>Snack 3</label><input type="number" id="e-sn3" min="0"></div>
+      <div class="form-group"><label>Snack Berat</label><input type="number" id="e-snb" min="0"></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:20px;">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Simpan Perubahan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-edit')">Batal</button>
+    </div>
+    <div style="margin-top:22px;">
+      <div style="font-size:10px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;">📜 Riwayat Perubahan</div>
+      <div class="audit-wrap" id="audit-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: DETAIL ══ -->
+<div class="overlay" id="m-detail">
+  <div class="modal">
+    <div class="mhead">
+      <div><div class="mtitle">📋 Detail Order</div><div class="msub" id="d-sub"></div></div>
+      <button class="mclose" onclick="closeM('m-detail')">✕</button>
+    </div>
+    <div id="d-body"></div>
+    <div style="margin-top:18px;">
+      <div style="font-size:10px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;">📜 Riwayat Perubahan</div>
+      <div class="audit-wrap" id="d-audit"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: USER ══ -->
+<div class="overlay" id="m-user">
+  <div class="modal sm">
+    <div class="mhead"><div class="mtitle">➕ Tambah User</div><button class="mclose" onclick="closeM('m-user')">✕</button></div>
+    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="um-nm" placeholder="Nama lengkap..."></div>
+    <div class="form-group"><label>Username *</label><input type="text" id="um-un" placeholder="username..."></div>
+    <div class="form-group"><label>Password *</label><input type="password" id="um-pw" placeholder="password..."></div>
+    <div class="form-group"><label>Role</label><select id="um-rl"><option value="admin">Admin</option><option value="operator">Operator</option><option value="viewer">Viewer</option></select></div>
+    <div style="display:flex;gap:9px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveUser()">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-user')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
+
+<script>
+// ══ CONFIG ══════════════════════════════════════
+const RC = {
+  superadmin:{ label:'Super Admin', color:'#a8281e', bg:'#faeeed', chip:'rc-sa', pages:['dashboard','input','orders','reports','users','settings'] },
+  admin:     { label:'Admin',       color:'#1e4d6b', bg:'#edf3f8', chip:'rc-ad', pages:['dashboard','input','orders','reports','settings'] },
+  operator:  { label:'Operator',    color:'#2a6b47', bg:'#eaf4ef', chip:'rc-op', pages:['dashboard','input','orders','settings'] },
+  viewer:    { label:'Viewer',      color:'#857e74', bg:'#f4f2ed', chip:'rc-vi', pages:['dashboard','orders','reports','settings'] },
+};
+const PM = {
+  dashboard:{ icon:'🏠', label:'Dashboard' },
+  input:    { icon:'➕', label:'Input Order' },
+  orders:   { icon:'📦', label:'Data Order' },
+  reports:  { icon:'📊', label:'Laporan' },
+  users:    { icon:'👤', label:'Manajemen User' },
+  settings: { icon:'⚙️', label:'Pengaturan' },
+};
+const PRIVS = [
+  { f:'👁 Lihat Dashboard',      sa:1,ad:1,op:1,vi:1 },
+  { f:'➕ Input Order',           sa:1,ad:1,op:1,vi:0 },
+  { f:'📋 Lihat Semua Order',     sa:1,ad:1,op:1,vi:1 },
+  { f:'✏️ Edit / Revisi Order',   sa:1,ad:1,op:0,vi:0 },
+  { f:'🗑 Hapus Order',            sa:1,ad:0,op:0,vi:0 },
+  { f:'📊 Laporan Harian',        sa:1,ad:1,op:0,vi:1 },
+  { f:'📆 Laporan Bulanan',       sa:1,ad:1,op:0,vi:1 },
+  { f:'🗓 Laporan Tahunan',       sa:1,ad:1,op:0,vi:1 },
+  { f:'👤 Manajemen User',        sa:1,ad:0,op:0,vi:0 },
+  { f:'⚙️ Pengaturan Akun',       sa:1,ad:1,op:1,vi:1 },
+];
+
+// ══ DATA ════════════════════════════════════════
+let USERS = [
+  {id:1,username:'superadmin',password:'admin123',nama:'Super Administrator',role:'superadmin'},
+  {id:2,username:'admin',     password:'admin123',nama:'Becca Admin',        role:'admin'},
+  {id:3,username:'operator',  password:'op123',   nama:'Nda Operator',       role:'operator'},
+  {id:4,username:'viewer',    password:'view123', nama:'Nadya DM',           role:'viewer'},
+];
+
+function mkO(id,ts,by,tgl,coy,p,cat,tipe){
+  const d={bf:0,s1:0,sp1:0,ot1:0,sn1:0,s2:0,sp2:0,ot2:0,sn2:0,s3:0,sp3:0,ot3:0,sn3:0,snb:0,...p};
+  return{id,tglOrder:tgl,perusahaan:coy.toUpperCase(),tipe,catatan:cat,
+    bf:d.bf,s1:d.s1,sp1:d.sp1,ot1:d.ot1,sn1:d.sn1,
+    s2:d.s2,sp2:d.sp2,ot2:d.ot2,sn2:d.sn2,
+    s3:d.s3,sp3:d.sp3,ot3:d.ot3,sn3:d.sn3,snb:d.snb,
+    history:[{ts,user:by,role:getRoleLabel(by),action:'create',note:tipe}]};
+}
+function getRoleLabel(nama){const u=USERS.find(x=>x.nama===nama);return u?RC[u.role].label:'—';}
+function getRoleKey(nama){const u=USERS.find(x=>x.nama===nama);return u?u.role:'viewer';}
+
+let ORDERS=[
+  mkO(1,'01/01/2025 22:39:23','Nda Operator','2025-01-01','PT. MARUGO',{s3:4},'real orderan','real orderan'),
+  mkO(2,'01/01/2025 22:41:17','Nadya DM','2025-01-01','PT. DAIKI',{s1:25,s3:9},'real orderan','real orderan'),
+  mkO(3,'01/01/2025 22:42:04','Nadya DM','2025-01-02','PT. DAIKI',{s1:25,s3:9},'real orderan','real orderan'),
+  mkO(4,'01/01/2025 22:43:43','Nadya DM','2025-01-03','PT. DAIKI',{s1:315,s2:205,s3:25},'estimasi orderan','estimasi orderan'),
+  mkO(5,'01/01/2025 22:45:10','Nadya DM','2025-01-04','PT. DAIKI',{s1:120,s2:50,s3:25},'estimasi orderan','estimasi orderan'),
+  mkO(6,'01/01/2025 22:47:34','Nadya DM','2025-01-05','PT. DAIKI',{s1:50,s2:20,s3:25},'estimasi orderan','estimasi orderan'),
+  mkO(7,'05/01/2025 08:15:00','Nda Operator','2025-01-06','PT. MARUGO',{s1:80,s2:60,s3:12},'real orderan','real orderan'),
+  mkO(8,'10/01/2025 09:30:00','Becca Admin','2025-01-10','PT. HONDA',{s1:200,s2:150,s3:40,sn1:30},'real orderan','real orderan'),
+  mkO(9,'15/01/2025 10:00:00','Becca Admin','2025-01-15','PT. HONDA',{s1:210,s2:155,s3:42},'real orderan','real orderan'),
+  mkO(10,'01/02/2025 08:00:00','Nadya DM','2025-02-01','PT. DAIKI',{s1:300,s2:180,s3:30},'estimasi orderan','estimasi orderan'),
+  mkO(11,'05/02/2025 09:00:00','Nda Operator','2025-02-05','PT. MARUGO',{s1:90,s2:70,s3:15},'real orderan','real orderan'),
+  mkO(12,'10/02/2025 10:30:00','Becca Admin','2025-02-10','PT. HONDA',{s1:220,s2:160,s3:45},'real orderan','real orderan'),
+  mkO(13,'01/03/2025 08:00:00','Nadya DM','2025-03-01','PT. DAIKI',{s1:320,s2:200,s3:35,bf:10},'real orderan','real orderan'),
+  mkO(14,'05/03/2025 09:00:00','Nda Operator','2025-03-05','PT. MARUGO',{s1:100,s2:80,s3:18},'real orderan','real orderan'),
+];
+
+let _oid=15,_uid=5,CU=null,editId=null,rTab='daily';
+
+// ══ HELPERS ═════════════════════════════════════
+const p2=x=>String(x).padStart(2,'0');
+function nowTs(){const n=new Date();return`${p2(n.getDate())}/${p2(n.getMonth()+1)}/${n.getFullYear()} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;}
+function tp(o){return(o.bf||0)+(o.s1||0)+(o.sp1||0)+(o.ot1||0)+(o.sn1||0)+(o.s2||0)+(o.sp2||0)+(o.ot2||0)+(o.sn2||0)+(o.s3||0)+(o.sp3||0)+(o.ot3||0)+(o.sn3||0)+(o.snb||0);}
+function rc(o){return o.history.filter(h=>h.action==='edit').length;}
+function le(o){const e=o.history.filter(h=>h.action==='edit');return e.length?e[e.length-1]:null;}
+function fv(v){return v||0;}
+
+// ══ AUTH ════════════════════════════════════════
+function fill(u,pw){document.getElementById('li-u').value=u;document.getElementById('li-p').value=pw;}
+function doLogin(){
+  const u=document.getElementById('li-u').value.trim();
+  const pw=document.getElementById('li-p').value;
+  const user=USERS.find(x=>x.username===u&&x.password===pw);
+  if(!user){toast('Username atau password salah','error');return;}
+  CU=user;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  initApp();
+}
+function doLogout(){CU=null;document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';}
+
+// ══ INIT ════════════════════════════════════════
+function initApp(){
+  const r=RC[CU.role];
+  const av=document.getElementById('nav-av');
+  av.textContent=CU.nama.charAt(0).toUpperCase();
+  av.style.background=r.bg; av.style.color=r.color; av.style.border=`2px solid ${r.color}40`;
+  document.getElementById('nav-nm').textContent=CU.nama;
+  document.getElementById('nav-rl').textContent=r.label;
+  buildNav(); tickClk(); setInterval(tickClk,1000); navigateTo('dashboard');
+}
+function tickClk(){
+  const n=new Date();
+  document.getElementById('clk').textContent=`${n.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'})} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;
+}
+function buildNav(){
+  const allowed=RC[CU.role].pages;
+  const nav=document.getElementById('nav-menu'); nav.innerHTML='';
+  const secs=[{l:'Menu',i:['dashboard','input','orders','reports']},{l:'Admin',i:['users','settings']}];
+  secs.forEach(sec=>{
+    const items=sec.i.filter(p=>allowed.includes(p)); if(!items.length)return;
+    const w=document.createElement('div'); w.className='ns';
+    w.innerHTML=`<div class="ns-lbl">${sec.l}</div>`;
+    items.forEach(pg=>{
+      const m=PM[pg];const el=document.createElement('div');
+      el.className='ni';el.id='ni-'+pg;
+      el.innerHTML=`<span class="icon">${m.icon}</span>${m.label}`;
+      el.onclick=()=>navigateTo(pg);w.appendChild(el);
+    });
+    nav.appendChild(w);
+  });
+}
+function navigateTo(pg){
+  if(!RC[CU.role].pages.includes(pg)){toast('Akses ditolak','error');return;}
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  const ni=document.getElementById('ni-'+pg); if(ni)ni.classList.add('active');
+  document.getElementById('pg-title').textContent=PM[pg].label;
+  renderPage(pg);
+}
+function renderPage(pg){
+  if(pg==='dashboard')renderDash();
+  if(pg==='orders')renderOrders();
+  if(pg==='reports')renderReportPage();
+  if(pg==='users')renderUsers();
+  if(pg==='settings')renderSettings();
+  if(pg==='input'){document.getElementById('f-tgl').value=new Date().toISOString().split('T')[0];updImeta();}
+}
+
+// ══ INPUT META ═══════════════════════════════════
+function updImeta(){
+  document.getElementById('imeta').innerHTML=`
+    <div class="im-item">👤 <strong>Diinput oleh:</strong> ${CU.nama}</div>
+    <div class="im-item">🏷 <strong>Role:</strong> ${RC[CU.role].label}</div>
+    <div class="im-item">🕐 <strong>Waktu:</strong> ${nowTs()}</div>`;
+}
+
+// ══ DASHBOARD ════════════════════════════════════
+function renderDash(){
+  const tot=ORDERS.length, real=ORDERS.filter(o=>o.tipe==='real orderan').length,
+        est=ORDERS.filter(o=>o.tipe==='estimasi orderan').length,
+        porsi=ORDERS.reduce((s,o)=>s+tp(o),0),
+        cos=[...new Set(ORDERS.map(o=>o.perusahaan))].length,
+        revs=ORDERS.reduce((s,o)=>s+rc(o),0);
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card sc-blue"><div class="si">📦</div><div class="sv">${tot}</div><div class="sl">Total Order</div></div>
+    <div class="stat-card sc-green"><div class="si">✅</div><div class="sv">${real}</div><div class="sl">Real Order</div></div>
+    <div class="stat-card sc-amber"><div class="si">📋</div><div class="sv">${est}</div><div class="sl">Estimasi</div></div>
+    <div class="stat-card sc-blue"><div class="si">🍱</div><div class="sv">${porsi.toLocaleString()}</div><div class="sl">Total Porsi</div></div>
+    <div class="stat-card sc-green"><div class="si">🏭</div><div class="sv">${cos}</div><div class="sl">Perusahaan</div></div>
+    <div class="stat-card sc-red"><div class="si">✏️</div><div class="sv">${revs}</div><div class="sl">Total Revisi</div></div>`;
+  document.getElementById('dash-ts').textContent='Update: '+nowTs();
+  document.getElementById('dash-tbl').innerHTML=[...ORDERS].reverse().slice(0,10).map(o=>`
+    <tr>
+      <td class="mono">${o.tglOrder}</td>
+      <td><strong>${o.perusahaan}</strong></td>
+      <td><strong>${o.history[0].user}</strong></td>
+      <td class="mono tmuted" style="font-size:10.5px;">${o.history[0].ts}</td>
+      <td class="mono taccent">${tp(o).toLocaleString()}</td>
+      <td>${rc(o)>0?`<span class="rev-chip">✏️ ${rc(o)}×</span>`:'<span class="tmuted">—</span>'}</td>
+      <td><span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span></td>
+    </tr>`).join('');
+}
+
+// ══ INPUT ORDER ══════════════════════════════════
+function submitOrder(){
+  const tgl=document.getElementById('f-tgl').value;
+  const coy=document.getElementById('f-coy').value.trim();
+  if(!tgl||!coy){toast('Tanggal & nama perusahaan wajib diisi','error');return;}
+  const o={
+    id:_oid++,tglOrder:tgl,perusahaan:coy.toUpperCase(),
+    tipe:document.getElementById('f-tipe').value,
+    catatan:document.getElementById('f-cat').value,
+    bf: +document.getElementById('f-bf').value||0,
+    s1: +document.getElementById('f-s1').value||0,
+    sp1:+document.getElementById('f-sp1').value||0,
+    ot1:+document.getElementById('f-ot1').value||0,
+    sn1:+document.getElementById('f-sn1').value||0,
+    s2: +document.getElementById('f-s2').value||0,
+    sp2:+document.getElementById('f-sp2').value||0,
+    ot2:+document.getElementById('f-ot2').value||0,
+    sn2:+document.getElementById('f-sn2').value||0,
+    s3: +document.getElementById('f-s3').value||0,
+    sp3:+document.getElementById('f-sp3').value||0,
+    ot3:+document.getElementById('f-ot3').value||0,
+    sn3:+document.getElementById('f-sn3').value||0,
+    snb:+document.getElementById('f-snb').value||0,
+    history:[{ts:nowTs(),user:CU.nama,role:RC[CU.role].label,action:'create',note:document.getElementById('f-tipe').value}]
+  };
+  ORDERS.push(o); toast('Order berhasil disimpan!','success'); resetForm();
+}
+function resetForm(){
+  ['f-coy','f-cat'].forEach(id=>document.getElementById(id).value='');
+  ['f-bf','f-s1','f-sp1','f-ot1','f-sn1','f-s2','f-sp2','f-ot2','f-sn2','f-s3','f-sp3','f-ot3','f-sn3','f-snb']
+    .forEach(id=>document.getElementById(id).value=0);
+  updImeta();
+}
+
+// ══ ORDERS TABLE ═════════════════════════════════
+function renderOrders(){
+  const cos=[...new Set(ORDERS.map(o=>o.perusahaan))].sort();
+  const sel=document.getElementById('sc'); const cur=sel.value;
+  sel.innerHTML='<option value="">Semua Perusahaan</option>'+cos.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  filterOrders();
+}
+function filterOrders(){
+  const q=(document.getElementById('sq')?.value||'').toLowerCase();
+  const t=document.getElementById('st')?.value||'';
+  const c=document.getElementById('sc')?.value||'';
+  const canEdit=['superadmin','admin'].includes(CU.role);
+  const canDel=CU.role==='superadmin';
+  const filtered=ORDERS.filter(o=>
+    (!q||o.perusahaan.toLowerCase().includes(q)||o.history[0].user.toLowerCase().includes(q))&&
+    (!t||o.tipe===t)&&(!c||o.perusahaan===c));
+  document.getElementById('ord-body').innerHTML=filtered.length?filtered.map((o,i)=>{
+    const e=le(o);
+    return`<tr>
+      <td class="mono tmuted">${i+1}</td>
+      <td class="mono">${o.tglOrder}</td>
+      <td><strong>${o.perusahaan}</strong></td>
+      <td><div style="font-size:12px;font-weight:600;">${o.history[0].user}</div></td>
+      <td><span class="role-chip ${RC[getRoleKey(o.history[0].user)]?.chip||'rc-vi'}" style="font-size:9px;">${o.history[0].role||'—'}</span></td>
+      <td class="mono tmuted" style="font-size:10.5px;">${o.history[0].ts}</td>
+      <td style="font-size:11px;">${e?`<div class="mono" style="font-size:11px;color:var(--accent);">${e.user}</div><div class="mono tmuted" style="font-size:10px;">${e.ts}</div>`:'<span class="tmuted">—</span>'}</td>
+      <td class="mono">${fv(o.bf)}</td><td class="mono">${fv(o.s1)}</td><td class="mono">${fv(o.sp1)}</td><td class="mono">${fv(o.ot1)}</td><td class="mono">${fv(o.sn1)}</td>
+      <td class="mono">${fv(o.s2)}</td><td class="mono">${fv(o.sp2)}</td><td class="mono">${fv(o.ot2)}</td><td class="mono">${fv(o.sn2)}</td>
+      <td class="mono">${fv(o.s3)}</td><td class="mono">${fv(o.sp3)}</td><td class="mono">${fv(o.ot3)}</td><td class="mono">${fv(o.sn3)}</td><td class="mono">${fv(o.snb)}</td>
+      <td class="mono taccent"><strong>${tp(o).toLocaleString()}</strong></td>
+      <td>${rc(o)>0?`<span class="rev-chip">✏️${rc(o)}</span>`:'<span class="tmuted mono">0</span>'}</td>
+      <td><span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span></td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-secondary btn-sm" onclick="openDetail(${o.id})">👁</button>
+        ${canEdit?`<button class="btn btn-amber btn-sm" onclick="openEdit(${o.id})">✏️</button>`:''}
+        ${canDel?`<button class="btn btn-danger btn-sm" onclick="delOrder(${o.id})">🗑</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="25" style="text-align:center;padding:40px;color:var(--muted);">Tidak ada data</td></tr>';
+}
+
+// ══ DETAIL ════════════════════════════════════════
+function openDetail(id){
+  const o=ORDERS.find(x=>x.id===id); if(!o)return;
+  document.getElementById('d-sub').textContent=`${o.perusahaan} · ${o.tglOrder}`;
+  const fields=[['Breakfast',o.bf],['Shift 1',o.s1],['Spare 1',o.sp1],['OT 1',o.ot1],['Snack 1',o.sn1],['Shift 2',o.s2],['Spare 2',o.sp2],['OT 2',o.ot2],['Snack 2',o.sn2],['Shift 3',o.s3],['Spare 3',o.sp3],['OT 3',o.ot3],['Snack 3',o.sn3],['Snack Berat',o.snb]];
+  document.getElementById('d-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:14px;">
+      ${fields.filter(([,v])=>v>0).map(([l,v])=>`<div class="rsum-card"><div class="rsum-val" style="color:var(--text);">${v}</div><div class="rsum-lbl">${l}</div></div>`).join('')}
+      <div class="rsum-card total-card"><div class="rsum-val">${tp(o)}</div><div class="rsum-lbl">TOTAL</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);font-style:italic;">${o.catatan||''}</div>`;
+  document.getElementById('d-audit').innerHTML=renderAudit(o.history);
+  openM('m-detail');
+}
+
+// ══ EDIT ══════════════════════════════════════════
+function openEdit(id){
+  const o=ORDERS.find(x=>x.id===id); if(!o)return;
+  editId=id;
+  document.getElementById('etitle').textContent=`✏️ Edit — ${o.perusahaan}`;
+  document.getElementById('esub').textContent=`${o.tglOrder} · ${rc(o)>0?rc(o)+' revisi sebelumnya':'Belum pernah direvisi'}`;
+  const w=document.getElementById('ewarn');
+  const last=le(o);
+  if(last){w.style.display='flex';w.textContent=`⚠️ Terakhir diedit oleh ${last.user} pada ${last.ts}`;}
+  else w.style.display='none';
+  document.getElementById('e-note').value='';
+  document.getElementById('e-tgl').value=o.tglOrder;
+  document.getElementById('e-coy').value=o.perusahaan;
+  document.getElementById('e-tipe').value=o.tipe;
+  document.getElementById('e-cat').value=o.catatan||'';
+  ['bf','s1','sp1','ot1','sn1','s2','sp2','ot2','sn2','s3','sp3','ot3','sn3','snb'].forEach(f=>document.getElementById('e-'+f).value=o[f]);
+  document.getElementById('audit-list').innerHTML=renderAudit(o.history);
+  openM('m-edit');
+}
+function saveEdit(){
+  const note=document.getElementById('e-note').value.trim();
+  if(!note){toast('Catatan revisi wajib diisi','error');return;}
+  const o=ORDERS.find(x=>x.id===editId); if(!o)return;
+  o.tglOrder=document.getElementById('e-tgl').value;
+  o.perusahaan=document.getElementById('e-coy').value.toUpperCase();
+  o.tipe=document.getElementById('e-tipe').value;
+  o.catatan=document.getElementById('e-cat').value;
+  ['bf','s1','sp1','ot1','sn1','s2','sp2','ot2','sn2','s3','sp3','ot3','sn3','snb'].forEach(f=>o[f]=+document.getElementById('e-'+f).value||0);
+  o.history.push({ts:nowTs(),user:CU.nama,role:RC[CU.role].label,action:'edit',note});
+  closeM('m-edit'); filterOrders(); toast(`Order diperbarui! (Revisi ke-${rc(o)})`, 'success');
+}
+function delOrder(id){
+  if(!confirm('Yakin hapus order ini?'))return;
+  ORDERS=ORDERS.filter(o=>o.id!==id); filterOrders(); toast('Order dihapus','info');
+}
+
+// ══ AUDIT RENDERER ═══════════════════════════════
+function renderAudit(hist){
+  if(!hist||!hist.length)return'<div style="padding:10px;text-align:center;color:var(--muted);font-size:12px;">Tidak ada riwayat</div>';
+  return hist.slice().reverse().map(h=>`
+    <div class="audit-row">
+      <div class="adot ${h.action==='create'?'c':'e'}"></div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          <span class="a-u">${h.user}</span>
+          <span class="role-chip ${RC[getRoleKey(h.user)]?.chip||'rc-vi'}" style="font-size:8.5px;">${h.role||'—'}</span>
+          <span class="badge ${h.action==='create'?'b-real':'b-rev'}" style="font-size:9px;">${h.action==='create'?'INPUT':'REVISI'}</span>
+        </div>
+        <div class="a-n">${h.note}</div>
+      </div>
+      <div class="a-ts">${h.ts}</div>
+    </div>`).join('');
+}
+
+// ══ REPORTS ══════════════════════════════════════
+const FLDS=['bf','s1','sp1','ot1','sn1','s2','sp2','ot2','sn2','s3','sp3','ot3','sn3','snb'];
+const FLBL=['BF','S1','Sp1','OT1','Snk1','S2','Sp2','OT2','Snk2','S3','Sp3','OT3','Snk3','SnkB'];
+
+function renderReportPage(){
+  // populate company filter
+  const cos=[...new Set(ORDERS.map(o=>o.perusahaan))].sort();
+  const sel=document.getElementById('r-coy'); const cur=sel.value;
+  sel.innerHTML='<option value="">Semua Perusahaan</option>'+cos.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  setRTab(rTab);
+}
+
+function setRTab(tab){
+  rTab=tab;
+  ['daily','monthly','yearly'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  buildPeriodBar();
+  renderReports();
+}
+
+function buildPeriodBar(){
+  const now=new Date();
+  const pb=document.getElementById('period-bar');
+  if(rTab==='daily'){
+    pb.innerHTML=`<label>Tanggal</label><input type="date" class="sel" id="r-date" value="${now.toISOString().split('T')[0]}" onchange="renderReports()" style="padding:6px 11px;">`;
+  } else if(rTab==='monthly'){
+    const ym=`${now.getFullYear()}-${p2(now.getMonth()+1)}`;
+    pb.innerHTML=`<label>Bulan</label><input type="month" class="sel" id="r-month" value="${ym}" onchange="renderReports()" style="padding:6px 11px;">`;
+  } else {
+    // yearly: dropdown list of available years
+    const years=[...new Set(ORDERS.map(o=>o.tglOrder.split('-')[0]))].sort().reverse();
+    pb.innerHTML=`<label>Tahun</label><select class="sel" id="r-year" onchange="renderReports()">${years.map(y=>`<option value="${y}" ${y===String(now.getFullYear())?'selected':''}>${y}</option>`).join('')}</select>`;
+  }
+}
+
+function renderReports(){
+  const coy=document.getElementById('r-coy')?.value||'';
+  let filtered=ORDERS.filter(o=>!coy||o.perusahaan===coy);
+
+  if(rTab==='daily'){
+    const date=document.getElementById('r-date')?.value||'';
+    if(!date){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">📅</div><p>Pilih tanggal</p></div>';return;}
+    filtered=filtered.filter(o=>o.tglOrder===date);
+    renderReportTable(filtered,`Laporan Harian — ${date}`,false);
+  } else if(rTab==='monthly'){
+    const month=document.getElementById('r-month')?.value||'';
+    if(!month){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">📆</div><p>Pilih bulan</p></div>';return;}
+    filtered=filtered.filter(o=>o.tglOrder.startsWith(month));
+    renderReportMonthly(filtered,month);
+  } else {
+    const year=document.getElementById('r-year')?.value||'';
+    if(!year){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">🗓</div><p>Pilih tahun</p></div>';return;}
+    filtered=filtered.filter(o=>o.tglOrder.startsWith(year));
+    renderReportYearly(filtered,year);
+  }
+}
+
+function renderReportTable(orders,title,showDate=true){
+  if(!orders.length){
+    document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">🔍</div><p>Tidak ada data untuk periode ini</p></div>';return;
+  }
+  const tots={};FLDS.forEach(f=>tots[f]=orders.reduce((s,o)=>s+(o[f]||0),0));
+  const grand=FLDS.reduce((s,f)=>s+tots[f],0);
+  const byComp={};orders.forEach(o=>{if(!byComp[o.perusahaan])byComp[o.perusahaan]=[];byComp[o.perusahaan].push(o);});
+
+  let html=`<div style="margin-bottom:16px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:12px;">${title}</div>
+    <div class="rsum-grid">
+      ${FLDS.map((f,i)=>tots[f]>0?`<div class="rsum-card"><div class="rsum-val">${tots[f].toLocaleString()}</div><div class="rsum-lbl">${FLBL[i]}</div></div>`:'').join('')}
+      <div class="rsum-card total-card"><div class="rsum-val">${grand.toLocaleString()}</div><div class="rsum-lbl">TOTAL</div></div>
+    </div>
+  </div>`;
+
+  Object.entries(byComp).forEach(([coy,ords])=>{
+    const r=ords.filter(o=>o.tipe==='real orderan').length, e=ords.filter(o=>o.tipe==='estimasi orderan').length;
+    const ctot=FLDS.reduce((s,f)=>s+ords.reduce((ss,o)=>ss+(o[f]||0),0),0);
+    html+=`<div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <div style="font-size:14px;font-weight:700;">${coy}</div>
+        <span class="badge b-real">${r} real</span><span class="badge b-est">${e} estimasi</span>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:700;">${ctot.toLocaleString()} porsi</span>
+      </div>
+      <div class="tw"><table><thead><tr>
+        ${showDate?'<th>Tgl Order</th>':''}
+        <th>Diinput Oleh</th><th>Waktu Input</th>
+        ${FLBL.map(l=>`<th>${l}</th>`).join('')}<th>Total</th><th>Rev</th><th>Tipe</th>
+      </tr></thead><tbody>
+        ${ords.map(o=>`<tr>
+          ${showDate?`<td class="mono">${o.tglOrder}</td>`:''}
+          <td><strong>${o.history[0].user}</strong></td>
+          <td class="mono tmuted" style="font-size:10.5px;">${o.history[0].ts}</td>
+          ${FLDS.map(f=>`<td class="mono">${o[f]||0}</td>`).join('')}
+          <td class="mono taccent"><strong>${tp(o)}</strong></td>
+          <td>${rc(o)>0?`<span class="rev-chip">✏️${rc(o)}</span>`:'—'}</td>
+          <td><span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+  });
+  document.getElementById('report-out').innerHTML=html;
+}
+
+function renderReportMonthly(orders,month){
+  if(!orders.length){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">📆</div><p>Tidak ada data bulan ini</p></div>';return;}
+
+  const [yr,mn]=month.split('-');
+  const monthName=new Date(yr,mn-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+
+  // Group by day
+  const byDay={};
+  orders.forEach(o=>{
+    const d=o.tglOrder; // YYYY-MM-DD
+    if(!byDay[d])byDay[d]=[];byDay[d].push(o);
+  });
+
+  const tots={};FLDS.forEach(f=>tots[f]=orders.reduce((s,o)=>s+(o[f]||0),0));
+  const grand=FLDS.reduce((s,f)=>s+tots[f],0);
+  const byComp={};orders.forEach(o=>{if(!byComp[o.perusahaan])byComp[o.perusahaan]=[];byComp[o.perusahaan].push(o);});
+
+  let html=`<div style="font-size:15px;font-weight:700;margin-bottom:14px;">📆 Laporan Bulanan — ${monthName}</div>`;
+
+  // Monthly summary
+  html+=`<div class="rsum-grid" style="margin-bottom:20px;">
+    ${FLDS.map((f,i)=>tots[f]>0?`<div class="rsum-card"><div class="rsum-val">${tots[f].toLocaleString()}</div><div class="rsum-lbl">${FLBL[i]}</div></div>`:'').join('')}
+    <div class="rsum-card total-card"><div class="rsum-val">${grand.toLocaleString()}</div><div class="rsum-lbl">TOTAL BULAN</div></div>
+  </div>`;
+
+  // Per-company summary
+  html+=`<div style="font-size:12px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Rekap per Perusahaan</div>`;
+  html+=`<div class="tw" style="margin-bottom:22px;"><table><thead><tr><th>Perusahaan</th><th>Order</th>${FLBL.map(l=>`<th>${l}</th>`).join('')}<th>Total</th><th>Real</th><th>Est</th></tr></thead><tbody>`;
+  Object.entries(byComp).forEach(([coy,ords])=>{
+    const ct={};FLDS.forEach(f=>ct[f]=ords.reduce((s,o)=>s+(o[f]||0),0));
+    const cg=FLDS.reduce((s,f)=>s+ct[f],0);
+    html+=`<tr><td><strong>${coy}</strong></td><td class="mono">${ords.length}</td>${FLDS.map(f=>`<td class="mono">${ct[f]||0}</td>`).join('')}<td class="mono taccent"><strong>${cg}</strong></td><td class="mono">${ords.filter(o=>o.tipe==='real orderan').length}</td><td class="mono">${ords.filter(o=>o.tipe==='estimasi orderan').length}</td></tr>`;
+  });
+  html+=`</tbody></table></div>`;
+
+  // Per-day breakdown
+  html+=`<div style="font-size:12px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Detail per Hari</div>`;
+  Object.entries(byDay).sort(([a],[b])=>a.localeCompare(b)).forEach(([day,ords])=>{
+    const dayGrand=FLDS.reduce((s,f)=>s+ords.reduce((ss,o)=>ss+(o[f]||0),0),0);
+    const dN=new Date(day+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'});
+    html+=`<div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:600;">${dN}</div>
+        <span class="mono" style="color:var(--accent);font-size:12px;">${dayGrand.toLocaleString()} porsi</span>
+        <span class="badge b-real" style="font-size:9.5px;">${ords.length} order</span>
+      </div>
+      <div class="tw"><table><thead><tr><th>Perusahaan</th><th>Diinput Oleh</th><th>Waktu Input</th>${FLBL.map(l=>`<th>${l}</th>`).join('')}<th>Total</th><th>Tipe</th></tr></thead>
+      <tbody>${ords.map(o=>`<tr>
+        <td><strong>${o.perusahaan}</strong></td>
+        <td>${o.history[0].user}</td>
+        <td class="mono tmuted" style="font-size:10.5px;">${o.history[0].ts}</td>
+        ${FLDS.map(f=>`<td class="mono">${o[f]||0}</td>`).join('')}
+        <td class="mono taccent"><strong>${tp(o)}</strong></td>
+        <td><span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span></td>
+      </tr>`).join('')}</tbody></table></div>
+    </div>`;
+  });
+
+  document.getElementById('report-out').innerHTML=html;
+}
+
+function renderReportYearly(orders,year){
+  if(!orders.length){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">🗓</div><p>Tidak ada data tahun ini</p></div>';return;}
+
+  const tots={};FLDS.forEach(f=>tots[f]=orders.reduce((s,o)=>s+(o[f]||0),0));
+  const grand=FLDS.reduce((s,f)=>s+tots[f],0);
+
+  // Group by month
+  const byMonth={};
+  orders.forEach(o=>{
+    const m=o.tglOrder.substring(0,7);// YYYY-MM
+    if(!byMonth[m])byMonth[m]=[];byMonth[m].push(o);
+  });
+
+  // Group by company
+  const byComp={};
+  orders.forEach(o=>{
+    if(!byComp[o.perusahaan])byComp[o.perusahaan]=[];byComp[o.perusahaan].push(o);
+  });
+
+  let html=`<div style="font-size:15px;font-weight:700;margin-bottom:14px;">🗓 Laporan Tahunan — ${year}</div>`;
+
+  // Annual totals
+  html+=`<div class="rsum-grid" style="margin-bottom:20px;">
+    ${FLDS.map((f,i)=>tots[f]>0?`<div class="rsum-card"><div class="rsum-val">${tots[f].toLocaleString()}</div><div class="rsum-lbl">${FLBL[i]}</div></div>`:'').join('')}
+    <div class="rsum-card total-card"><div class="rsum-val">${grand.toLocaleString()}</div><div class="rsum-lbl">TOTAL TAHUN</div></div>
+  </div>`;
+
+  // By month table
+  html+=`<div style="font-size:12px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Rekap per Bulan</div>`;
+  html+=`<div class="tw" style="margin-bottom:22px;"><table><thead><tr><th>Bulan</th><th>Jumlah Order</th>${FLBL.map(l=>`<th>${l}</th>`).join('')}<th>Total Porsi</th></tr></thead><tbody>`;
+  const months=['01','02','03','04','05','06','07','08','09','10','11','12'];
+  months.forEach(mn=>{
+    const key=`${year}-${mn}`;
+    const ords=byMonth[key]||[];
+    if(!ords.length)return;
+    const mt={};FLDS.forEach(f=>mt[f]=ords.reduce((s,o)=>s+(o[f]||0),0));
+    const mg=FLDS.reduce((s,f)=>s+mt[f],0);
+    const mName=new Date(year,mn-1,1).toLocaleDateString('id-ID',{month:'long'});
+    html+=`<tr><td><strong>${mName}</strong></td><td class="mono">${ords.length}</td>${FLDS.map(f=>`<td class="mono">${mt[f]||0}</td>`).join('')}<td class="mono taccent"><strong>${mg.toLocaleString()}</strong></td></tr>`;
+  });
+  html+=`</tbody></table></div>`;
+
+  // By company breakdown
+  html+=`<div style="font-size:12px;font-weight:600;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Rekap per Perusahaan</div>`;
+  Object.entries(byComp).forEach(([coy,ords])=>{
+    const ct={};FLDS.forEach(f=>ct[f]=ords.reduce((s,o)=>s+(o[f]||0),0));
+    const cg=FLDS.reduce((s,f)=>s+ct[f],0);
+    html+=`<div style="margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap;">
+        <div style="font-size:14px;font-weight:700;">${coy}</div>
+        <span class="badge b-real">${ords.filter(o=>o.tipe==='real orderan').length} real</span>
+        <span class="badge b-est">${ords.filter(o=>o.tipe==='estimasi orderan').length} estimasi</span>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:700;">${cg.toLocaleString()} porsi / tahun</span>
+      </div>
+      <div class="tw"><table><thead><tr><th>Bulan</th><th>Tgl Order</th><th>Diinput Oleh</th>${FLBL.map(l=>`<th>${l}</th>`).join('')}<th>Total</th><th>Rev</th></tr></thead>
+      <tbody>${ords.sort((a,b)=>a.tglOrder.localeCompare(b.tglOrder)).map(o=>{
+        const mN=new Date(o.tglOrder+'T00:00:00').toLocaleDateString('id-ID',{month:'short'});
+        return`<tr><td class="mono tmuted">${mN}</td><td class="mono">${o.tglOrder}</td><td>${o.history[0].user}</td>${FLDS.map(f=>`<td class="mono">${o[f]||0}</td>`).join('')}<td class="mono taccent"><strong>${tp(o)}</strong></td><td>${rc(o)>0?`<span class="rev-chip">✏️${rc(o)}</span>`:'—'}</td></tr>`;
+      }).join('')}</tbody></table></div>
+    </div>`;
+  });
+
+  document.getElementById('report-out').innerHTML=html;
+}
+
+// ══ USERS ══════════════════════════════════════
+function renderUsers(){
+  document.getElementById('priv-body').innerHTML=PRIVS.map(p=>`<tr><td>${p.f}</td>
+    <td style="text-align:center;">${p.sa?'<span class="chk">✓</span>':'<span class="crs">—</span>'}</td>
+    <td style="text-align:center;">${p.ad?'<span class="chk">✓</span>':'<span class="crs">—</span>'}</td>
+    <td style="text-align:center;">${p.op?'<span class="chk">✓</span>':'<span class="crs">—</span>'}</td>
+    <td style="text-align:center;">${p.vi?'<span class="chk">✓</span>':'<span class="crs">—</span>'}</td></tr>`).join('');
+  document.getElementById('users-list').innerHTML=USERS.map(u=>{
+    const r=RC[u.role]; const ini=u.nama.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const isMe=u.id===CU.id, isRoot=u.id===1;
+    return`<div class="ucard">
+      <div class="avatar" style="background:${r.bg};color:${r.color};border:2px solid ${r.color}40;font-size:11px;">${ini}</div>
+      <div class="ui">
+        <div class="un">${u.nama}${isMe?' <span style="font-size:10px;color:var(--muted);">(Anda)</span>':''}</div>
+        <div class="um">${u.username} · ${isRoot?'🔒 Protected':u.role}</div>
+      </div>
+      <div class="ua">
+        <select class="sel" style="padding:4px 26px 4px 9px;font-size:11px;" onchange="changeRole(${u.id},this.value)" ${isRoot||isMe?'disabled':''}>
+          ${Object.entries(RC).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v.label}</option>`).join('')}
+        </select>
+        ${!isRoot&&!isMe?`<button class="btn btn-danger btn-sm" onclick="delUser(${u.id})">🗑</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function openUserModal(){['um-nm','um-un','um-pw'].forEach(id=>document.getElementById(id).value='');document.getElementById('um-rl').value='operator';openM('m-user');}
+function saveUser(){
+  const nm=document.getElementById('um-nm').value.trim();
+  const un=document.getElementById('um-un').value.trim();
+  const pw=document.getElementById('um-pw').value;
+  if(!nm||!un||!pw){toast('Semua field wajib diisi','error');return;}
+  if(USERS.find(u=>u.username===un)){toast('Username sudah digunakan','error');return;}
+  USERS.push({id:_uid++,username:un,password:pw,nama:nm,role:document.getElementById('um-rl').value});
+  closeM('m-user');renderUsers();toast('User berhasil ditambah!','success');
+}
+function changeRole(id,role){const u=USERS.find(x=>x.id===id);if(u){u.role=role;renderUsers();toast('Role diperbarui','success');}}
+function delUser(id){if(!confirm('Hapus user ini?'))return;USERS=USERS.filter(u=>u.id!==id);renderUsers();toast('User dihapus','info');}
+
+// ══ SETTINGS ═════════════════════════════════════
+function renderSettings(){
+  document.getElementById('set-nm').value=CU.nama;
+  document.getElementById('set-un').value=CU.username;
+  document.getElementById('set-rl').value=RC[CU.role].label;
+  document.getElementById('set-pw').value='';
+}
+function saveSettings(){
+  const nm=document.getElementById('set-nm').value.trim();
+  const pw=document.getElementById('set-pw').value;
+  if(!nm){toast('Nama tidak boleh kosong','error');return;}
+  CU.nama=nm;const u=USERS.find(x=>x.id===CU.id);
+  if(u){u.nama=nm;if(pw)u.password=pw;}
+  document.getElementById('nav-nm').textContent=nm;
+  toast('Pengaturan disimpan!','success');
+}
+
+// ══ UTILS ════════════════════════════════════════
+function openM(id){document.getElementById(id).classList.add('show');}
+function closeM(id){document.getElementById(id).classList.remove('show');}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');}
+
+let _tt;
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  const ic={success:'✅',error:'❌',info:'ℹ️'};
+  document.getElementById('t-ico').textContent=ic[type]||'ℹ️';
+  document.getElementById('t-msg').textContent=msg;
+  t.className=`show ${type}`;clearTimeout(_tt);_tt=setTimeout(()=>t.className='',3500);
+}
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show');}));
+document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>
