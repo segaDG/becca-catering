@@ -530,6 +530,42 @@ tr:hover td{background:var(--bg);}
 
 <div id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
 
+<!-- MODAL KONFIRMASI DUPLIKAT ORDER -->
+<div class="overlay" id="m-confirm">
+  <div class="modal" style="max-width:780px;">
+    <div class="mhead">
+      <div>
+        <div class="mtitle">⚠️ Order Sudah Ada</div>
+        <div class="msub" id="confirm-sub"></div>
+      </div>
+      <button class="mclose" onclick="closeM('m-confirm')">✕</button>
+    </div>
+    <div class="alert alert-warn" style="margin-bottom:18px;">
+      Ditemukan order dengan perusahaan dan tanggal yang sama. Apakah Anda yakin ingin <strong>mengganti</strong> order lama dengan yang baru? Data lama akan dihapus permanen.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <!-- DATA LAMA -->
+      <div style="border:1.5px solid var(--red);border-radius:var(--r);overflow:hidden;">
+        <div style="background:var(--red-bg);padding:10px 14px;border-bottom:1px solid #dbb0ab;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--red);">Data Lama (akan dihapus)</span>
+        </div>
+        <div id="compare-old" style="padding:14px;font-size:12px;"></div>
+      </div>
+      <!-- DATA BARU -->
+      <div style="border:1.5px solid var(--green);border-radius:var(--r);overflow:hidden;">
+        <div style="background:var(--green-bg);padding:10px 14px;border-bottom:1px solid #a8d0bc;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--green);">Data Baru (akan disimpan)</span>
+        </div>
+        <div id="compare-new" style="padding:14px;font-size:12px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeM('m-confirm')">Batal</button>
+      <button class="btn btn-danger" id="confirm-replace-btn" onclick="confirmReplaceOrder()">Ganti Order Lama</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══ SUPABASE ══════════════════════════════════════
 const SB_URL='https://pevwkyrsfpmzhwxkoask.supabase.co';
@@ -765,19 +801,77 @@ function renderDash(){
 }
 
 // ══ INPUT ORDER ════════════════════════════════════
+let _pendingOrder=null; // holds new order data while waiting for confirm
+
+function buildCompareRow(label,oldVal,newVal){
+  const changed=String(oldVal)!==String(newVal);
+  return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bg2);">
+    <span style="color:var(--muted);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;">${label}</span>
+    <span style="font-weight:${changed?'700':'400'};color:${changed?'inherit':'var(--muted)'};">${oldVal||'—'}</span>
+  </div>`;
+}
+function buildComparePanel(order,isNew=false){
+  const cols=aCols();
+  let html='';
+  html+=buildCompareRow('Tgl Order', isNew?fmtDate(order.tgl_order):fmtDate(order.tgl_order), '');
+  html+=buildCompareRow('Tipe', order.tipe==='real orderan'?'Real':'Estimasi','');
+  html+=buildCompareRow('Diinput oleh', order.created_by||CU.nama,'');
+  html+=buildCompareRow('Catatan', order.catatan||'—','');
+  html+='<div style="height:6px;"></div>';
+  cols.forEach(c=>{
+    const v=order[c.key]||0;
+    if(v>0||isNew) html+=buildCompareRow(c.label,v,'');
+  });
+  const total=aCols().reduce((s,c)=>s+(order[c.key]||0),0);
+  html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;margin-top:4px;border-top:2px solid var(--border);">
+    <span style="font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;">Total Porsi</span>
+    <span style="font-weight:700;font-size:15px;color:${isNew?'var(--green)':'var(--red)'};">${total.toLocaleString()}</span>
+  </div>`;
+  return html;
+}
+
 async function submitOrder(){
   const tgl=document.getElementById('f-tgl').value,coy=document.getElementById('f-coy').value.trim();
   if(!tgl||!coy){toast('Tanggal & nama perusahaan wajib diisi','error');return;}
-  const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Menyimpan...';
+  const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Memeriksa...';
   try{
-    const data={tgl_order:tgl,perusahaan:coy.toUpperCase(),tipe:document.getElementById('f-tipe').value,
+    const newData={tgl_order:tgl,perusahaan:coy.toUpperCase(),tipe:document.getElementById('f-tipe').value,
       catatan:document.getElementById('f-cat').value,created_by:CU.nama,created_role:RC_META[CU.role].label};
-    aCols().forEach(c=>{data[c.key]=+document.getElementById('f-'+c.key).value||0;});
-    const [no]=await sbPost('orders',data);
-    await sbPost('order_history',{order_id:no.id,action:'create',user_name:CU.nama,user_role:RC_META[CU.role].label,note:data.tipe});
-    await loadOrders();toast('Order berhasil disimpan!','success');resetForm();
-  }catch(e){toast('Gagal menyimpan: '+e.message,'error');}
+    aCols().forEach(c=>{newData[c.key]=+document.getElementById('f-'+c.key).value||0;});
+    // Check for duplicate
+    const existing=ORDERS.find(o=>o.perusahaan===newData.perusahaan&&o.tgl_order===newData.tgl_order);
+    if(existing){
+      // Show compare modal
+      _pendingOrder={newData,existingId:existing.id};
+      document.getElementById('confirm-sub').textContent=`${newData.perusahaan} · ${fmtDate(tgl)} · order pertama diinput oleh ${existing.created_by}`;
+      document.getElementById('compare-old').innerHTML=buildComparePanel(existing,false);
+      document.getElementById('compare-new').innerHTML=buildComparePanel(newData,true);
+      openM('m-confirm');
+    } else {
+      await doSaveOrder(newData);
+    }
+  }catch(e){toast('Gagal: '+e.message,'error');}
   finally{btn.disabled=false;btn.textContent='💾 Simpan Order';}
+}
+
+async function confirmReplaceOrder(){
+  if(!_pendingOrder)return;
+  const {newData,existingId}=_pendingOrder;
+  const btn=document.getElementById('confirm-replace-btn');
+  btn.disabled=true;btn.textContent='Mengganti...';
+  try{
+    await sbDelete('orders',existingId);
+    await doSaveOrder(newData);
+    closeM('m-confirm');
+    _pendingOrder=null;
+  }catch(e){toast('Gagal mengganti order: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Ganti Order Lama';}
+}
+
+async function doSaveOrder(data){
+  const [no]=await sbPost('orders',data);
+  await sbPost('order_history',{order_id:no.id,action:'create',user_name:CU.nama,user_role:RC_META[CU.role].label,note:data.tipe});
+  await loadOrders();toast('Order berhasil disimpan!','success');resetForm();
 }
 function resetForm(){
   document.getElementById('f-coy').value='';document.getElementById('f-cat').value='';
