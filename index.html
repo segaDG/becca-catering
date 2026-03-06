@@ -703,10 +703,11 @@ function getGroups(cols){
   });
   return[g1,g2,g3];
 }
-function groupHeader(label,icon,color){
-  return`<div style="grid-column:span 2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:${color};border-radius:8px;margin-top:8px;border-left:3px solid ${color==='#edf3f8'?'#1e4d6b':color==='#eaf4ef'?'#2a6b47':'#9a5a0a'};">
-    <span style="font-size:16px;">${icon}</span>
-    <span style="font-size:11px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:${color==='#edf3f8'?'#1e4d6b':color==='#eaf4ef'?'#2a6b47':'#9a5a0a'};">${label}</span>
+function groupHeader(label,accentColor,textColor){
+  return`<div style="grid-column:span 2;display:flex;align-items:center;gap:0;margin-top:14px;margin-bottom:2px;">
+    <div style="width:3px;height:28px;background:${accentColor};border-radius:2px;margin-right:12px;"></div>
+    <span style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:2px;color:${textColor};">${label}</span>
+    <div style="flex:1;height:1px;background:${accentColor}22;margin-left:12px;"></div>
   </div>`;
 }
 function buildInputForm(){
@@ -714,27 +715,27 @@ function buildInputForm(){
   const [g1,g2,g3]=getGroups(cols);
   let html='';
   if(g1.length){
-    html+=groupHeader('Grup 1 — Breakfast & Shift 1','🌅','#edf3f8');
-    html+=g1.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+    html+=groupHeader('Group 1 — Breakfast & Shift 1','#1e4d6b','#1e4d6b');
+    html+=g1.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0" style="background:#edf3f8;border-color:#c8dcea;"></div>`).join('');
   }
   if(g2.length){
-    html+=groupHeader('Grup 2 — Shift 2','🌙','#eaf4ef');
-    html+=g2.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+    html+=groupHeader('Group 2 — Shift 2','#2a6b47','#2a6b47');
+    html+=g2.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0" style="background:#eaf4ef;border-color:#b0d9c0;"></div>`).join('');
   }
   if(g3.length){
-    html+=groupHeader('Grup 3 — Shift 3 & Lainnya','🌃','#fdf4e4');
-    html+=g3.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+    html+=groupHeader('Group 3 — Shift 3 & Lainnya','#9a5a0a','#9a5a0a');
+    html+=g3.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0" style="background:#fdf4e4;border-color:#e8d0a0;"></div>`).join('');
   }
   document.getElementById('f-cols-wrap').innerHTML=html;
 }
 function buildEditForm(o){
   const cols=allCols();
   const [g1,g2,g3]=getGroups(cols);
-  function editField(c){return`<div class="form-group"><label>${c.label}${!c.is_active?'<span style="color:var(--muted);font-size:9px;margin-left:4px;">(nonaktif)</span>':''}</label><input type="number" id="e-${c.key}" value="${o[c.key]||0}" min="0"></div>`;}
+  function editField(c,bg,bc){return`<div class="form-group"><label>${c.label}${!c.is_active?'<span style="color:var(--muted);font-size:9px;margin-left:4px;">(nonaktif)</span>':''}</label><input type="number" id="e-${c.key}" value="${o[c.key]||0}" min="0" style="background:${bg};border-color:${bc};"></div>`;}
   let html='';
-  if(g1.length){html+=groupHeader('Grup 1 — Breakfast & Shift 1','🌅','#edf3f8');html+=g1.map(editField).join('');}
-  if(g2.length){html+=groupHeader('Grup 2 — Shift 2','🌙','#eaf4ef');html+=g2.map(editField).join('');}
-  if(g3.length){html+=groupHeader('Grup 3 — Shift 3 & Lainnya','🌃','#fdf4e4');html+=g3.map(editField).join('');}
+  if(g1.length){html+=groupHeader('Group 1 — Breakfast & Shift 1','#1e4d6b','#1e4d6b');html+=g1.map(c=>editField(c,'#edf3f8','#c8dcea')).join('');}
+  if(g2.length){html+=groupHeader('Group 2 — Shift 2','#2a6b47','#2a6b47');html+=g2.map(c=>editField(c,'#eaf4ef','#b0d9c0')).join('');}
+  if(g3.length){html+=groupHeader('Group 3 — Shift 3 & Lainnya','#9a5a0a','#9a5a0a');html+=g3.map(c=>editField(c,'#fdf4e4','#e8d0a0')).join('');}
   document.getElementById('e-cols-wrap').innerHTML=html;
 }
 
