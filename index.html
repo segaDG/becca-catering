@@ -686,14 +686,56 @@ function updImeta(){
     <div class="im-item">🏷 <strong>Role:</strong> ${RC_META[CU.role].label}</div>
     <div class="im-item">🕐 <strong>Waktu:</strong> ${nowTs()}</div>`;
 }
+// Group columns into 3 groups by position
+function getGroups(cols){
+  const total=cols.length;
+  if(total<=0)return[[],[],[]];
+  // Fixed keys for known default columns
+  const g1keys=['bf','s1','sp1','ot1','sn1'];
+  const g2keys=['s2','sp2','ot2','sn2'];
+  const g3keys=['s3','sp3','ot3','sn3','snb'];
+  const g1=[],g2=[],g3=[];
+  cols.forEach(c=>{
+    if(g1keys.includes(c.key))g1.push(c);
+    else if(g2keys.includes(c.key))g2.push(c);
+    else if(g3keys.includes(c.key))g3.push(c);
+    else g3.push(c); // custom cols go to group 3
+  });
+  return[g1,g2,g3];
+}
+function groupHeader(label,icon,color){
+  return`<div style="grid-column:span 2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:${color};border-radius:8px;margin-top:8px;border-left:3px solid ${color==='#edf3f8'?'#1e4d6b':color==='#eaf4ef'?'#2a6b47':'#9a5a0a'};">
+    <span style="font-size:16px;">${icon}</span>
+    <span style="font-size:11px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:${color==='#edf3f8'?'#1e4d6b':color==='#eaf4ef'?'#2a6b47':'#9a5a0a'};">${label}</span>
+  </div>`;
+}
 function buildInputForm(){
-  document.getElementById('f-cols-wrap').innerHTML=aCols().map(c=>`
-    <div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+  const cols=aCols();
+  const [g1,g2,g3]=getGroups(cols);
+  let html='';
+  if(g1.length){
+    html+=groupHeader('Grup 1 — Breakfast & Shift 1','🌅','#edf3f8');
+    html+=g1.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+  }
+  if(g2.length){
+    html+=groupHeader('Grup 2 — Shift 2','🌙','#eaf4ef');
+    html+=g2.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+  }
+  if(g3.length){
+    html+=groupHeader('Grup 3 — Shift 3 & Lainnya','🌃','#fdf4e4');
+    html+=g3.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0"></div>`).join('');
+  }
+  document.getElementById('f-cols-wrap').innerHTML=html;
 }
 function buildEditForm(o){
-  document.getElementById('e-cols-wrap').innerHTML=allCols().map(c=>`
-    <div class="form-group"><label>${c.label}${!c.is_active?'<span style="color:var(--muted);font-size:9px;margin-left:4px;">(nonaktif)</span>':''}</label>
-    <input type="number" id="e-${c.key}" value="${o[c.key]||0}" min="0"></div>`).join('');
+  const cols=allCols();
+  const [g1,g2,g3]=getGroups(cols);
+  function editField(c){return`<div class="form-group"><label>${c.label}${!c.is_active?'<span style="color:var(--muted);font-size:9px;margin-left:4px;">(nonaktif)</span>':''}</label><input type="number" id="e-${c.key}" value="${o[c.key]||0}" min="0"></div>`;}
+  let html='';
+  if(g1.length){html+=groupHeader('Grup 1 — Breakfast & Shift 1','🌅','#edf3f8');html+=g1.map(editField).join('');}
+  if(g2.length){html+=groupHeader('Grup 2 — Shift 2','🌙','#eaf4ef');html+=g2.map(editField).join('');}
+  if(g3.length){html+=groupHeader('Grup 3 — Shift 3 & Lainnya','🌃','#fdf4e4');html+=g3.map(editField).join('');}
+  document.getElementById('e-cols-wrap').innerHTML=html;
 }
 
 // ══ DASHBOARD ══════════════════════════════════════
