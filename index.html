@@ -197,12 +197,17 @@ tr:hover td{background:var(--bg);}
 .col-label{flex:1;font-size:13px;font-weight:500;}
 .col-actions{display:flex;gap:6px;align-items:center;}
 /* TOGGLE */
-.tog{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0;}
+.tog{position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0;vertical-align:middle;}
 .tog input{opacity:0;width:0;height:0;position:absolute;}
-.tog-track{position:absolute;inset:0;background:var(--border2);border-radius:99px;transition:.2s;}
-.tog input:checked+.tog-track{background:var(--green);}
-.tog-knob{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;}
-.tog input:checked~.tog-knob{left:19px;}
+.tog-track{position:absolute;inset:0;background:#c8c2b6;border-radius:99px;transition:.25s;}
+.tog-knob{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none;}
+.tog input:checked + .tog-track{background:#2a6b47;}
+.tog input:checked + .tog-track + .tog-knob{left:21px;}
+.priv-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:7px;border:2px solid;cursor:pointer;font-size:16px;transition:all .15s;background:none;font-family:inherit;}
+.priv-btn.on{background:#eaf4ef;border-color:#2a6b47;color:#2a6b47;}
+.priv-btn.off{background:#f4f2ed;border-color:#c8c2b6;color:#c8c2b6;}
+.priv-btn.off::before{content:'—';}
+.priv-btn.on::before{content:'✓';}
 /* PRIVILEGE TABLE */
 .ptbl{width:100%;border-collapse:collapse;}
 .ptbl th,.ptbl td{padding:9px 13px;border:1px solid var(--border);font-size:12.5px;}
@@ -925,15 +930,28 @@ async function deleteCol(id){
 function renderPrivs(){
   document.getElementById('priv-body').innerHTML=PRIVS.map(p=>`<tr>
     <td>${p.feature_label}</td>
-    <td><span style="color:var(--green);font-size:16px;">✓</span></td>
-    <td><label class="tog"><input type="checkbox" ${p.role_admin?'checked':''} onchange="updatePriv(${p.id},'role_admin',this.checked)"><div class="tog-track"></div><div class="tog-knob"></div></label></td>
-    <td><label class="tog"><input type="checkbox" ${p.role_operator?'checked':''} onchange="updatePriv(${p.id},'role_operator',this.checked)"><div class="tog-track"></div><div class="tog-knob"></div></label></td>
-    <td><label class="tog"><input type="checkbox" ${p.role_viewer?'checked':''} onchange="updatePriv(${p.id},'role_viewer',this.checked)"><div class="tog-track"></div><div class="tog-knob"></div></label></td>
+    <td style="text-align:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:7px;background:#eaf4ef;border:2px solid #2a6b47;color:#2a6b47;font-size:16px;font-weight:700;">✓</span></td>
+    <td style="text-align:center;"><button class="priv-btn ${p.role_admin?'on':'off'}" onclick="togglePriv(${p.id},'role_admin',${!p.role_admin})"></button></td>
+    <td style="text-align:center;"><button class="priv-btn ${p.role_operator?'on':'off'}" onclick="togglePriv(${p.id},'role_operator',${!p.role_operator})"></button></td>
+    <td style="text-align:center;"><button class="priv-btn ${p.role_viewer?'on':'off'}" onclick="togglePriv(${p.id},'role_viewer',${!p.role_viewer})"></button></td>
     <td><div style="display:flex;gap:5px;justify-content:center;">
       <button class="btn btn-secondary btn-sm" onclick="openEditPriv(${p.id})">✏️</button>
       <button class="btn btn-danger btn-sm" onclick="deletePriv(${p.id})">🗑</button>
     </div></td>
   </tr>`).join('');
+}
+async function togglePriv(id,col,val){
+  // Optimistic UI update
+  const p=PRIVS.find(x=>x.id==id);
+  if(p){p[col]=val;renderPrivs();}
+  try{
+    await sbPatch('privilege_config',id,{[col]:val});
+    await loadPrivs();renderPrivs();buildNav();
+  }catch(e){
+    // Revert on error
+    if(p)p[col]=!val;renderPrivs();
+    toast('Gagal update privilege','error');
+  }
 }
 async function updatePriv(id,col,val){
   try{
