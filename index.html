@@ -336,9 +336,18 @@ tr:hover td{background:var(--bg);}
             <div class="input-meta" id="imeta"></div>
             <div class="fg">
               <div class="form-group"><label>Tanggal Order *</label><input type="date" id="f-tgl"></div>
-              <div class="form-group"><label>Nama Perusahaan *</label><input type="text" id="f-coy" placeholder="PT. EXAMPLE"></div>
+              <div class="form-group"><label>Customer *</label>
+                <select id="f-coy" onchange="onCustSelect()">
+                  <option value="">— Pilih Customer —</option>
+                </select>
+              </div>
               <div class="form-group"><label>Tipe Order</label><select id="f-tipe"><option value="real orderan">✅ Real Orderan</option><option value="estimasi orderan">📋 Estimasi Orderan</option></select></div>
               <div class="form-group"><label>Catatan</label><input type="text" id="f-cat" placeholder="Catatan tambahan..."></div>
+            </div>
+            <!-- INFO CUSTOMER CARD -->
+            <div id="cust-info-card" style="display:none;background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--rs);padding:11px 14px;margin-bottom:14px;display:none;">
+              <div style="font-size:9.5px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:8px;">Info Customer</div>
+              <div id="cust-info-body" style="display:flex;flex-wrap:wrap;gap:10px 24px;font-size:12px;"></div>
             </div>
             <div id="f-cols-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;"></div>
             <div style="display:flex;gap:9px;margin-top:18px;">
@@ -408,6 +417,38 @@ tr:hover td{background:var(--bg);}
               <thead><tr><th style="text-align:left;">Fitur</th><th>Super Admin</th><th>Admin</th><th>Operator</th><th>Viewer</th><th>Aksi</th></tr></thead>
               <tbody id="priv-body"></tbody>
             </table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div id="page-customers" class="page">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🏭 Data Customer</span>
+            <button class="btn btn-primary btn-sm" onclick="openAddCust()">➕ Tambah Customer</button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="tw">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nama Perusahaan</th>
+                    <th>Jenis Pelayanan</th>
+                    <th>Harga/Pax</th>
+                    <th>Biaya Box</th>
+                    <th>Biaya Lainnya</th>
+                    <th>Tempo</th>
+                    <th>Qty Lauk</th>
+                    <th>Qty Pendamping</th>
+                    <th>Catatan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="cust-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -528,6 +569,47 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
+<!-- MODAL CUSTOMER -->
+<div class="overlay" id="m-cust">
+  <div class="modal" style="max-width:640px;">
+    <div class="mhead">
+      <div><div class="mtitle" id="cust-modal-title">➕ Tambah Customer</div></div>
+      <button class="mclose" onclick="closeM('m-cust')">✕</button>
+    </div>
+    <div class="fg">
+      <div class="form-group span2"><label>Nama Perusahaan *</label><input type="text" id="cm-nama" placeholder="PT. EXAMPLE"></div>
+      <div class="form-group"><label>Jenis Pelayanan</label>
+        <select id="cm-jenis">
+          <option value="">— Pilih —</option>
+          <option value="Rantang">Rantang</option>
+          <option value="Bento">Bento</option>
+          <option value="Paper Box">Paper Box</option>
+          <option value="Prasmanan">Prasmanan</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tempo Pembayaran</label>
+        <select id="cm-tempo">
+          <option value="0">0 Hari</option>
+          <option value="15">15 Hari</option>
+          <option value="30">30 Hari</option>
+          <option value="45">45 Hari</option>
+          <option value="60">60 Hari</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Harga per Pax (Rp)</label><input type="number" id="cm-harga" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Biaya Box (Rp)</label><input type="number" id="cm-box" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Biaya Lainnya (Rp)</label><input type="number" id="cm-lain" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Qty Lauk</label><input type="number" id="cm-lauk" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Qty Pendamping</label><input type="number" id="cm-pend" placeholder="0" min="0"></div>
+      <div class="form-group span2"><label>Catatan</label><textarea id="cm-cat" placeholder="Catatan tambahan..."></textarea></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:4px;">
+      <button class="btn btn-primary" id="save-cust-btn" onclick="saveCust()">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-cust')">Batal</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
 
 <!-- MODAL KONFIRMASI DUPLIKAT ORDER -->
@@ -591,12 +673,13 @@ const ALL_PAGES={
   orders:   {icon:'📦',label:'Data Order',        priv_key:'view_orders'},
   reports:  {icon:'📊',label:'Laporan',           priv_key:'view_reports'},
   columns:  {icon:'📐',label:'Pengaturan Kolom',  priv_key:'manage_columns'},
+  customers:{icon:'🏭',label:'Data Customer',     priv_key:'manage_customers'},
   privilege:{icon:'🔑',label:'Privilege Matrix',  priv_key:'manage_privilege'},
   users:    {icon:'👤',label:'Manajemen User',    priv_key:'manage_users'},
   settings: {icon:'🔒',label:'Pengaturan Akun',   priv_key:'manage_settings'},
 };
 
-let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],editId=null,rTab='daily';
+let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],CUSTOMERS=[],editId=null,editCustId=null,rTab='daily';
 
 // ══ HELPERS ═══════════════════════════════════════
 const p2=x=>String(x).padStart(2,'0');
@@ -655,7 +738,7 @@ async function initApp(){
   document.getElementById('nav-rl').textContent=r.label;
   loading(true,'Memuat data...');
   try{
-    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs()]);
+    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers()]);
     setDb('connected');
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
@@ -669,7 +752,7 @@ function buildNav(){
   const allowed=allowedPages();
   const secs=[
     {l:'Menu',   pages:['dashboard','input','orders','reports']},
-    {l:'Kelola', pages:['columns','privilege','users','settings']},
+    {l:'Kelola', pages:['customers','columns','privilege','users','settings']},
   ];
   secs.forEach(sec=>{
     const items=sec.pages.filter(p=>allowed.includes(p));
@@ -700,6 +783,7 @@ function renderPage(pg){
   if(pg==='orders'){renderOrders();}
   if(pg==='reports')renderReportPage();
   if(pg==='columns')renderCols();
+  if(pg==='customers')renderCustomers();
   if(pg==='privilege')renderPrivs();
   if(pg==='users')renderUsers();
   if(pg==='settings')renderSettings();
@@ -715,6 +799,7 @@ async function loadOrders(){
 }
 async function loadUsers(){USERS_DATA=await sbGet('users','select=*&order=created_at.asc');return USERS_DATA;}
 async function loadPrivs(){PRIVS=await sbGet('privilege_config','select=*&order=position.asc');return PRIVS;}
+async function loadCustomers(){CUSTOMERS=await sbGet('customers','select=*&order=nama.asc');return CUSTOMERS;}
 
 // ══ INPUT META ═════════════════════════════════════
 function updImeta(){
@@ -764,6 +849,7 @@ function buildInputForm(){
     html+=g3.map(c=>`<div class="form-group"><label>${c.label}</label><input type="number" id="f-${c.key}" value="0" min="0" style="background:#fdf4e4;border-color:#e8d0a0;"></div>`).join('');
   }
   document.getElementById('f-cols-wrap').innerHTML=html;
+  populateCustDropdown();
 }
 function buildEditForm(o){
   const cols=allCols();
@@ -879,6 +965,7 @@ async function doSaveOrder(data){
 }
 function resetForm(){
   document.getElementById('f-coy').value='';document.getElementById('f-cat').value='';
+  const card=document.getElementById('cust-info-card');if(card)card.style.display='none';
   aCols().forEach(c=>{const el=document.getElementById('f-'+c.key);if(el)el.value=0;});
   updImeta();
 }
@@ -1352,6 +1439,132 @@ function toast(msg,type='info'){
   document.getElementById('t-msg').textContent=msg;
   t.className=`show ${type}`;clearTimeout(_tt);_tt=setTimeout(()=>t.className='',3500);
 }
+// ══ CUSTOMERS ══════════════════════════════════════
+function fmtRp(v){if(!v||v==0)return'—';return'Rp'+Number(v).toLocaleString('id-ID');}
+
+function renderCustomers(){
+  const tbody=document.getElementById('cust-body');
+  const canEdit=canDo('manage_customers');
+  if(!CUSTOMERS.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">Belum ada data customer</td></tr>';
+    return;
+  }
+  tbody.innerHTML=CUSTOMERS.map((c,i)=>`<tr>
+    <td class="mono tmuted">${i+1}</td>
+    <td><strong>${c.nama}</strong></td>
+    <td><span class="badge b-rev" style="font-size:10px;">${c.jenis_pelayanan||'—'}</span></td>
+    <td class="mono">${fmtRp(c.harga_per_pax)}</td>
+    <td class="mono">${fmtRp(c.biaya_box)}</td>
+    <td class="mono">${fmtRp(c.biaya_lainnya)}</td>
+    <td class="mono">${c.tempo||0} Hari</td>
+    <td class="mono">${c.qty_lauk||'—'}</td>
+    <td class="mono">${c.qty_pendamping||'—'}</td>
+    <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:150px;">${c.catatan||'—'}</td>
+    <td><div style="display:flex;gap:4px;">
+      ${canEdit?`<button class="btn btn-amber btn-sm" onclick="openEditCust(${c.id})">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCust(${c.id})">🗑</button>`:''}
+    </div></td>
+  </tr>`).join('');
+}
+
+function populateCustDropdown(){
+  const sel=document.getElementById('f-coy');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Pilih Customer —</option>'+
+    CUSTOMERS.map(c=>`<option value="${c.nama}" ${c.nama===cur?'selected':''}>${c.nama}</option>`).join('');
+}
+
+function onCustSelect(){
+  const nama=document.getElementById('f-coy').value;
+  const card=document.getElementById('cust-info-card');
+  const body=document.getElementById('cust-info-body');
+  if(!nama){card.style.display='none';return;}
+  const c=CUSTOMERS.find(x=>x.nama===nama);
+  if(!c){card.style.display='none';return;}
+  const fields=[
+    ['Jenis',c.jenis_pelayanan||'—'],
+    ['Harga/Pax',fmtRp(c.harga_per_pax)],
+    ['Biaya Box',fmtRp(c.biaya_box)],
+    ['Biaya Lainnya',fmtRp(c.biaya_lainnya)],
+    ['Tempo',c.tempo?c.tempo+' Hari':'—'],
+    ['Qty Lauk',c.qty_lauk||'—'],
+    ['Qty Pendamping',c.qty_pendamping||'—'],
+  ].filter(([,v])=>v&&v!=='—'&&v!=='Rp0');
+  body.innerHTML=fields.map(([k,v])=>`<div style="display:flex;gap:5px;align-items:center;">
+    <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted);text-transform:uppercase;">${k}:</span>
+    <span style="font-weight:600;color:var(--accent);">${v}</span>
+  </div>`).join('');
+  if(c.catatan) body.innerHTML+=`<div style="width:100%;font-style:italic;color:var(--muted);font-size:11px;">📝 ${c.catatan}</div>`;
+  card.style.display='block';
+}
+
+function openAddCust(){
+  editCustId=null;
+  document.getElementById('cust-modal-title').textContent='➕ Tambah Customer';
+  ['cm-nama','cm-harga','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('cm-jenis').value='';
+  document.getElementById('cm-tempo').value='30';
+  openM('m-cust');
+}
+
+function openEditCust(id){
+  editCustId=id;
+  const c=CUSTOMERS.find(x=>x.id==id);if(!c)return;
+  document.getElementById('cust-modal-title').textContent='✏️ Edit Customer — '+c.nama;
+  document.getElementById('cm-nama').value=c.nama||'';
+  document.getElementById('cm-jenis').value=c.jenis_pelayanan||'';
+  document.getElementById('cm-tempo').value=c.tempo||'30';
+  document.getElementById('cm-harga').value=c.harga_per_pax||'';
+  document.getElementById('cm-box').value=c.biaya_box||'';
+  document.getElementById('cm-lain').value=c.biaya_lainnya||'';
+  document.getElementById('cm-lauk').value=c.qty_lauk||'';
+  document.getElementById('cm-pend').value=c.qty_pendamping||'';
+  document.getElementById('cm-cat').value=c.catatan||'';
+  openM('m-cust');
+}
+
+async function saveCust(){
+  const nama=document.getElementById('cm-nama').value.trim().toUpperCase();
+  if(!nama){toast('Nama perusahaan wajib diisi','error');return;}
+  const btn=document.getElementById('save-cust-btn');btn.disabled=true;btn.textContent='Menyimpan...';
+  const data={
+    nama,
+    jenis_pelayanan:document.getElementById('cm-jenis').value||null,
+    tempo:+document.getElementById('cm-tempo').value||0,
+    harga_per_pax:+document.getElementById('cm-harga').value||0,
+    biaya_box:+document.getElementById('cm-box').value||0,
+    biaya_lainnya:+document.getElementById('cm-lain').value||0,
+    qty_lauk:+document.getElementById('cm-lauk').value||null,
+    qty_pendamping:+document.getElementById('cm-pend').value||null,
+    catatan:document.getElementById('cm-cat').value||null,
+  };
+  try{
+    if(editCustId){await sbPatch('customers',editCustId,data);}
+    else{await sbPost('customers',data);}
+    await loadCustomers();
+    renderCustomers();
+    populateCustDropdown();
+    closeM('m-cust');
+    toast(editCustId?'Customer diperbarui!':'Customer ditambah!','success');
+  }catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+
+async function deleteCust(id){
+  const c=CUSTOMERS.find(x=>x.id==id);
+  if(!confirm(`Hapus customer "${c?.nama}"?`))return;
+  try{
+    await sbDelete('customers',id);
+    await loadCustomers();
+    renderCustomers();
+    populateCustDropdown();
+    toast('Customer dihapus','info');
+  }catch(e){toast('Gagal: '+e.message,'error');}
+}
+
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show');}));
 document.getElementById('lip').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 </script>
