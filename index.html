@@ -561,7 +561,7 @@ tr:hover td{background:var(--bg);}
     </div>
     <div style="display:flex;gap:9px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeM('m-confirm')">Batal</button>
-      <button class="btn btn-danger" id="confirm-replace-btn" onclick="confirmReplaceOrder()">Ganti Order Lama</button>
+      <button class="btn btn-danger" id="confirm-replace-btn" onclick="confirmReplaceOrder()">Perbaharui Order</button>
     </div>
   </div>
 </div>
@@ -803,26 +803,30 @@ function renderDash(){
 // ══ INPUT ORDER ════════════════════════════════════
 let _pendingOrder=null; // holds new order data while waiting for confirm
 
-function buildCompareRow(label,oldVal,newVal){
-  const changed=String(oldVal)!==String(newVal);
+function buildCompareRow(label,val){
   return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bg2);">
     <span style="color:var(--muted);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;">${label}</span>
-    <span style="font-weight:${changed?'700':'400'};color:${changed?'inherit':'var(--muted)'};">${oldVal||'—'}</span>
+    <span style="font-weight:500;">${val}</span>
   </div>`;
 }
 function buildComparePanel(order,isNew=false){
   const cols=aCols();
   let html='';
-  html+=buildCompareRow('Tgl Order', isNew?fmtDate(order.tgl_order):fmtDate(order.tgl_order), '');
-  html+=buildCompareRow('Tipe', order.tipe==='real orderan'?'Real':'Estimasi','');
-  html+=buildCompareRow('Diinput oleh', order.created_by||CU.nama,'');
-  html+=buildCompareRow('Catatan', order.catatan||'—','');
+  // Always show these header fields
+  html+=buildCompareRow('Tgl Order', fmtDate(order.tgl_order));
+  html+=buildCompareRow('Tipe', order.tipe==='real orderan'?'Real Orderan':'Estimasi Orderan');
+  html+=buildCompareRow('Diinput oleh', order.created_by||CU.nama);
+  // Only show catatan if not empty
+  if(order.catatan&&order.catatan.trim()) html+=buildCompareRow('Catatan', order.catatan);
   html+='<div style="height:6px;"></div>';
-  cols.forEach(c=>{
-    const v=order[c.key]||0;
-    if(v>0||isNew) html+=buildCompareRow(c.label,v,'');
-  });
-  const total=aCols().reduce((s,c)=>s+(order[c.key]||0),0);
+  // Only show columns with value > 0
+  const colRows=cols.filter(c=>(order[c.key]||0)>0);
+  if(colRows.length){
+    colRows.forEach(c=>{ html+=buildCompareRow(c.label, order[c.key].toLocaleString()); });
+  } else {
+    html+=`<div style="color:var(--muted);font-size:11px;font-style:italic;padding:4px 0;">Semua kolom kosong</div>`;
+  }
+  const total=cols.reduce((s,c)=>s+(order[c.key]||0),0);
   html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;margin-top:4px;border-top:2px solid var(--border);">
     <span style="font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;">Total Porsi</span>
     <span style="font-weight:700;font-size:15px;color:${isNew?'var(--green)':'var(--red)'};">${total.toLocaleString()}</span>
@@ -865,7 +869,7 @@ async function confirmReplaceOrder(){
     closeM('m-confirm');
     _pendingOrder=null;
   }catch(e){toast('Gagal mengganti order: '+e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='Ganti Order Lama';}
+  finally{btn.disabled=false;btn.textContent='Perbaharui Order';}
 }
 
 async function doSaveOrder(data){
