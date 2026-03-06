@@ -564,6 +564,7 @@ let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],editId=null,rTab='daily';
 
 // ══ HELPERS ═══════════════════════════════════════
 const p2=x=>String(x).padStart(2,'0');
+function fmtDate(iso){if(!iso)return'—';const[y,m,d]=iso.split('-');return`${d}/${m}/${y}`;}
 function nowTs(){const n=new Date();return`${p2(n.getDate())}/${p2(n.getMonth()+1)}/${n.getFullYear()} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;}
 function fmtTs(iso){if(!iso)return'—';const d=new Date(iso);return`${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;}
 function aCols(){return COLS.filter(c=>c.is_active).sort((a,b)=>a.position-b.position);}
@@ -754,7 +755,7 @@ function renderDash(){
     <div class="stat-card sc-red"><div class="sic">✏️</div><div class="sv">${revs}</div><div class="sl">Total Revisi</div></div>`;
   document.getElementById('dash-ts').textContent='Update: '+nowTs();
   document.getElementById('dash-tbl').innerHTML=ORDERS.slice(0,10).map(o=>`<tr>
-    <td class="mono">${o.tgl_order}</td><td><strong>${o.perusahaan}</strong></td>
+    <td class="mono">${fmtDate(o.tgl_order)}</td><td><strong>${o.perusahaan}</strong></td>
     <td><strong>${o.created_by}</strong></td>
     <td class="mono tmuted" style="font-size:10.5px;">${fmtTs(o.created_at)}</td>
     <td class="mono taccent">${tp(o).toLocaleString()}</td>
@@ -810,7 +811,7 @@ function filterOrders(){
     const le=ledit(o);
     return`<tr>
       <td class="mono tmuted">${i+1}</td>
-      <td class="mono">${o.tgl_order}</td>
+      <td class="mono">${fmtDate(o.tgl_order)}</td>
       <td><strong>${o.perusahaan}</strong></td>
       <td><strong>${o.created_by}</strong></td>
       <td><span class="role-chip ${RC_META[getRK(o.created_by)]?.chip||'rc-vi'}" style="font-size:9px;">${o.created_role||'—'}</span></td>
@@ -832,7 +833,7 @@ function filterOrders(){
 // ══ DETAIL ═════════════════════════════════════════
 function openDetail(id){
   const o=ORDERS.find(x=>x.id==id);if(!o)return;
-  document.getElementById('d-sub').textContent=`${o.perusahaan} · ${o.tgl_order}`;
+  document.getElementById('d-sub').textContent=`${o.perusahaan} · ${fmtDate(o.tgl_order)}`;
   const cols=allCols().filter(c=>o[c.key]>0);
   document.getElementById('d-body').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:14px;">
@@ -849,7 +850,7 @@ function openEdit(id){
   const o=ORDERS.find(x=>x.id==id);if(!o)return;
   editId=id;
   document.getElementById('etitle').textContent=`✏️ Edit — ${o.perusahaan}`;
-  document.getElementById('esub').textContent=`${o.tgl_order} · ${rcCount(o)>0?rcCount(o)+' revisi':'Belum pernah direvisi'}`;
+  document.getElementById('esub').textContent=`${fmtDate(o.tgl_order)} · ${rcCount(o)>0?rcCount(o)+' revisi':'Belum pernah direvisi'}`;
   const w=document.getElementById('ewarn'),le=ledit(o);
   if(le){w.style.display='flex';w.textContent=`⚠️ Terakhir diedit oleh ${le.user_name} pada ${fmtTs(le.ts)}`;}
   else w.style.display='none';
@@ -1084,7 +1085,7 @@ function renderReports(){
   if(rTab==='daily'){
     const date=document.getElementById('r-date')?.value||'';
     if(!date){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">📅</div><p>Pilih tanggal</p></div>';return;}
-    renderRTable(fl.filter(o=>o.tgl_order===date),`📅 Laporan Harian — ${date}`);
+    renderRTable(fl.filter(o=>o.tgl_order===date),`📅 Laporan Harian — ${fmtDate(date)}`);
   }else if(rTab==='monthly'){
     const month=document.getElementById('r-month')?.value||'';
     if(!month){document.getElementById('report-out').innerHTML='<div class="empty"><div class="ei">📆</div><p>Pilih bulan</p></div>';return;}
@@ -1106,7 +1107,7 @@ function orderTable(orders,showDate=false){
   const cols=aCols();
   return`<div class="tw"><table><thead><tr>${showDate?'<th>Tgl</th>':''}<th>Diinput Oleh</th><th>Waktu Input</th>${cols.map(c=>`<th>${c.label}</th>`).join('')}<th>Total</th><th>Rev</th><th>Tipe</th></tr></thead>
   <tbody>${orders.map(o=>`<tr>
-    ${showDate?`<td class="mono">${o.tgl_order}</td>`:''}
+    ${showDate?`<td class="mono">${fmtDate(o.tgl_order)}</td>`:''}
     <td><strong>${o.created_by}</strong></td>
     <td class="mono tmuted" style="font-size:10.5px;">${fmtTs(o.created_at)}</td>
     ${cols.map(c=>`<td class="mono">${o[c.key]||0}</td>`).join('')}
