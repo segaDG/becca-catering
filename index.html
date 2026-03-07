@@ -138,6 +138,7 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .sc-amber::after{background:var(--amber);}
 .sc-red::after{background:var(--red);}
 .sc-purple::after{background:var(--purple);}
+.sc-red::after{background:var(--red);}
 .stat-card:hover{box-shadow:var(--sh);transform:translateY(-2px);}
 .sv{font-size:24px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;}
 .sl{font-size:9.5px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
@@ -381,11 +382,18 @@ tr:hover td{background:var(--bg);}
 <!-- APP -->
 <div id="app">
   <div class="sidebar" id="sidebar">
-    <div class="sb-head">
-      <div class="sb-lw">
-        <svg width="32" height="32" viewBox="0 0 52 52" fill="none"><rect width="52" height="52" rx="13" fill="#1e4d6b"/><text x="10" y="38" font-family="Georgia,serif" font-size="32" font-weight="700" fill="white">B</text><circle cx="40" cy="14" r="5" fill="#5ba3cc"/><circle cx="40" cy="14" r="3" fill="white"/></svg>
-        <div><div class="bname">BECCA</div><div class="bsub">Catering System</div></div>
+    <div class="sb-head" style="padding:14px 14px 10px;position:relative;">
+      <div id="sb-company-wrap" style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <div id="sb-logo-wrap" style="width:38px;height:38px;border-radius:9px;overflow:hidden;background:#1e4d6b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <img id="sb-logo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;">
+          <svg id="sb-logo-default" width="32" height="32" viewBox="0 0 52 52" fill="none"><rect width="52" height="52" rx="13" fill="#1e4d6b"/><text x="10" y="38" font-family="Georgia,serif" font-size="32" font-weight="700" fill="white">B</text><circle cx="40" cy="14" r="5" fill="#5ba3cc"/><circle cx="40" cy="14" r="3" fill="white"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="bname" id="sb-coy-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">BECCA</div>
+          <div class="bsub" id="sb-coy-tagline" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Catering System</div>
+        </div>
       </div>
+      <div style="position:absolute;bottom:6px;right:10px;font-size:7.5px;color:var(--muted);font-family:var(--mono);opacity:0.5;letter-spacing:1px;">Powered by BECCA</div>
     </div>
     <div class="upill">
       <div class="avatar" id="nav-av"></div>
@@ -416,6 +424,41 @@ tr:hover td{background:var(--bg);}
       <!-- DASHBOARD -->
       <div id="page-dashboard" class="page active">
         <div class="stats-grid" id="stat-grid"></div>
+        <!-- INVOICE BULAN BERJALAN -->
+        <div id="dash-inv-card" class="card" style="margin-bottom:14px;display:none;">
+          <div class="card-head">
+            <span class="card-title">💰 Invoice Bulan Berjalan</span>
+            <span class="tmuted mono" style="font-size:10px;" id="dash-inv-period"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:14px;">
+            <div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='';renderInvoices();},100)">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL INVOICE</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent);" id="dash-inv-total">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-count">0 invoice</div>
+            </div>
+            <div style="background:#f0ecfa;border:1px solid #d4c8f0;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='draft';renderInvoices();},100)">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">DRAFT</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#5b3fa0;" id="dash-inv-draft">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-draft-ct">0</div>
+            </div>
+            <div style="background:#eaf4ef;border:1px solid #b8ddc8;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='sent';renderInvoices();},100)">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">SENT / TERKIRIM</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green);" id="dash-inv-sent">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-sent-ct">0</div>
+            </div>
+            <div style="background:#eaf4ef;border:1px solid #b8ddc8;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='paid';renderInvoices();},100)">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">PAID / LUNAS</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green);" id="dash-inv-paid">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-paid-ct">0</div>
+            </div>
+            <div style="background:#faeeed;border:1px solid #e8b4b0;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="openNotif()">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">JATUH TEMPO</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--red);" id="dash-inv-overdue">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-overdue-ct">0</div>
+            </div>
+          </div>
+        </div>
+        <!-- ORDER TERBARU -->
         <div class="card">
           <div class="card-head"><span class="card-title">📋 Order Terbaru</span><span class="tmuted mono" style="font-size:10px;" id="dash-ts"></span></div>
           <div class="tw"><table><thead><tr><th>Tgl</th><th>Perusahaan</th><th class="hide-mob">Diinput</th><th class="hide-mob">Waktu</th><th>Total</th><th class="hide-mob">Rev</th><th>Tipe</th></tr></thead><tbody id="dash-tbl"></tbody></table></div>
@@ -577,9 +620,25 @@ tr:hover td{background:var(--bg);}
       <div id="page-settings" class="page">
         <!-- COMPANY DETAILS -->
         <div class="card" style="margin-bottom:16px;">
-          <div class="card-head"><span class="card-title">🏢 Detail Perusahaan Penyedia</span><span style="font-size:11px;color:var(--muted);">Tampil di header invoice</span></div>
+          <div class="card-head"><span class="card-title">🏢 Detail Perusahaan Penyedia</span><span style="font-size:11px;color:var(--muted);">Tampil di header invoice & sidebar</span></div>
           <div class="card-body">
             <div class="fg">
+              <div class="form-group span2">
+                <label>Logo Perusahaan</label>
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                  <div id="co-logo-preview" style="width:72px;height:72px;border-radius:10px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);flex-shrink:0;">
+                    <span style="font-size:28px;color:var(--muted);">🏢</span>
+                  </div>
+                  <div>
+                    <label style="display:inline-block;padding:8px 14px;background:var(--accent);color:#fff;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;">
+                      📁 Pilih Logo
+                      <input type="file" id="co-logo-file" accept="image/*" style="display:none;" onchange="previewLogo(this)">
+                    </label>
+                    <button class="btn btn-secondary btn-sm" onclick="removeLogo()" style="margin-left:6px;">✕ Hapus</button>
+                    <div style="font-size:10px;color:var(--muted);margin-top:5px;">Format: PNG / JPG / SVG · Maks. 500KB · Disimpan di browser</div>
+                  </div>
+                </div>
+              </div>
               <div class="form-group"><label>Nama Perusahaan</label><input type="text" id="co-nama" placeholder="PT. BOGA PANGAN SENTOSA"></div>
               <div class="form-group"><label>Tagline</label><input type="text" id="co-tagline" placeholder="Your Best Catering Service"></div>
               <div class="form-group span2"><label>Alamat</label><textarea id="co-alamat" style="min-height:52px;" placeholder="Jl. Contoh No.1, Kecamatan..."></textarea></div>
@@ -962,6 +1021,7 @@ async function initApp(){
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
   buildNav();tickClk();setInterval(tickClk,1000);
+  updateSidebarBranding();
   updateNotifBadge();
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
   navigateTo('dashboard');
@@ -1058,20 +1118,79 @@ function buildEditForm(o){
 
 // ══ DASHBOARD ══════════════════════════════════════
 function renderDash(){
+  const now=new Date();
+  const thisYM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const tot=ORDERS.length,real=ORDERS.filter(o=>o.tipe==='real orderan').length,
     porsi=ORDERS.reduce((s,o)=>s+tp(o),0),
     cos=[...new Set(ORDERS.map(o=>o.perusahaan))].length,
-    revs=ORDERS.reduce((s,o)=>s+rcCount(o),0),
-    invPaid=INVOICES.filter(i=>i.status==='paid').length;
+    invTotal=INVOICES.length;
+  // Overdue count
+  const todayD=new Date(); todayD.setHours(0,0,0,0);
+  const overdueInvs=INVOICES.filter(inv=>{
+    if(inv.status==='paid')return false;
+    const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
+    const base=new Date(inv.periode_sampai||inv.created_at);
+    base.setDate(base.getDate()+(+(cust?.tempo||30)));
+    return base<todayD;
+  });
+  // Stat cards — all clickable
   document.getElementById('stat-grid').innerHTML=`
-    <div class="stat-card sc-blue"><div class="sic">📦</div><div class="sv">${tot}</div><div class="sl">Total Order</div></div>
-    <div class="stat-card sc-green"><div class="sic">✅</div><div class="sv">${real}</div><div class="sl">Real Order</div></div>
-    <div class="stat-card sc-amber"><div class="sic">📋</div><div class="sv">${tot-real}</div><div class="sl">Estimasi</div></div>
-    <div class="stat-card sc-blue"><div class="sic">🍱</div><div class="sv">${porsi.toLocaleString()}</div><div class="sl">Total Porsi</div></div>
-    <div class="stat-card sc-green"><div class="sic">🏭</div><div class="sv">${cos}</div><div class="sl">Customer</div></div>
-    <div class="stat-card sc-purple"><div class="sic">🧾</div><div class="sv">${INVOICES.length}</div><div class="sl">Invoice</div></div>`;
+    <div class="stat-card sc-blue" style="cursor:pointer;" onclick="navigateTo('orders')" title="Lihat semua order">
+      <div class="sic">📦</div><div class="sv">${tot}</div><div class="sl">Total Order</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk lihat →</div>
+    </div>
+    <div class="stat-card sc-green" style="cursor:pointer;" onclick="navigateTo('orders');setTimeout(()=>{const f=document.getElementById('st');if(f){f.value='real orderan';filterOrders();}},100)" title="Filter order real">
+      <div class="sic">✅</div><div class="sv">${real}</div><div class="sl">Real Order</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk filter →</div>
+    </div>
+    <div class="stat-card sc-amber" style="cursor:pointer;" onclick="navigateTo('orders');setTimeout(()=>{const f=document.getElementById('st');if(f){f.value='estimasi orderan';filterOrders();}},100)" title="Filter estimasi">
+      <div class="sic">📋</div><div class="sv">${tot-real}</div><div class="sl">Estimasi</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk filter →</div>
+    </div>
+    <div class="stat-card sc-blue" style="cursor:pointer;" onclick="navigateTo('reports')" title="Lihat laporan">
+      <div class="sic">🍱</div><div class="sv">${porsi.toLocaleString()}</div><div class="sl">Total Porsi</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk laporan →</div>
+    </div>
+    <div class="stat-card sc-green" style="cursor:pointer;" onclick="navigateTo('customers')" title="Data customer">
+      <div class="sic">🏭</div><div class="sv">${cos}</div><div class="sl">Customer</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk data →</div>
+    </div>
+    <div class="stat-card ${overdueInvs.length>0?'sc-red':'sc-purple'}" style="cursor:pointer;" onclick="navigateTo('invoice')" title="Halaman invoice">
+      <div class="sic">${overdueInvs.length>0?'⚠️':'🧾'}</div><div class="sv">${invTotal}</div><div class="sl">Invoice${overdueInvs.length>0?` · ${overdueInvs.length} overdue`:''}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk invoice →</div>
+    </div>`;
+  // Invoice bulan berjalan
+  const invCard=document.getElementById('dash-inv-card');
+  if(INVOICES.length>0){
+    invCard.style.display='block';
+    const thisMonthInvs=INVOICES.filter(i=>i.periode_dari?.slice(0,7)===thisYM||i.periode_sampai?.slice(0,7)===thisYM);
+    const sumGrand=arr=>arr.reduce((s,i)=>s+(+i.grand_total||0),0);
+    const draft=thisMonthInvs.filter(i=>i.status==='draft');
+    const sent=thisMonthInvs.filter(i=>i.status==='sent');
+    const paid=thisMonthInvs.filter(i=>i.status==='paid');
+    const overdueThis=INVOICES.filter(inv=>{
+      if(inv.status==='paid')return false;
+      const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
+      const base=new Date(inv.periode_sampai||inv.created_at);
+      base.setDate(base.getDate()+(+(cust?.tempo||30)));
+      return base<todayD;
+    });
+    document.getElementById('dash-inv-period').textContent=now.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+    document.getElementById('dash-inv-total').textContent=fmtRpNum(sumGrand(thisMonthInvs));
+    document.getElementById('dash-inv-count').textContent=`${thisMonthInvs.length} invoice`;
+    document.getElementById('dash-inv-draft').textContent=fmtRpNum(sumGrand(draft));
+    document.getElementById('dash-inv-draft-ct').textContent=`${draft.length} invoice`;
+    document.getElementById('dash-inv-sent').textContent=fmtRpNum(sumGrand(sent));
+    document.getElementById('dash-inv-sent-ct').textContent=`${sent.length} invoice`;
+    document.getElementById('dash-inv-paid').textContent=fmtRpNum(sumGrand(paid));
+    document.getElementById('dash-inv-paid-ct').textContent=`${paid.length} lunas`;
+    document.getElementById('dash-inv-overdue').textContent=fmtRpNum(sumGrand(overdueThis));
+    document.getElementById('dash-inv-overdue-ct').textContent=`${overdueThis.length} belum lunas`;
+  } else {
+    invCard.style.display='none';
+  }
   document.getElementById('dash-ts').textContent='Update: '+nowTs();
-  document.getElementById('dash-tbl').innerHTML=ORDERS.slice(0,10).map(o=>`<tr>
+  document.getElementById('dash-tbl').innerHTML=ORDERS.slice(0,10).map(o=>`<tr style="cursor:pointer;" onclick="openEdit('${o.id}')">
     <td class="mono">${fmtDate(o.tgl_order)}</td><td><strong>${o.perusahaan}</strong></td>
     <td class="hide-mob"><strong>${o.created_by}</strong></td>
     <td class="mono tmuted hide-mob" style="font-size:10px;">${fmtTs(o.created_at)}</td>
@@ -2355,6 +2474,63 @@ async function changeRole(id,role){try{await sbPatch('users',id,{role});await lo
 async function delUser(id){if(!confirm('Hapus user ini?'))return;try{await sbDelete('users',id);await loadUsers();renderUsers();toast('Dihapus','info');}catch(e){toast('Gagal','error');}}
 
 // ══ SETTINGS ═══════════════════════════════════════
+function getLogo(){
+  try{return localStorage.getItem('becca_logo')||'';}
+  catch(e){return'';}
+}
+function saveLogo(dataUrl){
+  try{localStorage.setItem('becca_logo',dataUrl);}
+  catch(e){toast('Logo terlalu besar, coba ukuran lebih kecil','error');}
+}
+function previewLogo(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>600*1024){toast('Logo max 500KB','error');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const url=e.target.result;
+    saveLogo(url);
+    updateSidebarBranding();
+    showLogoPreview(url);
+    toast('Logo disimpan!','success');
+  };
+  reader.readAsDataURL(file);
+}
+function removeLogo(){
+  localStorage.removeItem('becca_logo');
+  showLogoPreview('');
+  updateSidebarBranding();
+  toast('Logo dihapus','info');
+}
+function showLogoPreview(url){
+  const wrap=document.getElementById('co-logo-preview');
+  if(!wrap)return;
+  if(url){
+    wrap.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+  } else {
+    wrap.innerHTML=`<span style="font-size:28px;color:var(--muted);">🏢</span>`;
+  }
+}
+function updateSidebarBranding(){
+  const B=getBILLER();
+  const logo=getLogo();
+  // Name
+  const nm=document.getElementById('sb-coy-name');
+  if(nm)nm.textContent=B.nama||'BECCA';
+  // Tagline
+  const tg=document.getElementById('sb-coy-tagline');
+  if(tg)tg.textContent=B.tagline||'Catering System';
+  // Logo
+  const img=document.getElementById('sb-logo-img');
+  const def=document.getElementById('sb-logo-default');
+  if(img&&def){
+    if(logo){
+      img.src=logo; img.style.display='block'; def.style.display='none';
+    } else {
+      img.style.display='none'; def.style.display='block';
+    }
+  }
+}
 function renderSettings(){
   document.getElementById('set-nm').value=CU.nama;
   document.getElementById('set-un').value=CU.username;
@@ -2369,6 +2545,8 @@ function renderSettings(){
   fv('co-bank-name',B.bank_name);fv('co-bank-no',B.bank_no);
   fv('co-npwp',B.npwp);fv('co-npwpd',B.npwpd);
   fv('co-ct-nama',B.contact_name);fv('co-ct-info',B.contact_phone+(B.contact_email?' - '+B.contact_email:''));
+  // Logo preview
+  showLogoPreview(getLogo());
 }
 function saveCompany(){
   const gv=id=>document.getElementById(id)?.value?.trim()||'';
@@ -2381,7 +2559,11 @@ function saveCompany(){
     npwp:gv('co-npwp'),npwpd:gv('co-npwpd'),
     contact_name:ctInfo[0]||'',contact_phone:ctInfo[1]||'',contact_email:ctInfo[2]||''
   };
-  try{localStorage.setItem('becca_company',JSON.stringify(data));toast('Detail perusahaan tersimpan!','success');}
+  try{
+    localStorage.setItem('becca_company',JSON.stringify(data));
+    updateSidebarBranding();
+    toast('Detail perusahaan tersimpan!','success');
+  }
   catch(e){toast('Gagal simpan','error');}
 }
 async function saveSettings(){
