@@ -56,6 +56,7 @@ input[type=number]{text-align:right;}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:1.5px solid transparent;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all .18s;white-space:nowrap;}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .btn-primary:hover{background:#163d57;box-shadow:0 4px 14px rgba(30,77,107,.3);transform:translateY(-1px);}
+.btn-plus{font-weight:800;font-size:16px;line-height:1;margin-right:5px;color:#fff!important;vertical-align:middle;}
 .btn-secondary{background:var(--surface);color:var(--text2);border-color:var(--border);}
 .btn-secondary:hover{border-color:var(--border2);background:var(--bg2);}
 .btn-ghost{background:transparent;color:var(--muted);border-color:transparent;}
@@ -555,7 +556,7 @@ tr:hover td{background:var(--bg);}
         <div class="card">
           <div class="card-head">
             <span class="card-title">🧾 Invoice</span>
-            <button class="btn btn-primary btn-sm" onclick="openCreateInvoice()">➕ Buat Invoice</button>
+            <button class="btn btn-primary btn-sm" onclick="openCreateInvoice()"><span class="btn-plus">+</span>Buat Invoice</button>
           </div>
           <!-- FILTER BAR -->
           <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);">
@@ -590,7 +591,7 @@ tr:hover td{background:var(--bg);}
             <span class="card-title">🏭 Data Customer</span>
             <div style="display:flex;gap:8px;align-items:center;">
               <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="cust-sq" placeholder="Cari customer..." oninput="filterCustomers()"></div>
-              <button class="btn btn-primary btn-sm" onclick="openAddCust()">➕ Tambah</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddCust()"><span class="btn-plus">+</span>Tambah</button>
             </div>
           </div>
           <div class="tw">
@@ -610,7 +611,7 @@ tr:hover td{background:var(--bg);}
       <!-- KOLOM -->
       <div id="page-columns" class="page">
         <div class="card">
-          <div class="card-head"><span class="card-title">📐 Pengaturan Kolom</span><button class="btn btn-primary btn-sm" onclick="openAddCol()">➕ Tambah Kolom</button></div>
+          <div class="card-head"><span class="card-title">📐 Pengaturan Kolom</span><button class="btn btn-primary btn-sm" onclick="openAddCol()"><span class="btn-plus">+</span>Tambah Kolom</button></div>
           <div class="card-body">
             <div class="alert alert-info">ℹ️ Perubahan berlaku global. Kolom nonaktif tidak muncul di form & laporan, data tetap tersimpan.</div>
             <div id="col-list"></div>
@@ -621,7 +622,7 @@ tr:hover td{background:var(--bg);}
       <!-- PRIVILEGE -->
       <div id="page-privilege" class="page">
         <div class="card">
-          <div class="card-head"><span class="card-title">🔑 Privilege Matrix</span><button class="btn btn-primary btn-sm" onclick="openAddPriv()">➕ Tambah Fitur</button></div>
+          <div class="card-head"><span class="card-title">🔑 Privilege Matrix</span><button class="btn btn-primary btn-sm" onclick="openAddPriv()"><span class="btn-plus">+</span>Tambah Fitur</button></div>
           <div class="card-body">
             <div class="alert alert-warn">⚠️ Perubahan berlaku langsung. Super Admin selalu memiliki akses penuh.</div>
             <div class="tw"><table class="ptbl">
@@ -635,7 +636,7 @@ tr:hover td{background:var(--bg);}
       <!-- USERS -->
       <div id="page-users" class="page">
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-          <button class="btn btn-primary" onclick="openUserModal()">➕ Tambah User</button>
+          <button class="btn btn-primary" onclick="openUserModal()"><span class="btn-plus">+</span>Tambah User</button>
         </div>
         <div id="users-list"></div>
       </div>
@@ -1890,8 +1891,11 @@ function openCreateInvoice(){
   }
   const now=new Date();
   const y=now.getFullYear(),m=now.getMonth();
-  document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
-  document.getElementById('inv-sampai').value=new Date(y,m+1,0).toISOString().split('T')[0];
+  // Gunakan format lokal agar tidak shift karena timezone (WIB +7)
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('inv-dari').value=`${y}-${pad(m+1)}-01`;
+  const lastDay=new Date(y,m+1,0).getDate();
+  document.getElementById('inv-sampai').value=`${y}-${pad(m+1)}-${pad(lastDay)}`;
   document.getElementById('inv-cat').value='';
   document.getElementById('inv-po-aktif').checked=false;
   document.getElementById('inv-po-num').value='';
@@ -1974,7 +1978,7 @@ function calcInvoiceData(custNama,dari,sampai,additionalOrders=[]){
   const pb1Amount=Math.round(baseTotal*pb1Rate);
   const pphAmount=-Math.round(baseTotal*pphRate);
   const grandTotal=baseTotal+pb1Amount+pphAmount;
-  return{cust,orders:rows,cols,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
+  return{cust,orders:rows,cols,dari,sampai,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
 }
 
 function fmtDateLong(iso){
@@ -1996,7 +2000,7 @@ function fmtDayMonth(iso){
 }
 
 function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
-  const{cust,orders,cols,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const{cust,orders,cols,dari,sampai,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
   const B=getBILLER();
   const ao=additionalOrders||[];
   const lineItems=[];
@@ -2041,7 +2045,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
     <div style="text-align:right;min-width:210px;">
       <div style="display:inline-block;min-width:195px;text-align:right;">
         <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:2px;">PERIOD</div>
-        <div style="font-size:10.5px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:5px 10px;border-radius:4px;line-height:1.5;">${fmtPeriod(orders[0]?.tgl_order||'',orders[orders.length-1]?.tgl_order||'')}</div>
+        <div style="font-size:10.5px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:5px 10px;border-radius:4px;line-height:1.5;">${fmtPeriod(dari||orders[0]?.tgl_order||'',sampai||orders[orders.length-1]?.tgl_order||'')}</div>
       </div>
     </div>
   </div>
@@ -2127,7 +2131,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
 
 
 function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
-  const{cust,orders,cols,grandSubtotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const{cust,orders,cols,dari,sampai,grandSubtotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
   const B=getBILLER();
   const ao=additionalOrders||[];
   const hasAO=ao.length>0;
@@ -2166,7 +2170,7 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
     <div style="text-align:right;min-width:220px;">
       <div style="display:inline-block;min-width:200px;text-align:right;">
         <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:2px;">PERIOD</div>
-        <div style="font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:5px 10px;border-radius:4px;line-height:1.5;">${fmtPeriod(orders[0]?.tgl_order,orders[orders.length-1]?.tgl_order)}</div>
+        <div style="font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:5px 10px;border-radius:4px;line-height:1.5;">${fmtPeriod(dari||orders[0]?.tgl_order||'',sampai||orders[orders.length-1]?.tgl_order||'')}</div>
       </div>
     </div>
   </div>
