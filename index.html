@@ -384,7 +384,7 @@ tr:hover td{background:var(--bg);}
   <div class="sidebar" id="sidebar">
     <div class="sb-head" style="padding:14px 14px 10px;">
       <div id="sb-company-wrap" style="display:flex;align-items:center;gap:10px;min-width:0;">
-        <div id="sb-logo-wrap" style="width:38px;height:38px;border-radius:9px;overflow:hidden;background:#1e4d6b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div id="sb-logo-wrap" style="width:38px;height:38px;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <img id="sb-logo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;">
           <svg id="sb-logo-default" width="32" height="32" viewBox="0 0 52 52" fill="none"><rect width="52" height="52" rx="13" fill="#1e4d6b"/><text x="10" y="38" font-family="Georgia,serif" font-size="32" font-weight="700" fill="white">B</text><circle cx="40" cy="14" r="5" fill="#5ba3cc"/><circle cx="40" cy="14" r="3" fill="white"/></svg>
         </div>
@@ -570,7 +570,11 @@ tr:hover td{background:var(--bg);}
               <option value="paid">Paid</option>
             </select>
             <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()">✕ Reset</button>
-            <span id="inv-f-count" style="margin-left:auto;font-size:11px;color:var(--muted);align-self:center;font-family:var(--mono);"></span>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <span id="inv-f-total-label" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;font-family:var(--mono);">Total Invoice</span>
+              <span id="inv-f-total" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:3px 10px;border-radius:6px;font-family:var(--mono);"></span>
+              <span id="inv-f-count" style="font-size:11px;color:var(--muted);align-self:center;font-family:var(--mono);"></span>
+            </div>
           </div>
           <div class="tw"><table>
             <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th>Total Order</th><th>Grand Total</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
@@ -584,7 +588,10 @@ tr:hover td{background:var(--bg);}
         <div class="card">
           <div class="card-head">
             <span class="card-title">🏭 Data Customer</span>
-            <button class="btn btn-primary btn-sm" onclick="openAddCust()">➕ Tambah</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="cust-sq" placeholder="Cari customer..." oninput="filterCustomers()"></div>
+              <button class="btn btn-primary btn-sm" onclick="openAddCust()">➕ Tambah</button>
+            </div>
           </div>
           <div class="tw">
             <table>
@@ -1590,6 +1597,46 @@ async function savePriv(){
 async function deletePriv(id){if(!confirm('Hapus fitur ini?'))return;try{await sbDelete('privilege_config',id);await loadPrivs();renderPrivs();toast('Dihapus','info');}catch(e){toast('Gagal','error');}}
 
 // ══ CUSTOMERS ══════════════════════════════════════
+function filterCustomers(){
+  const q=(document.getElementById('cust-sq')?.value||'').toLowerCase().trim();
+  if(!q){renderCustomers();return;}
+  const cols=aCols();
+  const canEdit=canDo('manage_customers');
+  const tbody=document.getElementById('cust-body');
+  if(!tbody)return;
+  const filtered=CUSTOMERS.filter(c=>
+    (c.nama||'').toLowerCase().includes(q)||
+    (c.kode_customer||'').toLowerCase().includes(q)||
+    (c.jenis_pelayanan||'').toLowerCase().includes(q)||
+    (c.catatan||'').toLowerCase().includes(q)||
+    (c.alamat||'').toLowerCase().includes(q)
+  );
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:28px;color:var(--muted);">Tidak ada customer yang cocok dengan "<strong>${q}</strong>"</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=filtered.map((c,i)=>{
+    const prices=c.column_prices||{};
+    return`<tr>
+      <td class="mono tmuted">${i+1}</td>
+      <td><strong>${c.nama}</strong>${c.kode_customer?`<br><span class="mono tmuted" style="font-size:9px;">${c.kode_customer}</span>`:''}</td>
+      <td><span class="badge b-rev" style="font-size:10px;">${c.jenis_pelayanan||'—'}</span></td>
+      <td class="mono">${c.tempo||0}h</td>
+      <td class="mono taccent"><strong>${fmtRp(c.default_harga||c.harga_per_pax)}</strong></td>
+      ${cols.map(col=>`<td class="mono" style="font-size:11px;">${prices[col.key]>0?fmtRp(prices[col.key]):'<span class="tmuted">—</span>'}</td>`).join('')}
+      <td class="mono">${fmtRp(c.biaya_box)}</td>
+      <td class="mono">${fmtRp(c.biaya_lainnya)}</td>
+      <td class="mono">${c.qty_lauk||'—'}</td>
+      <td class="mono">${c.qty_pendamping||'—'}</td>
+      <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:130px;">${c.catatan||'—'}</td>
+      <td><div style="display:flex;gap:4px;">
+        ${canEdit?`<button class="btn btn-amber btn-sm" onclick="openEditCust(${c.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCust(${c.id})">🗑</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
 function renderCustomers(){
   const cols=aCols();
   // Fix: use innerHTML on wrapper, not outerHTML (outerHTML breaks element reference on re-render)
@@ -1773,6 +1820,18 @@ function renderInvoices(){
   });
   const fCount=document.getElementById('inv-f-count');
   if(fCount)fCount.textContent=`${filtered.length} / ${INVOICES.length} invoice`;
+  // Total nilai invoice sesuai filter
+  const totalFiltered=filtered.reduce((s,i)=>s+(+i.grand_total||0),0);
+  const fTotalLabel=document.getElementById('inv-f-total-label');
+  const fTotal=document.getElementById('inv-f-total');
+  if(fTotalLabel&&fTotal){
+    if(filtered.length>0){
+      fTotalLabel.style.display='inline'; fTotal.style.display='inline-block';
+      fTotal.textContent=fmtRpNum(totalFiltered);
+    } else {
+      fTotalLabel.style.display='none'; fTotal.style.display='none';
+    }
+  }
   const today=new Date();today.setHours(0,0,0,0);
   function getDueDate(inv){
     const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
@@ -2180,8 +2239,8 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
     </tbody>
   </table>`:''}
   <!-- SIGNATURES -->
-  <div style="display:flex;justify-content:space-between;padding:10px 0 16px;font-size:10px;font-family:Arial,sans-serif;">
-    <div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:14px 0 16px;font-size:10px;font-family:Arial,sans-serif;">
+    <div style="display:flex;flex-direction:column;align-items:flex-start;">
       <div style="font-weight:700;margin-bottom:4px;">Approved By :</div>
       <div style="color:#555;margin-bottom:67px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
@@ -2189,9 +2248,9 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
         <div style="color:#555;font-size:9.5px;">${cust?.pic_jabatan||('PIC '+(cust?.nama||'...'))}</div>
       </div>
     </div>
-    <div style="text-align:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;">
       <div style="color:#555;margin-bottom:67px;">Karawang, ${today}</div>
-      <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
+      <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;text-align:center;">
         <div style="font-weight:700;">${B.manager_nama}</div>
         <div style="color:#555;font-size:9.5px;">${B.manager_jabatan}</div>
       </div>
