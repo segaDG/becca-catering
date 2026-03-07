@@ -382,18 +382,17 @@ tr:hover td{background:var(--bg);}
 <!-- APP -->
 <div id="app">
   <div class="sidebar" id="sidebar">
-    <div class="sb-head" style="padding:14px 14px 10px;position:relative;">
+    <div class="sb-head" style="padding:14px 14px 10px;">
       <div id="sb-company-wrap" style="display:flex;align-items:center;gap:10px;min-width:0;">
         <div id="sb-logo-wrap" style="width:38px;height:38px;border-radius:9px;overflow:hidden;background:#1e4d6b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <img id="sb-logo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;">
           <svg id="sb-logo-default" width="32" height="32" viewBox="0 0 52 52" fill="none"><rect width="52" height="52" rx="13" fill="#1e4d6b"/><text x="10" y="38" font-family="Georgia,serif" font-size="32" font-weight="700" fill="white">B</text><circle cx="40" cy="14" r="5" fill="#5ba3cc"/><circle cx="40" cy="14" r="3" fill="white"/></svg>
         </div>
         <div style="flex:1;min-width:0;">
-          <div class="bname" id="sb-coy-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">BECCA</div>
-          <div class="bsub" id="sb-coy-tagline" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Catering System</div>
+          <div class="bname" id="sb-coy-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;">BECCA</div>
+          <div class="bsub" id="sb-coy-tagline" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7px;font-style:italic;letter-spacing:1px;margin-top:1px;">Catering System</div>
         </div>
       </div>
-      <div style="position:absolute;bottom:6px;right:10px;font-size:7.5px;color:var(--muted);font-family:var(--mono);opacity:0.5;letter-spacing:1px;">Powered by BECCA</div>
     </div>
     <div class="upill">
       <div class="avatar" id="nav-av"></div>
@@ -401,6 +400,7 @@ tr:hover td{background:var(--bg);}
     </div>
     <nav class="nav" id="nav-menu"></nav>
     <div class="sb-foot">
+      <div style="text-align:center;padding:4px 0 6px;font-size:8px;color:var(--muted);font-family:var(--mono);opacity:0.45;letter-spacing:1px;border-bottom:1px solid var(--border);margin-bottom:6px;">Powered by BECCA</div>
       <button onclick="openNotif()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border:none;background:var(--bg2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--text);font-family:var(--font);font-weight:500;margin-bottom:6px;position:relative;transition:background .15s;" title="Notifikasi">
         <span style="font-size:15px;">🔔</span> Notifikasi
         <span id="notif-badge-sb" style="display:none;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:2px;"></span>
@@ -442,10 +442,10 @@ tr:hover td{background:var(--bg);}
               <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent);" id="dash-inv-total">Rp 0</div>
               <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-count">0 invoice</div>
             </div>
-            <div style="background:#eaf4ef;border:1px solid #b8ddc8;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='sent';renderInvoices();},100)">
-              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">SENT / TERKIRIM</div>
-              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green);" id="dash-inv-sent">Rp 0</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-sent-ct">0</div>
+            <div style="background:#fdf8ec;border:1px solid #e8d4a0;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('orders')">
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL NILAI ORDER</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--amber);" id="dash-inv-sent">Rp 0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-sent-ct">0 order</div>
             </div>
             <div style="background:#eaf4ef;border:1px solid #b8ddc8;border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='paid';renderInvoices();},100)">
               <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">PAID / LUNAS</div>
@@ -1193,8 +1193,17 @@ function renderDashInvoicePanel(){
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   sv('dash-inv-total',fmtRpNum(sumGrand(periodInvs)));
   sv('dash-inv-count',`${periodInvs.length} invoice`);
-  sv('dash-inv-sent',fmtRpNum(sumGrand(sent)));
-  sv('dash-inv-sent-ct',`${sent.length} invoice`);
+  // Total nilai order (all orders, or filtered by period)
+  let periodOrders;
+  if(_dashMode==='month'){
+    const ym=`${_dashYear}-${String(_dashMonth+1).padStart(2,'0')}`;
+    periodOrders=ORDERS.filter(o=>o.tgl_order?.slice(0,7)===ym);
+  } else {
+    periodOrders=ORDERS.filter(o=>o.tgl_order?.slice(0,4)===String(_dashYear));
+  }
+  const totalOrderNilai=periodOrders.reduce((s,o)=>s+tp(o),0);
+  sv('dash-inv-sent',totalOrderNilai.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}));
+  sv('dash-inv-sent-ct',`${periodOrders.length} order`);
   sv('dash-inv-paid',fmtRpNum(sumGrand(paid)));
   sv('dash-inv-paid-ct',`${paid.length} lunas`);
   sv('dash-inv-overdue',fmtRpNum(sumGrand(overdueInPeriod)));
@@ -1246,14 +1255,15 @@ function renderDash(){
     </div>`;
   renderDashInvoicePanel();
   document.getElementById('dash-ts').textContent='Update: '+nowTs();
-  document.getElementById('dash-tbl').innerHTML=ORDERS.slice(0,10).map(o=>`<tr style="cursor:pointer;" onclick="openEdit('${o.id}')">
+  const recentOrders=ORDERS.slice(0,10);
+  document.getElementById('dash-tbl').innerHTML=recentOrders.length?recentOrders.map(o=>`<tr style="cursor:pointer;" onclick="openEdit('${o.id}')">
     <td class="mono">${fmtDate(o.tgl_order)}</td><td><strong>${o.perusahaan}</strong></td>
     <td class="hide-mob"><strong>${o.created_by}</strong></td>
     <td class="mono tmuted hide-mob" style="font-size:10px;">${fmtTs(o.created_at)}</td>
     <td class="mono taccent">${tp(o).toLocaleString()}</td>
     <td class="hide-mob">${rcCount(o)>0?`<span class="rev-chip">✏️${rcCount(o)}</span>`:'—'}</td>
     <td><span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span></td>
-  </tr>`).join('');
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);">Belum ada order. Mulai input order pertama anda!</td></tr>';
 }
 
 // ══ INPUT ORDER ════════════════════════════════════
@@ -1787,11 +1797,18 @@ function clearInvFilters(){
 
 function openCreateInvoice(){
   const sel=document.getElementById('inv-coy');
+  // Only customers who have at least one order
+  const custWithOrders=new Set(ORDERS.map(o=>o.perusahaan));
   const unpaidNames=new Set(INVOICES.filter(i=>i.status!=='paid').map(i=>i.customer_nama));
-  sel.innerHTML='<option value="">— Pilih Customer —</option>'+CUSTOMERS.map(c=>{
-    const hasPending=unpaidNames.has(c.nama);
-    return`<option value="${c.nama}">${c.nama}${c.kode_customer?' ('+c.kode_customer+')':''}${hasPending?' ⚠ ada invoice pending':''}`;
-  }).join('');
+  const eligible=CUSTOMERS.filter(c=>custWithOrders.has(c.nama));
+  if(eligible.length===0){
+    sel.innerHTML='<option value="">— Belum ada order masuk —</option>';
+  } else {
+    sel.innerHTML='<option value="">— Pilih Customer —</option>'+eligible.map(c=>{
+      const hasPending=unpaidNames.has(c.nama);
+      return`<option value="${c.nama}">${c.nama}${c.kode_customer?' ('+c.kode_customer+')':''}${hasPending?' ⚠ ada invoice pending':''}`;
+    }).join('');
+  }
   const now=new Date();
   const y=now.getFullYear(),m=now.getMonth();
   document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
