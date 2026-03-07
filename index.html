@@ -595,7 +595,7 @@ tr:hover td{background:var(--bg);}
             </div>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th>Tgl Invoice</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th style="min-width:100px;">Tgl Invoice</th><th style="min-width:110px;">Jatuh Tempo</th><th style="min-width:90px;">Grand Total</th><th style="min-width:110px;">Tgl Bayar</th><th style="min-width:110px;">Jml Terbayar</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="inv-body"></tbody>
           </table></div>
         </div>
@@ -1892,12 +1892,30 @@ function renderInvoices(){
       :isNearDue
       ?`<span style="display:inline-block;background:#9a5a0a;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);margin-left:5px;vertical-align:middle;">DUE SOON</span>`
       :'';
+    // Tgl Invoice — editable date input
+    const tglInvVal=inv.tgl_invoice?inv.tgl_invoice.slice(0,10):'';
+    const tglInvCell=canEdit
+      ?`<input type="date" value="${tglInvVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_invoice',this.value,'sent')" title="Isi tanggal → status otomatis Sent">`
+      :`<span class="mono" style="font-size:11px;">${tglInvVal?fmtDate(tglInvVal):'—'}</span>`;
+    // Tgl Bayar — editable date input
+    const tglBayarVal=inv.tgl_bayar?inv.tgl_bayar.slice(0,10):'';
+    const tglBayarCell=canEdit
+      ?`<input type="date" value="${tglBayarVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_bayar',this.value,'paid')" title="Isi tanggal → status otomatis Paid">`
+      :`<span class="mono" style="font-size:11px;">${tglBayarVal?fmtDate(tglBayarVal):'—'}</span>`;
+    // Jumlah Bayar — editable number input
+    const jmlBayarVal=inv.jumlah_bayar||'';
+    const jmlBayarCell=canEdit
+      ?`<input type="number" value="${jmlBayarVal}" placeholder="0" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','jumlah_bayar',this.value,null)" title="Jumlah yang diterima">`
+      :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
     return`<tr style="${rowBg}">
     <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
     <td><strong>${inv.customer_nama}</strong>${custBadge}</td>
     <td class="mono" style="font-size:11px;">${fmtDate(inv.periode_dari)} –<br>${fmtDate(inv.periode_sampai)}</td>
-    <td class="mono tmuted" style="font-size:11px;">${tglSubmit}</td>
+    <td>${tglInvCell}</td>
     <td style="min-width:110px;">${dueCell}</td>
+    <td class="mono taccent" style="font-weight:700;white-space:nowrap;">${fmtRpNum(inv.grand_total)}</td>
+    <td>${tglBayarCell}</td>
+    <td>${jmlBayarCell}</td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
     <td><div style="display:flex;gap:4px;">
       <button class="btn btn-secondary btn-sm" onclick="viewInvoice('${inv.id}')">👁</button>
@@ -1908,7 +1926,7 @@ function renderInvoices(){
       </select>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
     </div></td>
-  </tr>`}).join(''):'<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
+  </tr>`}).join(''):'<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
   updateNotifBadge();
 }
 function clearInvFilters(){
@@ -2364,11 +2382,40 @@ function viewInvoice(id){
   const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
   let savedAO=[];
   let savedPO='';
+  let isImported=false;
   try{
     const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
     if(od&&od.additional)savedAO=od.additional;
     if(od&&od.po_number)savedPO=od.po_number;
+    if(od&&od.imported)isImported=true;
   }catch(e){}
+  if(isImported||(inv.catatan==='Imported from AR2026')){
+    // Show a simple info modal for imported/historical invoices
+    document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
+    document.getElementById('inv-doc-wrap').innerHTML=`
+      <div style="padding:24px;text-align:center;color:var(--muted);">
+        <div style="font-size:32px;margin-bottom:12px;">📋</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px;">${inv.invoice_no}</div>
+        <div style="font-size:12px;margin-bottom:4px;">${inv.customer_nama}</div>
+        <div style="font-size:11px;margin-bottom:16px;">Periode: ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:16px;display:inline-block;min-width:260px;text-align:left;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+            <span style="color:var(--muted);">Grand Total</span>
+            <strong style="color:var(--accent);font-family:var(--mono);">${fmtRpNum(inv.grand_total)}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+            <span style="color:var(--muted);">Status</span>
+            <span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span>
+          </div>
+          ${inv.tgl_invoice?`<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span style="color:var(--muted);">Tgl Invoice</span><span style="font-family:var(--mono);">${fmtDate(inv.tgl_invoice.slice(0,10))}</span></div>`:''}
+          ${inv.tgl_bayar?`<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span style="color:var(--muted);">Tgl Bayar</span><span style="font-family:var(--mono);">${fmtDate(inv.tgl_bayar.slice(0,10))}</span></div>`:''}
+          ${inv.jumlah_bayar?`<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--muted);">Jml Terbayar</span><span style="font-family:var(--mono);color:var(--green);">${fmtRpNum(inv.jumlah_bayar)}</span></div>`:''}
+        </div>
+        <div style="margin-top:14px;font-size:10px;color:var(--muted);font-style:italic;">Invoice historis — tidak ada data order terhubung</div>
+      </div>`;
+    openM('m-inv-view');
+    return;
+  }
   const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai,savedAO);
   _currentInvData=data;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;_currentInvTab='inv';
   document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
@@ -2537,6 +2584,26 @@ async function saveInvoice(){
   finally{btn.disabled=false;btn.textContent='💾 Simpan Invoice';}
 }
 
+async function updateInvField(id,field,value,autoStatus){
+  try{
+    const patch={};
+    patch[field]=value||null;
+    // Auto-set status based on which field was filled
+    if(value&&autoStatus){
+      // tgl_bayar → paid; tgl_invoice → sent (only if not already paid)
+      const inv=INVOICES.find(x=>x.id==id);
+      if(autoStatus==='paid'){
+        patch.status='paid';
+        NOTIF_DISMISSED.delete(String(id));saveNotifDismissed();
+      } else if(autoStatus==='sent'&&inv&&inv.status==='draft'){
+        patch.status='sent';
+      }
+    }
+    await sbPatch('invoices',id,patch);
+    await loadInvoices();renderInvoices();updateNotifBadge();
+    toast(`${field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah'} disimpan`+(autoStatus&&value?` · Status → ${patch.status||''}`:''),(autoStatus==='paid'&&value)?'success':'info');
+  }catch(e){toast('Gagal: '+e.message,'error');}
+}
 async function updateInvStatus(id,status){
   try{
     await sbPatch('invoices',id,{status});
