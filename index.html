@@ -1927,14 +1927,14 @@ function renderInvoices(){
     // Jumlah Bayar — editable Rp input with formatted display
     const jmlBayarVal=inv.jumlah_bayar?+inv.jumlah_bayar:null;
     // Use text input showing formatted number; strip dots on focus, reformat on blur
-    const jmlFmt=jmlBayarVal?fmtRpNum(jmlBayarVal):'';
+    const jmlFmt=jmlBayarVal?jmlBayarVal.toLocaleString('id-ID'):'';
     const jmlBayarCell=canEdit
       ?`<input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="—"
             data-inv-id="${inv.id}"
             style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--bg);color:var(--text);width:115px;text-align:right;"
-            onfocus="this._prev=this.value;this.value=this.value.replace(/\./g,'')"
+            onfocus="this.value=this.value.replace(/[^0-9]/g,'')"
             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-            onblur="(function(el){const raw=el.value.replace(/\./g,'').trim();const num=raw===''?null:Number(raw);if(!isNaN(num)||num===null){el.value=num?num.toLocaleString('id-ID'):'';updateInvField(el.dataset.invId,'jumlah_bayar',raw,null);}else{el.value=el._prev||'';}})(this)"
+            onblur="(function(el){const digits=el.value.replace(/[^0-9]/g,'').trim();const num=digits===''?null:parseInt(digits,10);el.value=num?num.toLocaleString('id-ID'):'';updateInvField(el.dataset.invId,'jumlah_bayar',digits,null);})(this)"
             title="Jumlah terbayar (Rp) — tekan Enter atau klik luar untuk simpan">`
       :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
     // Sisa pembayaran = grand_total - jumlah_bayar
@@ -2733,11 +2733,14 @@ async function saveInvoice(){
 }
 
 async function updateInvField(id,field,value,autoStatus){
+  const label=field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah Terbayar';
   try{
     const patch={};
     if(field==='jumlah_bayar'){
-      const cleaned=String(value||'').replace(/\./g,'').trim();
-      patch[field]=cleaned===''?null:Number(cleaned);
+      // Strip ALL non-digit characters, then parse as integer
+      const digits=String(value||'').replace(/[^0-9]/g,'').trim();
+      patch[field]=digits===''?null:parseInt(digits,10);
+      if(patch[field]!==null&&isNaN(patch[field])){toast('Angka tidak valid','error');return;}
     } else {
       patch[field]=value||null;
     }
@@ -2750,16 +2753,27 @@ async function updateInvField(id,field,value,autoStatus){
         patch.status='sent';
       }
     }
-    // Snapshot before saving (for undo)
-    const snapFields=Object.keys(patch);
-    const oldSnap=invSnapshot(id,snapFields);
-    await sbPatch('invoices',id,patch);
-    const label=field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah Terbayar';
+    const oldSnap=invSnapshot(id,Object.keys(patch));
+    const result=await sbPatch('invoices',id,patch);
+    // Verify the save actually worked by checking returned data
+    if(!result||result.length===0){
+      // sbPatch returned empty — may mean column doesn't exist yet
+      // Try to reload anyway
+      await loadInvoices();
+      const saved=INVOICES.find(x=>x.id==id);
+      if(saved&&field==='jumlah_bayar'&&saved.jumlah_bayar==null&&patch[field]!==null){
+        toast(`Kolom ${field} belum ada di database. Jalankan SQL migrasi dulu.`,'error');
+        return;
+      }
+    }
     pushUndo(id,oldSnap,label+(patch.status?` → ${patch.status}`:''));
     await loadInvoices();renderInvoices();updateNotifBadge();
     const statusNote=patch.status?` · Status → ${patch.status}`:'';
     toast(`${label} disimpan${statusNote}`,patch.status==='paid'?'success':'info');
-  }catch(e){toast('Gagal menyimpan: '+e.message,'error');}
+  }catch(e){
+    console.error('updateInvField error:',field,value,e);
+    toast('Gagal: '+e.message,'error');
+  }
 }
 async function updateInvStatus(id,status){
   try{
