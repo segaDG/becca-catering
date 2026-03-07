@@ -436,7 +436,8 @@ tr:hover td{background:var(--bg);}
     <div class="topbar">
       <div class="tb-l"><button class="hbg" onclick="toggleSB()">☰</button><div class="pg-title" id="pgtitle">Dashboard</div></div>
       <div class="tb-r">
-        <div class="db-chip loading" id="dbchip">⬤ DB</div>
+        <div class="db-chip loading" id="dbchip">⬤ <span style="font-size:9px;letter-spacing:.5px;">DATABASE</span></div>
+        <div id="online-users" style="display:flex;align-items:center;padding:0 4px;" title="Pengguna aktif"></div>
         <div class="clock-chip">🕐 <span id="clk"></span></div>
         <button id="notif-btn" onclick="openNotif()" style="position:relative;background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;border-radius:8px;transition:background .15s;" title="Notifikasi">
           🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
@@ -1050,7 +1051,7 @@ function tp(o){return aCols().reduce((s,c)=>s+(o[c.key]||0),0);}
 function rcCount(o){return(o.history||[]).filter(h=>h.action==='edit').length;}
 function ledit(o){const e=(o.history||[]).filter(h=>h.action==='edit');return e.length?e[e.length-1]:null;}
 function loading(show,txt=''){document.getElementById('ldo').classList.toggle('show',show);if(txt)document.getElementById('ltxt').textContent=txt;}
-function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.textContent=s==='connected'?'⬤ DB':'⬤ DB';}
+function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.title=s==='connected'?'Database: Terhubung':'Database: Terputus';el.innerHTML=s==='connected'?'<span style="font-size:9px;letter-spacing:.5px;">DATABASE</span>':'<span style="font-size:9px;letter-spacing:.5px;">DATABASE</span>';}
 function getRK(nama){const u=USERS_DATA.find(x=>x.nama===nama);return u?u.role:'viewer';}
 function canDo(key){if(CU.role==='superadmin')return true;const p=PRIVS.find(x=>x.feature_key===key);return p?p[`role_${CU.role}`]===true:false;}
 function allowedPages(){return Object.entries(ALL_PAGES).filter(([,v])=>canDo(v.priv_key)).map(([k])=>k);}
@@ -1092,8 +1093,10 @@ async function doLogin(){
 function showErr(m){const el=document.getElementById('lerr');el.style.display='flex';el.textContent='❌ '+m;}
 function doLogout(){
   logActivity('logout','Logout dari sistem','');
+  stopOnlineTracker();
   CU=null;ORDERS=[];USERS_DATA=[];COLS=[];PRIVS=[];CUSTOMERS=[];INVOICES=[];
   document.getElementById('app').style.display='none';document.getElementById('ls').style.display='flex';
+  document.getElementById('online-users').innerHTML='';
 }
 
 // ══ INIT ══════════════════════════════════════════
@@ -1114,6 +1117,7 @@ async function initApp(){
   updateSidebarBranding();
   updateNotifBadge();
   logActivity('login',`Login berhasil sebagai ${CU.role} (${CU.nama})`,'Login');
+  startOnlineTracker();
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
   navigateTo('dashboard');
 }
@@ -1122,7 +1126,7 @@ function buildNav(){
   const nav=document.getElementById('nav-menu');nav.innerHTML='';
   const allowed=allowedPages();
   const secs=[
-    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice']},
+    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice','activity']},
     {l:'Kelola', pages:['customers','columns','privilege','users','settings']},
   ];
   secs.forEach(sec=>{
@@ -2977,6 +2981,71 @@ function renderActivity(){
       <button class="btn btn-secondary btn-sm" onclick="_actPage=Math.min(${pages},_actPage+1);renderActivity();" ${_actPage>=pages?'disabled':''}>Next ▶</button>
     </div>`;
   }
+}
+// ═══════════════════════════════════════════════════
+
+
+// ══ ONLINE USERS TRACKER ════════════════════════════
+// Uses localStorage broadcasting — shows users active in this browser
+// For multi-device: would need server-side presence, this works per-browser
+const ONLINE_KEY='becca_online_sessions';
+const ONLINE_TTL=60000; // 60s before considered offline
+let _heartbeatInterval=null;
+
+function onlineHeartbeat(){
+  if(!CU)return;
+  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
+  sessions[CU.username]={
+    nama:CU.nama,username:CU.username,role:CU.role,
+    ts:Date.now(),tab:document.title
+  };
+  // Clean stale sessions
+  Object.keys(sessions).forEach(k=>{if(Date.now()-sessions[k].ts>ONLINE_TTL)delete sessions[k];});
+  localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
+  renderOnlineUsers();
+}
+
+function renderOnlineUsers(){
+  const wrap=document.getElementById('online-users');
+  if(!wrap)return;
+  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
+  const active=Object.values(sessions).filter(s=>Date.now()-s.ts<=ONLINE_TTL);
+  const colors={'superadmin':'#a8281e','admin':'#1e4d6b','operator':'#1e7e34','viewer':'#6c757d'};
+  const MAX_SHOW=5;
+  const shown=active.slice(0,MAX_SHOW);
+  const extra=active.length-MAX_SHOW;
+  wrap.innerHTML=shown.map((s,i)=>{
+    const c=colors[s.role]||'#555';
+    const initials=s.nama.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const isMe=s.username===CU?.username;
+    return`<div title="${s.nama} (${s.role})${isMe?' — Anda':''}" style="
+      width:28px;height:28px;border-radius:50%;background:${c};color:#fff;
+      font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
+      border:2px solid ${isMe?'#fff':'rgba(255,255,255,.6)'};
+      margin-left:${i===0?'0':'-8px'};position:relative;z-index:${10-i};
+      box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default;
+      ${isMe?'ring:2px solid white;outline:2px solid '+c+';outline-offset:1px;':''}
+    ">${initials}</div>`;
+  }).join('')+(extra>0?`<div style="width:28px;height:28px;border-radius:50%;background:#888;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.6);margin-left:-8px;z-index:5;">+${extra}</div>`:'');
+}
+
+function startOnlineTracker(){
+  onlineHeartbeat();
+  _heartbeatInterval=setInterval(onlineHeartbeat,15000);
+  window.addEventListener('storage',()=>renderOnlineUsers()); // Cross-tab sync
+  window.addEventListener('beforeunload',()=>{
+    if(!CU)return;
+    const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
+    delete sessions[CU.username];
+    localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
+  });
+}
+function stopOnlineTracker(){
+  if(_heartbeatInterval)clearInterval(_heartbeatInterval);
+  if(!CU)return;
+  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
+  delete sessions[CU.username];
+  localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
 }
 // ═══════════════════════════════════════════════════
 
