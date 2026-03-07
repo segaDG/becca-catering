@@ -591,11 +591,13 @@ tr:hover td{background:var(--bg);}
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <span id="inv-f-total-label" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;font-family:var(--mono);">Total Invoice</span>
               <span id="inv-f-total" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:3px 10px;border-radius:6px;font-family:var(--mono);"></span>
+              <span id="inv-f-outstanding-label" style="display:none;font-size:11px;font-weight:700;color:#a8281e;font-family:var(--mono);">Outstanding</span>
+              <span id="inv-f-outstanding" style="display:none;font-size:11px;font-weight:700;color:#a8281e;background:#fdf0ef;padding:3px 10px;border-radius:6px;font-family:var(--mono);"></span>
               <span id="inv-f-count" style="font-size:11px;color:var(--muted);align-self:center;font-family:var(--mono);"></span>
             </div>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th style="min-width:105px;">Tgl Invoice</th><th style="min-width:110px;">Jatuh Tempo</th><th style="min-width:90px;">Grand Total</th><th style="min-width:105px;">Tgl Bayar</th><th style="min-width:110px;">Jml Terbayar</th><th style="min-width:90px;">Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th style="min-width:105px;">Tgl Invoice</th><th style="min-width:110px;">Jatuh Tempo</th><th style="min-width:90px;">Grand Total</th><th style="min-width:105px;">Tgl Bayar</th><th style="min-width:90px;">Lama Bayar</th><th style="min-width:110px;">Jml Terbayar</th><th style="min-width:90px;">Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="inv-body"></tbody>
           </table></div>
         </div>
@@ -1868,13 +1870,24 @@ function renderInvoices(){
     if(filtered.length>0){fTotalLabel.style.display='inline';fTotal.style.display='inline-block';fTotal.textContent=fmtRpNum(totalFiltered);}
     else{fTotalLabel.style.display='none';fTotal.style.display='none';}
   }
+  // Total Outstanding = sum of (grand_total - jumlah_bayar) for non-paid invoices
+  const totalOutstanding=filtered.filter(i=>i.status!=='paid').reduce((s,i)=>{
+    const jml=i.jumlah_bayar?+i.jumlah_bayar:0;
+    return s+Math.max(0,(+i.grand_total||0)-jml);
+  },0);
+  const fOutLabel=document.getElementById('inv-f-outstanding-label');
+  const fOut=document.getElementById('inv-f-outstanding');
+  if(fOutLabel&&fOut){
+    if(filtered.length>0&&totalOutstanding>0){fOutLabel.style.display='inline';fOut.style.display='inline-block';fOut.textContent=fmtRpNum(totalOutstanding);}
+    else{fOutLabel.style.display='none';fOut.style.display='none';}
+  }
   const canEdit=canDo('manage_invoice');
   document.getElementById('inv-body').innerHTML=filtered.length?filtered.map(inv=>{
     const due=getDueDate(inv); // null if no tgl_invoice yet
     const diffDays=due?Math.round((due-today)/(1000*60*60*24)):null;
     const isOverdue=inv.status!=='paid'&&diffDays!==null&&diffDays<0;
     const isNearDue=inv.status!=='paid'&&diffDays!==null&&diffDays>=0&&diffDays<=7;
-    const rowBg=isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
+    const rowBg=inv.status==='paid'?'background:#f0f0f0;':isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
     // Jatuh tempo cell
     let dueCell='';
     if(inv.status==='paid'){
@@ -1914,17 +1927,28 @@ function renderInvoices(){
     // Use text input showing formatted number; strip dots on focus, reformat on blur
     const jmlFmt=jmlBayarVal?fmtRpNum(jmlBayarVal):'';
     const jmlBayarCell=canEdit
-      ?`<div style="display:inline-flex;align-items:center;gap:2px;">
-          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">Rp</span>
-          <input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="0"
-            style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:105px;text-align:right;"
+      ?`<input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="—"
+            style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--bg);color:var(--text);width:115px;text-align:right;"
             onfocus="this.value=this.value.replace(/\./g,'')"
             onblur="this.value=this.value?Number(this.value.replace(/\./g,'')).toLocaleString('id-ID'):''"
-            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value.replace(/\./g,''),null)" title="Jumlah terbayar (Rp)">
-        </div>`
+            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value.replace(/\./g,''),null)" title="Jumlah terbayar (Rp)">`
       :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
     // Sisa pembayaran = grand_total - jumlah_bayar
     const sisa=(+inv.grand_total||0)-(jmlBayarVal||0);
+    // Lama Bayar = diff antara tgl_bayar dan tgl_invoice
+    let lamaBayarCell='<span style="color:var(--muted);font-size:10px;">—</span>';
+    if(inv.tgl_invoice&&inv.tgl_bayar){
+      const d1=new Date(inv.tgl_invoice.slice(0,10)+'T00:00:00');
+      const d2=new Date(inv.tgl_bayar.slice(0,10)+'T00:00:00');
+      const diffL=Math.round((d2-d1)/(1000*60*60*24));
+      const lColor=diffL<=15?'var(--green)':diffL<=30?'#9a5a0a':'#a8281e';
+      lamaBayarCell=`<span style="font-family:var(--mono);font-size:11px;font-weight:600;color:${lColor};">${diffL} hari</span>`;
+    } else if(inv.tgl_invoice&&inv.status!=='paid'){
+      // not yet paid, show how many days since invoice
+      const d1=new Date(inv.tgl_invoice.slice(0,10)+'T00:00:00');
+      const elapsed=Math.round((today-d1)/(1000*60*60*24));
+      lamaBayarCell=`<span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${elapsed}h berjalan</span>`;
+    }
     // Sisa = grand_total - jumlah_bayar, selalu tampil sebagai angka Rp
     const sisaNum=Math.max(0,sisa);
     const sisaColor=sisaNum===0?'var(--green)':sisaNum>(+inv.grand_total*0.5)?'#a8281e':'#9a5a0a';
@@ -1937,6 +1961,7 @@ function renderInvoices(){
     <td style="min-width:110px;">${dueCell}</td>
     <td class="mono taccent" style="font-weight:700;white-space:nowrap;">${fmtRpNum(inv.grand_total)}</td>
     <td>${tglBayarCell}</td>
+    <td style="text-align:center;">${lamaBayarCell}</td>
     <td>${jmlBayarCell}</td>
     <td style="min-width:100px;">${sisaCell}</td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
@@ -1949,7 +1974,7 @@ function renderInvoices(){
       </select>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
     </div></td>
-  </tr>`}).join(''):'<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
+  </tr>`}).join(''):'<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
   updateNotifBadge();
 }
 function clearInvFilters(){
