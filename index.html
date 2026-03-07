@@ -507,7 +507,7 @@ tr:hover td{background:var(--bg);}
               <thead><tr>
                 <th>#</th><th>Nama</th><th>Jenis</th><th>Tempo</th>
                 <th>Harga Default/Pax</th>
-                <th id="cust-col-headers"></th>
+                <th id="cust-col-headers-wrap"></th>
                 <th>Box</th><th>Lainnya</th><th>Lauk</th><th>Pendamping</th><th>Catatan</th><th>Aksi</th>
               </tr></thead>
               <tbody id="cust-body"></tbody>
@@ -561,8 +561,8 @@ tr:hover td{background:var(--bg);}
               <div class="form-group span2"><label>Alamat</label><textarea id="co-alamat" style="min-height:52px;" placeholder="Jl. Contoh No.1, Kecamatan..."></textarea></div>
               <div class="form-group"><label>No. Telepon</label><input type="text" id="co-phone" placeholder="0267 - 8407252"></div>
               <div class="form-group"><label>Website</label><input type="text" id="co-website" placeholder="www.example.co.id"></div>
-              <div class="form-group"><label>Nama Manager / TTD</label><input type="text" id="co-mgr-nama" placeholder="Umad Jaelani"></div>
-              <div class="form-group"><label>Jabatan Manager</label><input type="text" id="co-mgr-jabatan" placeholder="Manager"></div>
+              <div class="form-group"><label>Nama PIC / TTD Invoice</label><input type="text" id="co-mgr-nama" placeholder="Umad Jaelani"></div>
+              <div class="form-group"><label>Jabatan PIC</label><input type="text" id="co-mgr-jabatan" placeholder="Manager"></div>
               <div class="form-group"><label>Nama Bank</label><input type="text" id="co-bank-name" placeholder="Bank Mandiri KC Karawang 17300"></div>
               <div class="form-group"><label>No. Rekening</label><input type="text" id="co-bank-no" placeholder="173-00-0153197-0"></div>
               <div class="form-group"><label>NPWP</label><input type="text" id="co-npwp" placeholder="75.260.202.9-408.000"></div>
@@ -719,8 +719,12 @@ tr:hover td{background:var(--bg);}
       <div class="form-group"><label>Jabatan PIC</label><input type="text" id="cm-pic-jabatan" placeholder="Finance Manager"></div>
     </div>
     <!-- BIAYA -->
-    <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin:16px 0 10px;">💳 Biaya Tambahan</div>
+    <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin:16px 0 10px;">💳 Harga & Biaya</div>
     <div class="fg">
+      <div class="form-group span2" style="background:var(--accent-bg);border:1.5px solid var(--accent-lt);border-radius:var(--rs);padding:12px 14px;">
+        <label style="color:var(--accent);font-weight:700;">🏷️ Harga Default / Pax (Rp) <span style="font-weight:400;color:var(--muted);font-size:11px;">— fallback jika harga per-kolom tidak diisi</span></label>
+        <input type="number" id="cm-def-harga" placeholder="Contoh: 25000" min="0" style="font-size:15px;font-weight:700;color:var(--accent);margin-top:6px;">
+      </div>
       <div class="form-group"><label>Biaya Box / Pax (Rp)</label><input type="number" id="cm-box" placeholder="0" min="0"></div>
       <div class="form-group"><label>Biaya Lainnya / Pax (Rp)</label><input type="number" id="cm-lain" placeholder="0" min="0"></div>
       <div class="form-group"><label>Qty Lauk</label><input type="number" id="cm-lauk" placeholder="0" min="0"></div>
@@ -1335,22 +1339,38 @@ async function deletePriv(id){if(!confirm('Hapus fitur ini?'))return;try{await s
 
 // ══ CUSTOMERS ══════════════════════════════════════
 function renderCustomers(){
-  // Build dynamic column price headers
   const cols=aCols();
-  // Update header th for col prices
-  document.getElementById('cust-col-headers').outerHTML=cols.map(c=>`<th>Harga ${c.label}</th>`).join('')+'<th id="cust-col-headers-end" style="display:none;"></th>';
+  // Fix: use innerHTML on wrapper, not outerHTML (outerHTML breaks element reference on re-render)
+  const hdrWrap=document.getElementById('cust-col-headers-wrap');
+  if(hdrWrap){
+    // Replace wrapper with individual <th> elements by building the thead row dynamically
+    const thead=hdrWrap.closest('thead');
+    if(thead){
+      const tr=thead.querySelector('tr');
+      // Remove old dynamic headers (after index 4, before last 5 fixed ones)
+      tr.querySelectorAll('.dyn-col-hdr').forEach(el=>el.remove());
+      // Insert before cust-col-headers-wrap
+      cols.forEach(c=>{
+        const th=document.createElement('th');
+        th.className='dyn-col-hdr';
+        th.textContent=`Harga ${c.label}`;
+        tr.insertBefore(th,hdrWrap);
+      });
+    }
+  }
   const canEdit=canDo('manage_customers');
   const tbody=document.getElementById('cust-body');
+  if(!tbody)return;
   if(!CUSTOMERS.length){tbody.innerHTML='<tr><td colspan="20" style="text-align:center;padding:36px;color:var(--muted);">Belum ada customer</td></tr>';return;}
   tbody.innerHTML=CUSTOMERS.map((c,i)=>{
     const prices=c.column_prices||{};
     return`<tr>
       <td class="mono tmuted">${i+1}</td>
-      <td><strong>${c.nama}</strong></td>
+      <td><strong>${c.nama}</strong>${c.kode_customer?`<br><span class="mono tmuted" style="font-size:9px;">${c.kode_customer}</span>`:''}</td>
       <td><span class="badge b-rev" style="font-size:10px;">${c.jenis_pelayanan||'—'}</span></td>
       <td class="mono">${c.tempo||0}h</td>
-      <td class="mono">${fmtRp(c.default_harga||c.harga_per_pax)}</td>
-      ${cols.map(col=>`<td class="mono" style="font-size:11px;">${prices[col.key]>0?fmtRp(prices[col.key]):'<span class="tmuted">default</span>'}</td>`).join('')}
+      <td class="mono taccent"><strong>${fmtRp(c.default_harga||c.harga_per_pax)}</strong></td>
+      ${cols.map(col=>`<td class="mono" style="font-size:11px;">${prices[col.key]>0?fmtRp(prices[col.key]):'<span class="tmuted">—</span>'}</td>`).join('')}
       <td class="mono">${fmtRp(c.biaya_box)}</td>
       <td class="mono">${fmtRp(c.biaya_lainnya)}</td>
       <td class="mono">${c.qty_lauk||'—'}</td>
@@ -1380,7 +1400,7 @@ function toggleTaxField(which){
 function openAddCust(){
   editCustId=null;
   document.getElementById('cust-modal-title').textContent='➕ Tambah Customer';
-  ['cm-kode','cm-nama','cm-alamat','cm-telp','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat','cm-pic-nama','cm-pic-jabatan'].forEach(id=>document.getElementById(id).value='');
+  ['cm-kode','cm-nama','cm-alamat','cm-telp','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat','cm-pic-nama','cm-pic-jabatan','cm-def-harga'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cm-jenis').value='Food Catering Service';document.getElementById('cm-tempo').value='30';
   document.getElementById('cm-pb1').value='10';document.getElementById('cm-pph').value='2';
   document.getElementById('cm-pb1-aktif').checked=true;document.getElementById('cm-pph-aktif').checked=true;
@@ -1401,6 +1421,7 @@ function openEditCust(id){
   document.getElementById('cm-pb1-aktif').checked=c.pajak_pb1_aktif||false;
   document.getElementById('cm-pph-aktif').checked=c.pajak_pph_aktif||false;
   toggleTaxField('pb1');toggleTaxField('pph');
+  document.getElementById('cm-def-harga').value=c.default_harga||c.harga_per_pax||'';
   document.getElementById('cm-box').value=c.biaya_box||'';
   document.getElementById('cm-lain').value=c.biaya_lainnya||'';
   document.getElementById('cm-lauk').value=c.qty_lauk||'';
@@ -1430,7 +1451,7 @@ async function saveCust(){
     pajak_pph_aktif:document.getElementById('cm-pph-aktif').checked,
     pic_nama:document.getElementById('cm-pic-nama').value||null,
     pic_jabatan:document.getElementById('cm-pic-jabatan').value||null,
-    default_harga:0,
+    default_harga:+document.getElementById('cm-def-harga').value||0,
     biaya_box:+document.getElementById('cm-box').value||0,biaya_lainnya:+document.getElementById('cm-lain').value||0,
     qty_lauk:+document.getElementById('cm-lauk').value||null,qty_pendamping:+document.getElementById('cm-pend').value||null,
     catatan:document.getElementById('cm-cat').value||null,column_prices};
