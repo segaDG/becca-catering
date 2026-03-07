@@ -1632,7 +1632,7 @@ function fmtDateLong(iso){
 }
 function fmtPeriod(dari,sampai){
   if(!dari||!sampai)return'';
-  return`${fmtDateLong(dari)} to ${fmtDateLong(sampai)}`;
+  return`${fmtDateLong(dari)} &nbsp; to &nbsp; ${fmtDateLong(sampai)}`;
 }
 function fmtDayMonth(iso){
   if(!iso)return{dd:'',mm:''};
@@ -1756,7 +1756,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
       <div>5. NPWPD : ${B.npwpd}</div>
     </div>
     <div style="text-align:center;min-width:185px;padding-bottom:0;">
-      <div style="font-size:9.5px;color:#555;margin-bottom:24px;">Karawang, ${today}</div>
+      <div style="font-size:9.5px;color:#555;margin-bottom:74px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:4px;display:inline-block;min-width:140px;">
         <div style="font-weight:700;">${B.manager_nama}</div>
         <div style="font-size:9px;color:#555;">${B.manager_jabatan}</div>
@@ -1771,7 +1771,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
 }
 
 
-function buildRekapHTML(data,invNo,isPreview=false){
+function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
   const{cust,orders,cols,grandSubtotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
   const B=getBILLER();
   const ao=additionalOrders||[];
@@ -1794,6 +1794,10 @@ function buildRekapHTML(data,invNo,isPreview=false){
     <div style="text-align:right;">
       <div style="font-size:20px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">INVOICE SUMMARY</div>
       <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#1e4d6b;margin-top:4px;">${invNo}</div>
+      ${poNum?`<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:6px;">
+        <span style="font-size:9px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;color:#1e4d6b;">PO Number</span>
+        <span style="background:#1e4d6b;color:#fff;font-family:'Courier New',monospace;font-size:10px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:.5px;">${poNum}</span>
+      </div>`:''}
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;padding:12px 0;gap:20px;">
@@ -1886,7 +1890,7 @@ function buildRekapHTML(data,invNo,isPreview=false){
       <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
         <div style="font-weight:700;">${cust?.pic_nama||'________________________'}</div>
-        <div style="color:#555;font-size:9.5px;">PIC ${cust?.nama||'...'}</div>
+        <div style="color:#555;font-size:9.5px;">${cust?.pic_jabatan||('PIC '+(cust?.nama||'...'))}</div>
       </div>
     </div>
     <div style="text-align:center;">
@@ -1923,7 +1927,7 @@ function viewInvoice(id){
   _currentInvData=data;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;
   document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
   document.getElementById('inv-tab-inv').innerHTML=data?buildInvoiceHTML(data,inv.invoice_no,false,savedPO):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
-  document.getElementById('inv-tab-rekap').innerHTML=data?buildRekapHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
+  document.getElementById('inv-tab-rekap').innerHTML=data?buildRekapHTML(data,inv.invoice_no,false,savedPO):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
   switchInvTab('inv');
   openM('m-inv-view');
 }
@@ -1940,7 +1944,7 @@ function getPrintStyles(){
 
 function printDoc(which){
   if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
-  const html=which==='inv'?buildInvoiceHTML(_currentInvData,_currentInvNo,false,_currentInvPO):buildRekapHTML(_currentInvData,_currentInvNo,false);
+  const html=which==='inv'?buildInvoiceHTML(_currentInvData,_currentInvNo,false,_currentInvPO):buildRekapHTML(_currentInvData,_currentInvNo,false,_currentInvPO);
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA ${which==='inv'?'Invoice':'Rekap'} ${_currentInvNo}</title>${getPrintStyles()}</head><body>${html}<script>window.onload=()=>window.print();<\/script></body></html>`);
   w.document.close();
@@ -1949,7 +1953,7 @@ function printDoc(which){
 function printInvoiceDual(){
   if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
   const htmlInv=buildInvoiceHTML(_currentInvData,_currentInvNo,false,_currentInvPO);
-  const htmlRekap=buildRekapHTML(_currentInvData,_currentInvNo,false);
+  const htmlRekap=buildRekapHTML(_currentInvData,_currentInvNo,false,_currentInvPO);
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA Invoice ${_currentInvNo}</title>${getPrintStyles()}
   <style>.pbreak{page-break-after:always;}</style></head><body>
@@ -1974,7 +1978,7 @@ function previewInvoice(){
       <button class="rtab" id="ptab-rekap" onclick="switchPreviewTab('rekap')">📋 Rekapitulasi</button>
     </div>
     <div id="prev-inv">${buildInvoiceHTML(data,no,true,poNum)}</div>
-    <div id="prev-rekap" style="display:none;">${buildRekapHTML(data,no,true)}</div>`;
+    <div id="prev-rekap" style="display:none;">${buildRekapHTML(data,no,false,poNum)}</div>`;
 }
 function switchPreviewTab(tab){
   document.getElementById('ptab-inv').classList.toggle('active',tab==='inv');
