@@ -125,9 +125,9 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .db-chip.connected{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
 .db-chip.disconnected{background:#ef4444;box-shadow:0 0 6px #ef444488;}
 .db-chip.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b88;}
-.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;}
-.page{display:none;}
-.page.active{display:block;animation:fadeUp .2s ease;}#page-tasks.active{display:flex!important;flex-direction:column;flex:1;min-height:0;}
+.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+.page{display:none;width:100%;}
+.page.active{display:block;animation:fadeUp .2s ease;}.page-flex.active{display:flex!important;flex-direction:column;height:calc(100vh - 53px - 44px);margin:-22px;padding:22px;box-sizing:border-box;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
 
 /* ── STATS ─────────────────────────────────── */
@@ -723,7 +723,7 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
-      <div id="page-tasks" class="page" style="flex-direction:column;">
+      <div id="page-tasks" class="page page-flex">
         <!-- Filter bar -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -739,7 +739,7 @@ tr:hover td{background:var(--bg);}
           <button class="btn btn-primary" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
         </div>
         <!-- Board columns -->
-        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;min-height:0;">
+        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;min-height:0;overflow:hidden;">
           <div style="display:flex;flex-direction:column;min-height:0;">
             <div style="font-weight:700;font-size:13px;color:#555;padding:8px 12px;background:#f3f4f6;border-radius:8px 8px 0 0;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
               <span>📋 Todo</span><span id="task-count-todo" style="font-size:11px;background:#e5e7eb;padding:1px 7px;border-radius:10px;">0</span>
@@ -761,9 +761,9 @@ tr:hover td{background:var(--bg);}
         </div>
       </div>
 
-      <div id="page-activity" class="page">
-        <div class="card">
-          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div id="page-activity" class="page page-flex">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;">
             <span class="card-title">📋 Activity Log</span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="text" id="act-search" placeholder="Cari nama / aktivitas..." style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);width:200px;" oninput="renderActivity()">
@@ -782,8 +782,8 @@ tr:hover td{background:var(--bg);}
               <button class="btn btn-danger btn-sm" onclick="clearAllActivity()" style="margin-left:8px;">🗑 Hapus Semua</button>
             </div>
           </div>
-          <div class="card-body" style="padding:0;overflow:hidden;">
-            <div style="overflow-x:auto;"><table id="act-table" style="width:100%;">
+          <div class="card-body" style="padding:0;overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="overflow-x:auto;overflow-y:auto;flex:1;min-height:0;"><table id="act-table" style="width:100%;">
               <thead style="position:sticky;top:0;z-index:2;background:var(--surface2);"><tr>
                 <th style="width:40px;">#</th>
                 <th style="min-width:120px;">User</th>
@@ -1256,11 +1256,7 @@ function renderPage(pg){
   if(pg==='users')renderUsers();
   if(pg==='settings')renderSettings();
   if(pg==='activity'){_actPage=1;renderActivity();}
-  if(pg==='tasks'){
-    const tp=document.getElementById('page-tasks');
-    if(tp){tp.style.display='flex';}
-    renderTasks();
-  }
+  if(pg==='tasks'){renderTasks();}
   if(pg==='input'){document.getElementById('f-tgl').value=new Date().toISOString().split('T')[0];buildInputForm();updImeta();}
 }
 
