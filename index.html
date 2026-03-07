@@ -582,6 +582,11 @@ tr:hover td{background:var(--bg);}
               <option value="sent">Sent</option>
               <option value="paid">Paid</option>
             </select>
+            <select id="inv-f-due" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;">
+              <option value="">Semua Tempo</option>
+              <option value="overdue">🔴 Jatuh Tempo (Overdue)</option>
+              <option value="neardue">⏰ Mendekati Jatuh Tempo (≤7 hari)</option>
+            </select>
             <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()">✕ Reset</button>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <span id="inv-f-total-label" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;font-family:var(--mono);">Total Invoice</span>
@@ -590,7 +595,7 @@ tr:hover td{background:var(--bg);}
             </div>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th>Total Order</th><th>Grand Total</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th>Tgl Invoice</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="inv-body"></tbody>
           </table></div>
         </div>
@@ -1824,6 +1829,15 @@ function renderInvoices(){
   const fPeriod=document.getElementById('inv-f-period')?.value||'';
   const fStatus=document.getElementById('inv-f-status')?.value||'';
   const fCoyVal=fCoy?.value||'';
+  const fDue=document.getElementById('inv-f-due')?.value||'';
+  const today=new Date();today.setHours(0,0,0,0);
+  function getDueDate(inv){
+    const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
+    const tempo=+(cust?.tempo||30);
+    const base=new Date((inv.periode_sampai||inv.created_at?.slice(0,10))+'T00:00:00');
+    base.setDate(base.getDate()+tempo);
+    return base;
+  }
   let filtered=INVOICES.filter(inv=>{
     if(fCoyVal&&inv.customer_nama!==fCoyVal)return false;
     if(fStatus&&inv.status!==fStatus)return false;
@@ -1832,29 +1846,22 @@ function renderInvoices(){
       const ps=inv.periode_sampai?.slice(0,7)||'';
       if(pd>fPeriod||ps<fPeriod)return false;
     }
+    if(fDue){
+      if(inv.status==='paid')return false;
+      const diff=Math.round((getDueDate(inv)-today)/(1000*60*60*24));
+      if(fDue==='overdue'&&diff>=0)return false;
+      if(fDue==='neardue'&&!(diff>=0&&diff<=7))return false;
+    }
     return true;
   });
   const fCount=document.getElementById('inv-f-count');
   if(fCount)fCount.textContent=`${filtered.length} / ${INVOICES.length} invoice`;
-  // Total nilai invoice sesuai filter
   const totalFiltered=filtered.reduce((s,i)=>s+(+i.grand_total||0),0);
   const fTotalLabel=document.getElementById('inv-f-total-label');
   const fTotal=document.getElementById('inv-f-total');
   if(fTotalLabel&&fTotal){
-    if(filtered.length>0){
-      fTotalLabel.style.display='inline'; fTotal.style.display='inline-block';
-      fTotal.textContent=fmtRpNum(totalFiltered);
-    } else {
-      fTotalLabel.style.display='none'; fTotal.style.display='none';
-    }
-  }
-  const today=new Date();today.setHours(0,0,0,0);
-  function getDueDate(inv){
-    const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
-    const tempo=+(cust?.tempo||30);
-    const base=new Date(inv.periode_sampai||inv.created_at);
-    base.setDate(base.getDate()+tempo);
-    return base;
+    if(filtered.length>0){fTotalLabel.style.display='inline';fTotal.style.display='inline-block';fTotal.textContent=fmtRpNum(totalFiltered);}
+    else{fTotalLabel.style.display='none';fTotal.style.display='none';}
   }
   const canEdit=canDo('manage_invoice');
   document.getElementById('inv-body').innerHTML=filtered.length?filtered.map(inv=>{
@@ -1862,15 +1869,36 @@ function renderInvoices(){
     const diffDays=Math.round((due-today)/(1000*60*60*24));
     const isOverdue=inv.status!=='paid'&&diffDays<0;
     const isNearDue=inv.status!=='paid'&&diffDays>=0&&diffDays<=7;
-    const rowStyle=isOverdue?'background:#fdf0ef;':'';
-    const dueBadge=inv.status==='paid'?'':isOverdue?`<span style="color:#a8281e;font-size:9px;font-family:var(--mono);font-weight:700;margin-left:4px;">⚠ ${Math.abs(diffDays)}h lewat</span>`:isNearDue?`<span style="color:#9a5a0a;font-size:9px;font-family:var(--mono);margin-left:4px;">⏰ ${diffDays}h lagi</span>`:'';
-    return`<tr style="${rowStyle}">
-    <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}${isOverdue?'<span title="Jatuh tempo!" style="margin-left:4px;">🔴</span>':''}</td>
-    <td><strong>${inv.customer_nama}</strong>${dueBadge}</td>
-    <td class="mono" style="font-size:11px;">${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}</td>
-    <td class="mono taccent"><strong>${fmtRpNum(inv.grand_total)}</strong></td>
+    const rowBg=isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
+    // Tgl invoice submitted (created_at)
+    const tglSubmit=inv.created_at?fmtDate(inv.created_at.slice(0,10)):'—';
+    // Jatuh tempo cell
+    const dueDateStr=due.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'});
+    let dueCell='';
+    if(inv.status==='paid'){
+      dueCell=`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">✓ Lunas</span>`;
+    } else if(isOverdue){
+      dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#a8281e;">${dueDateStr}</div>`+
+               `<div style="font-size:9px;color:#a8281e;font-weight:700;">🔴 ${Math.abs(diffDays)} hari lewat</div>`;
+    } else if(isNearDue){
+      dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:#9a5a0a;">${dueDateStr}</div>`+
+               `<div style="font-size:9px;color:#9a5a0a;">⏰ ${diffDays} hari lagi</div>`;
+    } else {
+      dueCell=`<div style="font-family:var(--mono);font-size:11px;">${dueDateStr}</div>`+
+               `<div style="font-size:9px;color:var(--muted);">${diffDays} hari lagi</div>`;
+    }
+    const custBadge=isOverdue
+      ?`<span style="display:inline-block;background:#a8281e;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);margin-left:5px;vertical-align:middle;">OVERDUE</span>`
+      :isNearDue
+      ?`<span style="display:inline-block;background:#9a5a0a;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);margin-left:5px;vertical-align:middle;">DUE SOON</span>`
+      :'';
+    return`<tr style="${rowBg}">
+    <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
+    <td><strong>${inv.customer_nama}</strong>${custBadge}</td>
+    <td class="mono" style="font-size:11px;">${fmtDate(inv.periode_dari)} –<br>${fmtDate(inv.periode_sampai)}</td>
+    <td class="mono tmuted" style="font-size:11px;">${tglSubmit}</td>
+    <td style="min-width:110px;">${dueCell}</td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
-    <td class="mono tmuted" style="font-size:10px;">${fmtTs(inv.created_at)}</td>
     <td><div style="display:flex;gap:4px;">
       <button class="btn btn-secondary btn-sm" onclick="viewInvoice('${inv.id}')">👁</button>
       ${canEdit?`<select class="sel" style="padding:4px 24px 4px 8px;font-size:11px;" onchange="updateInvStatus('${inv.id}',this.value)">
@@ -1880,13 +1908,14 @@ function renderInvoices(){
       </select>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
     </div></td>
-  </tr>`}).join(''):'<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
+  </tr>`}).join(''):'<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
   updateNotifBadge();
 }
 function clearInvFilters(){
   document.getElementById('inv-f-period').value='';
   document.getElementById('inv-f-status').value='';
   document.getElementById('inv-f-coy').value='';
+  const fd=document.getElementById('inv-f-due');if(fd)fd.value='';
   renderInvoices();
 }
 
