@@ -1909,23 +1909,26 @@ function renderInvoices(){
     const tglBayarCell=canEdit
       ?`<input type="date" value="${tglBayarVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_bayar',this.value,'paid')" title="Isi tanggal → status otomatis Paid">`
       :`<span class="mono" style="font-size:11px;">${tglBayarVal?fmtDate(tglBayarVal):'—'}</span>`;
-    // Jumlah Bayar — editable Rp input (stored as numeric)
+    // Jumlah Bayar — editable Rp input with formatted display
     const jmlBayarVal=inv.jumlah_bayar?+inv.jumlah_bayar:null;
+    // Use text input showing formatted number; strip dots on focus, reformat on blur
+    const jmlFmt=jmlBayarVal?fmtRpNum(jmlBayarVal):'';
     const jmlBayarCell=canEdit
-      ?`<div style="position:relative;display:inline-flex;align-items:center;gap:2px;">
+      ?`<div style="display:inline-flex;align-items:center;gap:2px;">
           <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">Rp</span>
-          <input type="number" value="${jmlBayarVal||''}" placeholder="0" min="0" step="1000"
-            style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:100px;"
-            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value,null)" title="Jumlah terbayar (Rp)">
+          <input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="0"
+            style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:105px;text-align:right;"
+            onfocus="this.value=this.value.replace(/\./g,'')"
+            onblur="this.value=this.value?Number(this.value.replace(/\./g,'')).toLocaleString('id-ID'):''"
+            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value.replace(/\./g,''),null)" title="Jumlah terbayar (Rp)">
         </div>`
       :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
     // Sisa pembayaran = grand_total - jumlah_bayar
     const sisa=(+inv.grand_total||0)-(jmlBayarVal||0);
-    const sisaCell=inv.status==='paid'
-      ?`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">✓ Lunas</span>`
-      :sisa<=0&&jmlBayarVal
-      ?`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">0</span>`
-      :`<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${sisa>(+inv.grand_total*0.5)?'#a8281e':'#9a5a0a'};">${fmtRpNum(sisa)}</span>`;
+    // Sisa = grand_total - jumlah_bayar, selalu tampil sebagai angka Rp
+    const sisaNum=Math.max(0,sisa);
+    const sisaColor=sisaNum===0?'var(--green)':sisaNum>(+inv.grand_total*0.5)?'#a8281e':'#9a5a0a';
+    const sisaCell=`<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${sisaColor};">${fmtRpNum(sisaNum)}</span>`;
     return`<tr style="${rowBg}">
     <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
     <td><strong>${inv.customer_nama}</strong>${custBadge}</td>
@@ -2377,7 +2380,7 @@ function renderInvDoc(tab){
   const wrap=document.getElementById('inv-doc-wrap');
   if(!wrap)return;
   const data=_currentInvData, no=_currentInvNo, po=_currentInvPO;
-  if(!data){wrap.innerHTML='<div class="alert alert-warn">Data order tidak ditemukan.</div>';return;}
+  if(!data){wrap.innerHTML='';return;}  // null = being loaded, stay blank
   const html=_currentInvTab==='inv'?buildInvoiceHTML(data,no,false,po):buildRekapHTML(data,no,false,po);
   if(isMobile()){
     // Mobile: render inside an iframe for proper A4-like fixed layout
@@ -2404,6 +2407,9 @@ function switchInvTab(tab){
 }
 
 function viewInvoice(id){
+  // Always reset global invoice state first to prevent stale data bleed
+  _currentInvData=null;_currentInvNo=null;_currentInvPO='';_currentInvTab='inv';
+  document.getElementById('inv-doc-wrap').innerHTML='';
   const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
   let savedAO=[];
   let savedPO='';
