@@ -752,6 +752,16 @@ tr:hover td{background:var(--bg);}
       <div class="form-group"><label>Periode Dari</label><input type="date" id="inv-dari" onchange="previewInvoice()"></div>
       <div class="form-group"><label>Periode Sampai</label><input type="date" id="inv-sampai" onchange="previewInvoice()"></div>
       <div class="form-group"><label>Catatan Invoice</label><input type="text" id="inv-cat" placeholder="Opsional..."></div>
+      <div class="form-group span2">
+        <label style="display:flex;align-items:center;gap:10px;">
+          <label class="tog"><input type="checkbox" id="inv-po-aktif" onchange="togglePO()"><span class="tog-track"></span><span class="tog-knob"></span></label>
+          <span style="font-weight:700;">PO Number</span>
+          <span style="font-weight:400;color:var(--muted);font-size:11px;">— Aktifkan jika ada Purchase Order dari customer</span>
+        </label>
+        <div id="inv-po-wrap" style="display:none;margin-top:8px;">
+          <input type="text" id="inv-po-num" placeholder="Contoh: PO-2026/03/001" style="font-weight:700;letter-spacing:.5px;" oninput="previewInvoice()">
+        </div>
+      </div>
     </div>
     <!-- ADDITIONAL ORDER -->
     <div style="margin:14px 0 8px;padding:13px 14px;background:var(--amber-bg);border:1px solid #e0c090;border-radius:var(--rs);">
@@ -1528,6 +1538,9 @@ function openCreateInvoice(){
   document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
   document.getElementById('inv-sampai').value=new Date(y,m+1,0).toISOString().split('T')[0];
   document.getElementById('inv-cat').value='';
+  document.getElementById('inv-po-aktif').checked=false;
+  document.getElementById('inv-po-num').value='';
+  document.getElementById('inv-po-wrap').style.display='none';
   document.getElementById('ao-rows').innerHTML='';
   document.getElementById('inv-preview').innerHTML='';
   openM('m-inv-create');
@@ -1553,6 +1566,17 @@ function addAORow(){
   document.getElementById('ao-rows').appendChild(row);
 }
 
+function togglePO(){
+  const aktif=document.getElementById('inv-po-aktif').checked;
+  document.getElementById('inv-po-wrap').style.display=aktif?'block':'none';
+  if(aktif)document.getElementById('inv-po-num').focus();
+  previewInvoice();
+}
+function getPONumber(){
+  const aktif=document.getElementById('inv-po-aktif')?.checked;
+  if(!aktif)return '';
+  return document.getElementById('inv-po-num')?.value?.trim()||'';
+}
 function getAOItems(){
   const items=[];
   document.querySelectorAll('[id^="ao-tgl-"]').forEach(el=>{
@@ -1616,7 +1640,7 @@ function fmtDayMonth(iso){
   return{dd:p2(d.getDate()),mm:d.toLocaleDateString('en-US',{month:'long'})};
 }
 
-function buildInvoiceHTML(data,invNo,isPreview=false){
+function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
   const{cust,orders,cols,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
   const B=getBILLER();
   const ao=additionalOrders||[];
@@ -1645,14 +1669,18 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
     <div style="text-align:right;">
       <div style="font-size:26px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:2px;">INVOICE</div>
       <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#1e4d6b;margin-top:3px;">${invNo}</div>
+      ${poNum?`<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:6px;">
+        <span style="font-size:9px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;color:#1e4d6b;">PO Number</span>
+        <span style="background:#1e4d6b;color:#fff;font-family:'Courier New',monospace;font-size:10px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:.5px;">${poNum}</span>
+      </div>`:''}
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;padding:10px 0;gap:20px;">
     <div style="flex:1;">
       <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:4px;border-bottom:1px solid #ccc;padding-bottom:2px;">BILL TO &mdash; Invoice Receiving</div>
       <div style="font-size:12px;font-weight:700;color:#000;">${cust?.nama||''}</div>
-      ${cust?.alamat?`<div style="font-size:9px;color:#333;margin-top:2px;">${cust.alamat}</div>`:''}
-      ${cust?.telepon?`<div style="font-size:9px;color:#333;">Phone: ${cust.telepon}</div>`:''}
+      ${cust?.alamat?`<div style="font-size:9px;color:#333;margin-top:2px;">${cust.alamat}</div>`:`<div style="font-size:9px;color:#aaa;font-style:italic;margin-top:2px;">— Alamat belum diisi —</div>`}
+      ${cust?.telepon?`<div style="font-size:9px;color:#333;">Telp: ${cust.telepon}</div>`:''}
       ${cust?.pic_nama?`<div style="font-size:9px;color:#333;margin-top:3px;">Attn: <strong>${cust.pic_nama}</strong>${cust.pic_jabatan?' — '+cust.pic_jabatan:''}</div>`:''}
     </div>
     <div style="text-align:right;min-width:210px;">
@@ -1728,7 +1756,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
       <div>5. NPWPD : ${B.npwpd}</div>
     </div>
     <div style="text-align:center;min-width:185px;padding-bottom:0;">
-      <div style="font-size:9.5px;color:#555;margin-bottom:44px;">Karawang, ${today}</div>
+      <div style="font-size:9.5px;color:#555;margin-bottom:24px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:4px;display:inline-block;min-width:140px;">
         <div style="font-weight:700;">${B.manager_nama}</div>
         <div style="font-size:9px;color:#555;">${B.manager_jabatan}</div>
@@ -1772,8 +1800,8 @@ function buildRekapHTML(data,invNo,isPreview=false){
     <div style="flex:1;">
       <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:4px;border-bottom:1px solid #ccc;padding-bottom:2px;">BILL TO &mdash; Invoice Receiving</div>
       <div style="font-size:13px;font-weight:700;color:#000;">${cust?.nama||''}</div>
-      ${cust?.alamat?`<div style="font-size:9px;color:#333;margin-top:2px;">${cust.alamat}</div>`:''}
-      ${cust?.telepon?`<div style="font-size:9px;color:#333;">Phone: ${cust.telepon}</div>`:''}
+      ${cust?.alamat?`<div style="font-size:9px;color:#333;margin-top:2px;">${cust.alamat}</div>`:`<div style="font-size:9px;color:#aaa;font-style:italic;margin-top:2px;">— Alamat belum diisi —</div>`}
+      ${cust?.telepon?`<div style="font-size:9px;color:#333;">Telp: ${cust.telepon}</div>`:''}
       ${cust?.pic_nama?`<div style="font-size:9px;color:#333;margin-top:3px;">Attn: <strong>${cust.pic_nama}</strong>${cust.pic_jabatan?' — '+cust.pic_jabatan:''}</div>`:''}
     </div>
     <div style="text-align:right;min-width:220px;">
@@ -1872,7 +1900,7 @@ function buildRekapHTML(data,invNo,isPreview=false){
 </div>`;
 }
 
-let _currentInvData=null,_currentInvNo=null;
+let _currentInvData=null,_currentInvNo=null,_currentInvPO='';
 
 function switchInvTab(tab){
   document.getElementById('itab-inv').classList.toggle('active',tab==='inv');
@@ -1885,14 +1913,16 @@ function viewInvoice(id){
   const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
   // Extract saved additional orders if any
   let savedAO=[];
+  let savedPO='';
   try{
     const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
     if(od&&od.additional)savedAO=od.additional;
+    if(od&&od.po_number)savedPO=od.po_number;
   }catch(e){}
   const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai,savedAO);
-  _currentInvData=data;_currentInvNo=inv.invoice_no;
+  _currentInvData=data;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;
   document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
-  document.getElementById('inv-tab-inv').innerHTML=data?buildInvoiceHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
+  document.getElementById('inv-tab-inv').innerHTML=data?buildInvoiceHTML(data,inv.invoice_no,false,savedPO):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
   document.getElementById('inv-tab-rekap').innerHTML=data?buildRekapHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
   switchInvTab('inv');
   openM('m-inv-view');
@@ -1910,7 +1940,7 @@ function getPrintStyles(){
 
 function printDoc(which){
   if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
-  const html=which==='inv'?buildInvoiceHTML(_currentInvData,_currentInvNo,false):buildRekapHTML(_currentInvData,_currentInvNo,false);
+  const html=which==='inv'?buildInvoiceHTML(_currentInvData,_currentInvNo,false,_currentInvPO):buildRekapHTML(_currentInvData,_currentInvNo,false);
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA ${which==='inv'?'Invoice':'Rekap'} ${_currentInvNo}</title>${getPrintStyles()}</head><body>${html}<script>window.onload=()=>window.print();<\/script></body></html>`);
   w.document.close();
@@ -1918,7 +1948,7 @@ function printDoc(which){
 
 function printInvoiceDual(){
   if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
-  const htmlInv=buildInvoiceHTML(_currentInvData,_currentInvNo,false);
+  const htmlInv=buildInvoiceHTML(_currentInvData,_currentInvNo,false,_currentInvPO);
   const htmlRekap=buildRekapHTML(_currentInvData,_currentInvNo,false);
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA Invoice ${_currentInvNo}</title>${getPrintStyles()}
@@ -1934,6 +1964,7 @@ function previewInvoice(){
   const sampai=document.getElementById('inv-sampai').value;
   if(!custNama||!dari||!sampai){document.getElementById('inv-preview').innerHTML='';return;}
   const ao=getAOItems();
+  const poNum=getPONumber();
   const data=calcInvoiceData(custNama,dari,sampai,ao);
   if(!data){document.getElementById('inv-preview').innerHTML='<div class="alert alert-warn">Tidak ada order real di periode ini.</div>';return;}
   const no=genInvoiceNo(data.cust,dari,sampai);
@@ -1942,7 +1973,7 @@ function previewInvoice(){
       <button class="rtab active" id="ptab-inv" onclick="switchPreviewTab('inv')">📄 Invoice</button>
       <button class="rtab" id="ptab-rekap" onclick="switchPreviewTab('rekap')">📋 Rekapitulasi</button>
     </div>
-    <div id="prev-inv">${buildInvoiceHTML(data,no,true)}</div>
+    <div id="prev-inv">${buildInvoiceHTML(data,no,true,poNum)}</div>
     <div id="prev-rekap" style="display:none;">${buildRekapHTML(data,no,true)}</div>`;
 }
 function switchPreviewTab(tab){
@@ -1958,6 +1989,7 @@ async function saveInvoice(){
   const sampai=document.getElementById('inv-sampai').value;
   if(!custNama||!dari||!sampai){toast('Lengkapi semua field','error');return;}
   const ao=getAOItems();
+  const poNum=getPONumber();
   const data=calcInvoiceData(custNama,dari,sampai,ao);
   if(!data){toast('Tidak ada order untuk di-invoice','error');return;}
   const btn=document.getElementById('save-inv-btn');btn.disabled=true;btn.textContent='Menyimpan...';
@@ -1969,7 +2001,8 @@ async function saveInvoice(){
       periode_dari:dari,periode_sampai:sampai,
       orders_data:JSON.stringify({
         orders:data.orders.map(o=>({id:o.id,tgl:o.tgl_order,total:o.subtotal,totalQty:o.totalQty||0})),
-        additional:ao
+        additional:ao,
+        po_number:poNum
       }),
       subtotal:data.grandSubtotal,biaya_box_total:0,biaya_lainnya_total:data.aoTotal||0,
       grand_total:data.grandTotal,status:'draft',catatan:document.getElementById('inv-cat').value,created_by:CU.nama
