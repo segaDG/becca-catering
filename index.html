@@ -588,6 +588,8 @@ tr:hover td{background:var(--bg);}
               <option value="neardue">⏰ Mendekati Jatuh Tempo (≤7 hari)</option>
             </select>
             <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()">✕ Reset</button>
+            <button id="btn-undo" class="btn btn-secondary btn-sm" onclick="doUndo()" disabled title="Tidak ada yang bisa di-undo" style="font-size:12px;padding:5px 10px;">↩ Undo</button>
+            <button id="btn-redo" class="btn btn-secondary btn-sm" onclick="doRedo()" disabled title="Tidak ada yang bisa di-redo" style="font-size:12px;padding:5px 10px;">↪ Redo</button>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <span id="inv-f-total-label" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;font-family:var(--mono);">Total Invoice</span>
               <span id="inv-f-total" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:3px 10px;border-radius:6px;font-family:var(--mono);"></span>
@@ -1887,7 +1889,7 @@ function renderInvoices(){
     const diffDays=due?Math.round((due-today)/(1000*60*60*24)):null;
     const isOverdue=inv.status!=='paid'&&diffDays!==null&&diffDays<0;
     const isNearDue=inv.status!=='paid'&&diffDays!==null&&diffDays>=0&&diffDays<=7;
-    const rowBg=inv.status==='paid'?'background:#dde0e3;color:#555;':isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
+    const rowBg=inv.status==='paid'?'background:#c8cdd2;color:#4a4a4a;':isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
     // Jatuh tempo cell
     let dueCell='';
     if(inv.status==='paid'){
@@ -1928,10 +1930,12 @@ function renderInvoices(){
     const jmlFmt=jmlBayarVal?fmtRpNum(jmlBayarVal):'';
     const jmlBayarCell=canEdit
       ?`<input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="—"
+            data-inv-id="${inv.id}"
             style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--bg);color:var(--text);width:115px;text-align:right;"
-            onfocus="this.value=this.value.replace(/\./g,'')"
-            onblur="this.value=this.value?Number(this.value.replace(/\./g,'')).toLocaleString('id-ID'):''"
-            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value.replace(/\./g,''),null)" title="Jumlah terbayar (Rp)">`
+            onfocus="this._prev=this.value;this.value=this.value.replace(/\./g,'')"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            onblur="(function(el){const raw=el.value.replace(/\./g,'').trim();const num=raw===''?null:Number(raw);if(!isNaN(num)||num===null){el.value=num?num.toLocaleString('id-ID'):'';updateInvField(el.dataset.invId,'jumlah_bayar',raw,null);}else{el.value=el._prev||'';}})(this)"
+            title="Jumlah terbayar (Rp) — tekan Enter atau klik luar untuk simpan">`
       :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
     // Sisa pembayaran = grand_total - jumlah_bayar
     const sisa=(+inv.grand_total||0)-(jmlBayarVal||0);
@@ -2385,6 +2389,63 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
 let _currentInvData=null,_currentInvNo=null,_currentInvPO='';
 let _currentInvTab='inv';
 
+// ══ UNDO / REDO ════════════════════════════════════
+const UNDO_STACK=[]; // [{id, snapshot:{field:oldVal,...}, desc}]
+const REDO_STACK=[];
+const MAX_HISTORY=20;
+
+function invSnapshot(id,fields){
+  const inv=INVOICES.find(x=>x.id==id);if(!inv)return null;
+  const snap={};
+  (Array.isArray(fields)?fields:Object.keys(fields)).forEach(f=>snap[f]=inv[f]??null);
+  return snap;
+}
+async function pushUndo(id,oldSnap,desc){
+  if(!oldSnap)return;
+  UNDO_STACK.push({id,snap:oldSnap,desc});
+  if(UNDO_STACK.length>MAX_HISTORY)UNDO_STACK.shift();
+  REDO_STACK.length=0; // clear redo on new action
+  updateUndoRedoUI();
+}
+async function doUndo(){
+  if(!UNDO_STACK.length)return;
+  const{id,snap,desc}=UNDO_STACK.pop();
+  // Save current state to redo before reverting
+  const cur=invSnapshot(id,Object.keys(snap));
+  try{
+    await sbPatch('invoices',id,snap);
+    REDO_STACK.push({id,snap:cur,desc});
+    await loadInvoices();renderInvoices();updateNotifBadge();
+    toast('↩ Undo: '+desc,'info');
+    updateUndoRedoUI();
+  }catch(e){toast('Undo gagal: '+e.message,'error');}
+}
+async function doRedo(){
+  if(!REDO_STACK.length)return;
+  const{id,snap,desc}=REDO_STACK.pop();
+  const cur=invSnapshot(id,Object.keys(snap));
+  try{
+    await sbPatch('invoices',id,snap);
+    UNDO_STACK.push({id,snap:cur,desc});
+    await loadInvoices();renderInvoices();updateNotifBadge();
+    toast('↪ Redo: '+desc,'info');
+    updateUndoRedoUI();
+  }catch(e){toast('Redo gagal: '+e.message,'error');}
+}
+function updateUndoRedoUI(){
+  const u=document.getElementById('btn-undo');
+  const r=document.getElementById('btn-redo');
+  if(u){u.disabled=!UNDO_STACK.length;u.title=UNDO_STACK.length?`Undo: ${UNDO_STACK[UNDO_STACK.length-1].desc}`:'Tidak ada yang bisa di-undo';}
+  if(r){r.disabled=!REDO_STACK.length;r.title=REDO_STACK.length?`Redo: ${REDO_STACK[REDO_STACK.length-1].desc}`:'Tidak ada yang bisa di-redo';}
+}
+// Keyboard shortcut Ctrl+Z / Ctrl+Y
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){e.preventDefault();doUndo();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();doRedo();}
+});
+// ═══════════════════════════════════════════════════
+
+
 function isMobile(){return window.innerWidth<=768;}
 
 function buildDocPage(html){
@@ -2674,15 +2735,12 @@ async function saveInvoice(){
 async function updateInvField(id,field,value,autoStatus){
   try{
     const patch={};
-    // Cast correctly per field type
     if(field==='jumlah_bayar'){
-      // Strip formatting dots, cast to number; empty string → null
       const cleaned=String(value||'').replace(/\./g,'').trim();
       patch[field]=cleaned===''?null:Number(cleaned);
     } else {
       patch[field]=value||null;
     }
-    // Auto-set status based on which field was filled
     if(value&&autoStatus){
       const inv=INVOICES.find(x=>x.id==id);
       if(autoStatus==='paid'){
@@ -2692,18 +2750,23 @@ async function updateInvField(id,field,value,autoStatus){
         patch.status='sent';
       }
     }
+    // Snapshot before saving (for undo)
+    const snapFields=Object.keys(patch);
+    const oldSnap=invSnapshot(id,snapFields);
     await sbPatch('invoices',id,patch);
-    await loadInvoices();renderInvoices();updateNotifBadge();
     const label=field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah Terbayar';
+    pushUndo(id,oldSnap,label+(patch.status?` → ${patch.status}`:''));
+    await loadInvoices();renderInvoices();updateNotifBadge();
     const statusNote=patch.status?` · Status → ${patch.status}`:'';
     toast(`${label} disimpan${statusNote}`,patch.status==='paid'?'success':'info');
   }catch(e){toast('Gagal menyimpan: '+e.message,'error');}
 }
 async function updateInvStatus(id,status){
   try{
+    const oldSnap=invSnapshot(id,['status']);
     await sbPatch('invoices',id,{status});
-    // If paid, clear from dismissed so it disappears from notif cleanly
     if(status==='paid'){NOTIF_DISMISSED.delete(String(id));saveNotifDismissed();}
+    pushUndo(id,oldSnap,`Status → ${status}`);
     await loadInvoices();renderInvoices();updateNotifBadge();toast('Status diperbarui','success');
   }
   catch(e){toast('Gagal','error');}
