@@ -1384,16 +1384,18 @@ function filterOrders(){
   const canEdit=canDo('edit_order');
   const canDel=CU.role==='superadmin';
   const cols=aCols();
+  const invoicedIds=getInvoicedOrderIds(); // for badge display
   const filtered=ORDERS.filter(o=>
     (!q||o.perusahaan.toLowerCase().includes(q)||(o.created_by||'').toLowerCase().includes(q))&&
     (!t||o.tipe===t)&&(!c||o.perusahaan===c));
   // Desktop
   document.getElementById('ord-body').innerHTML=filtered.length?filtered.map((o,i)=>{
     const le=ledit(o);
-    return`<tr>
+    const isInvoiced=invoicedIds.has(String(o.id));
+    return`<tr${isInvoiced?' style="background:#f0f7ff;"':''}>
       <td class="mono tmuted">${i+1}</td>
       <td class="mono">${fmtDate(o.tgl_order)}</td>
-      <td><strong>${o.perusahaan}</strong></td>
+      <td><strong>${o.perusahaan}</strong>${isInvoiced?'<span title="Sudah di-invoice" style="margin-left:5px;background:#1e4d6b;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);">INV</span>':''}</td>
       <td class="hide-mob"><strong>${o.created_by}</strong></td>
       <td class="hide-mob"><span class="role-chip ${RC_META[getRK(o.created_by)]?.chip||'rc-vi'}" style="font-size:9px;">${o.created_role||'—'}</span></td>
       <td class="mono tmuted hide-mob" style="font-size:10px;">${fmtTs(o.created_at)}</td>
@@ -1412,9 +1414,10 @@ function filterOrders(){
   // Mobile cards
   document.getElementById('mob-orders').innerHTML=filtered.length?filtered.map(o=>{
     const cols2show=cols.filter(c=>(o[c.key]||0)>0);
-    return`<div class="mob-card">
+    const isInvoicedMob=invoicedIds.has(String(o.id));
+    return`<div class="mob-card"${isInvoicedMob?' style="border-left:3px solid #1e4d6b;"':''}>
       <div class="mob-card-head">
-        <div class="mob-card-co">${o.perusahaan}</div>
+        <div class="mob-card-co">${o.perusahaan}${isInvoicedMob?'<span style="margin-left:5px;background:#1e4d6b;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);">INV</span>':''}</div>
         <span class="badge ${o.tipe==='real orderan'?'b-real':'b-est'}">${o.tipe==='real orderan'?'Real':'Est'}</span>
       </div>
       <div class="mob-card-meta">
@@ -1949,10 +1952,14 @@ function getAOItems(){
   return items;
 }
 
-function calcInvoiceData(custNama,dari,sampai,additionalOrders=[]){
+function calcInvoiceData(custNama,dari,sampai,additionalOrders=[],excludeInvoiceId=null){
   const cust=CUSTOMERS.find(c=>c.nama===custNama);
   const cols=aCols();
-  const orders=ORDERS.filter(o=>o.perusahaan===custNama&&o.tgl_order>=dari&&o.tgl_order<=sampai&&o.tipe==='real orderan').sort((a,b)=>a.tgl_order.localeCompare(b.tgl_order));
+  const invoicedIds=getInvoicedOrderIds(excludeInvoiceId);
+  const allOrders=ORDERS.filter(o=>o.perusahaan===custNama&&o.tgl_order>=dari&&o.tgl_order<=sampai&&o.tipe==='real orderan').sort((a,b)=>a.tgl_order.localeCompare(b.tgl_order));
+  // Separate: available orders vs already-invoiced orders in this period
+  const orders=allOrders.filter(o=>!invoicedIds.has(String(o.id)));
+  const alreadyInvoiced=allOrders.filter(o=>invoicedIds.has(String(o.id)));
   if(!orders.length&&!additionalOrders.length)return null;
   const rows=orders.map(o=>{
     let subtotal=0;
@@ -1978,7 +1985,7 @@ function calcInvoiceData(custNama,dari,sampai,additionalOrders=[]){
   const pb1Amount=Math.round(baseTotal*pb1Rate);
   const pphAmount=-Math.round(baseTotal*pphRate);
   const grandTotal=baseTotal+pb1Amount+pphAmount;
-  return{cust,orders:rows,cols,dari,sampai,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
+  return{cust,orders:rows,cols,dari,sampai,alreadyInvoiced,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
 }
 
 function fmtDateLong(iso){
@@ -2359,6 +2366,36 @@ function printInvoiceDual(){
   w.document.close();
 }
 
+// Returns Set of order IDs already used in active (non-paid) invoices
+// Optionally excludes a specific invoice ID (for future edit support)
+function getInvoicedOrderIds(excludeInvoiceId=null){
+  const ids=new Set();
+  INVOICES.forEach(inv=>{
+    if(inv.status==='paid')return; // paid invoices: orders dianggap selesai, boleh tidak dihitung
+    if(excludeInvoiceId&&inv.id==excludeInvoiceId)return;
+    try{
+      const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
+      if(od&&od.orders)od.orders.forEach(o=>ids.add(String(o.id)));
+    }catch(e){}
+  });
+  return ids;
+}
+
+// Returns array of {inv, orderIds} for invoices (non-paid) that contain any of the given order IDs
+function findConflictingInvoices(orderIds){
+  const conflicts=[];
+  INVOICES.forEach(inv=>{
+    if(inv.status==='paid')return;
+    try{
+      const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
+      if(!od||!od.orders)return;
+      const shared=od.orders.filter(o=>orderIds.has(String(o.id)));
+      if(shared.length>0)conflicts.push({inv,count:shared.length});
+    }catch(e){}
+  });
+  return conflicts;
+}
+
 function previewInvoice(){
   const custNama=document.getElementById('inv-coy').value;
   const dari=document.getElementById('inv-dari').value;
@@ -2367,10 +2404,25 @@ function previewInvoice(){
   const ao=getAOItems();
   const poNum=getPONumber();
   const data=calcInvoiceData(custNama,dari,sampai,ao);
-  if(!data){document.getElementById('inv-preview').innerHTML='<div class="alert alert-warn">Tidak ada order real di periode ini.</div>';return;}
-  const no=genInvoiceNo(data.cust,dari,sampai);
   const container=document.getElementById('inv-preview');
+  // Build conflict warning if any orders in this period are already invoiced
+  let warnHtml='';
+  if(data?.alreadyInvoiced?.length>0){
+    const ai=data.alreadyInvoiced;
+    const conflictInvs=findConflictingInvoices(new Set(ai.map(o=>String(o.id))));
+    const invNos=conflictInvs.map(c=>`<strong>${c.inv.invoice_no}</strong>`).join(', ');
+    warnHtml=`<div style="background:#fff8e1;border:1.5px solid #f9a825;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;">
+      ⚠️ <strong>${ai.length} order</strong> di periode ini sudah masuk ke invoice lain (${invNos}) dan <strong>dikeluarkan dari invoice baru ini</strong>.
+      <div style="margin-top:4px;color:#555;font-size:11px;">Tanggal order yang dikecualikan: ${ai.map(o=>fmtDate(o.tgl_order)).join(', ')}</div>
+    </div>`;
+  }
+  if(!data||(!data.orders.length&&!ao.length)){
+    container.innerHTML=warnHtml||'<div class="alert alert-warn">Tidak ada order real yang tersedia di periode ini.</div>';
+    return;
+  }
+  const no=genInvoiceNo(data.cust,dari,sampai);
   container.innerHTML=`
+    ${warnHtml}
     <div class="rtabs" style="margin-bottom:12px;">
       <button class="rtab active" id="ptab-inv" onclick="switchPreviewTab('inv')">📄 Invoice</button>
       <button class="rtab" id="ptab-rekap" onclick="switchPreviewTab('rekap')">📋 Rekapitulasi</button>
@@ -2414,7 +2466,14 @@ async function saveInvoice(){
   const ao=getAOItems();
   const poNum=getPONumber();
   const data=calcInvoiceData(custNama,dari,sampai,ao);
-  if(!data){toast('Tidak ada order untuk di-invoice','error');return;}
+  if(!data||(!data.orders.length&&!ao.length)){toast('Tidak ada order yang tersedia untuk di-invoice','error');return;}
+  // Warn if some orders were excluded (already in other invoices) — still allow save with remaining orders
+  if(data.alreadyInvoiced?.length>0){
+    const conflictInvs=findConflictingInvoices(new Set(data.alreadyInvoiced.map(o=>String(o.id))));
+    const invNos=conflictInvs.map(c=>c.inv.invoice_no).join(', ');
+    const ok=confirm(`⚠️ ${data.alreadyInvoiced.length} order sudah ada di invoice: ${invNos}\n\nOrder tersebut dikeluarkan secara otomatis. Invoice baru hanya berisi ${data.orders.length} order yang belum di-invoice.\n\nLanjutkan menyimpan?`);
+    if(!ok)return;
+  }
   const btn=document.getElementById('save-inv-btn');btn.disabled=true;btn.textContent='Menyimpan...';
   try{
     const cust=CUSTOMERS.find(c=>c.nama===custNama);
