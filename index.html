@@ -660,17 +660,34 @@ tr:hover td{background:var(--bg);}
 <!-- MODAL CUSTOMER -->
 <div class="overlay" id="m-cust">
   <div class="modal lg">
-    <div class="mhead"><div><div class="mtitle" id="cust-modal-title">➕ Tambah Customer</div><div class="msub">Data & harga per kolom porsi</div></div><button class="mclose" onclick="closeM('m-cust')">✕</button></div>
+    <div class="mhead"><div><div class="mtitle" id="cust-modal-title">➕ Tambah Customer</div><div class="msub">Data lengkap & harga per kolom porsi</div></div><button class="mclose" onclick="closeM('m-cust')">✕</button></div>
+    <!-- IDENTITAS -->
+    <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:10px;">📋 Identitas Perusahaan</div>
     <div class="fg">
-      <div class="form-group span2"><label>Nama Perusahaan *</label><input type="text" id="cm-nama" placeholder="PT. EXAMPLE"></div>
-      <div class="form-group"><label>Jenis Pelayanan</label><select id="cm-jenis"><option value="">— Pilih —</option><option value="Rantang">Rantang</option><option value="Bento">Bento</option><option value="Paper Box">Paper Box</option><option value="Prasmanan">Prasmanan</option></select></div>
-      <div class="form-group"><label>Tempo Pembayaran</label><select id="cm-tempo"><option value="0">0 Hari</option><option value="15">15 Hari</option><option value="30">30 Hari</option><option value="45">45 Hari</option><option value="60">60 Hari</option></select></div>
+      <div class="form-group"><label>Kode Customer *</label><input type="text" id="cm-kode" placeholder="NICI, DAIKI, MARUGO..."></div>
+      <div class="form-group"><label>Nama Perusahaan *</label><input type="text" id="cm-nama" placeholder="PT. EXAMPLE"></div>
+      <div class="form-group span2"><label>Alamat</label><input type="text" id="cm-alamat" placeholder="Jl. Surya Kencana Kav.1, Kawasan Industri Surya Cipta..."></div>
+      <div class="form-group"><label>No. Telepon</label><input type="text" id="cm-telp" placeholder="(0267) 8637994"></div>
+      <div class="form-group"><label>Jenis Pelayanan</label><select id="cm-jenis"><option value="">— Pilih —</option><option value="Food Catering Service">Food Catering Service</option><option value="Rantang">Rantang</option><option value="Bento">Bento</option><option value="Paper Box">Paper Box</option><option value="Prasmanan">Prasmanan</option></select></div>
+      <div class="form-group"><label>Tempo Pembayaran</label><select id="cm-tempo"><option value="0">0 Hari</option><option value="14">14 Hari</option><option value="30">30 Hari</option><option value="45">45 Hari</option><option value="60">60 Hari</option></select></div>
+      <div class="form-group"><label>Pajak (Pb1 %)</label><input type="number" id="cm-pb1" placeholder="0" min="0" max="100" step="0.01" value="10"></div>
+      <div class="form-group"><label>PPh 23 (%)</label><input type="number" id="cm-pph" placeholder="0" min="0" max="100" step="0.01" value="2"></div>
+    </div>
+    <!-- PIC -->
+    <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin:16px 0 10px;">👤 PIC Penerima Invoice</div>
+    <div class="fg">
+      <div class="form-group"><label>Nama PIC</label><input type="text" id="cm-pic-nama" placeholder="Mr. Ryan Cahyo"></div>
+      <div class="form-group"><label>Jabatan PIC</label><input type="text" id="cm-pic-jabatan" placeholder="Finance Manager"></div>
+    </div>
+    <!-- BIAYA -->
+    <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin:16px 0 10px;">💳 Biaya Tambahan</div>
+    <div class="fg">
       <div class="form-group"><label>Biaya Box / Pax (Rp)</label><input type="number" id="cm-box" placeholder="0" min="0"></div>
       <div class="form-group"><label>Biaya Lainnya / Pax (Rp)</label><input type="number" id="cm-lain" placeholder="0" min="0"></div>
       <div class="form-group"><label>Qty Lauk</label><input type="number" id="cm-lauk" placeholder="0" min="0"></div>
       <div class="form-group"><label>Qty Pendamping</label><input type="number" id="cm-pend" placeholder="0" min="0"></div>
     </div>
-    <!-- HARGA PER KOLOM DINAMIS -->
+    <!-- HARGA PER KOLOM -->
     <div style="margin:16px 0 8px;padding:12px 14px;background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--rs);">
       <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:12px;">💰 Harga per Porsi — per Kolom</div>
       <div id="cm-prices" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
@@ -704,15 +721,24 @@ tr:hover td{background:var(--bg);}
 <!-- MODAL VIEW INVOICE -->
 <div class="overlay" id="m-inv-view">
   <div class="modal lg">
-    <div class="mhead"><div><div class="mtitle">🧾 Invoice</div><div class="msub" id="inv-view-sub"></div></div>
+    <div class="mhead"><div><div class="mtitle">🧾 Invoice & Rekapitulasi</div><div class="msub" id="inv-view-sub"></div></div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <button class="btn btn-secondary btn-sm" onclick="printInvoice()">🖨️ Print</button>
+        <button class="btn btn-primary btn-sm" onclick="printInvoiceDual()">🖨️ Print Keduanya</button>
+        <button class="btn btn-secondary btn-sm" onclick="printDoc('inv')">📄 Print Invoice</button>
+        <button class="btn btn-secondary btn-sm" onclick="printDoc('rekap')">📋 Print Rekap</button>
         <button class="mclose" onclick="closeM('m-inv-view')">✕</button>
       </div>
     </div>
-    <div id="inv-view-body"></div>
+    <!-- TABS -->
+    <div class="rtabs" style="margin-bottom:16px;">
+      <button class="rtab active" id="itab-inv" onclick="switchInvTab('inv')">📄 Invoice</button>
+      <button class="rtab" id="itab-rekap" onclick="switchInvTab('rekap')">📋 Rekapitulasi</button>
+    </div>
+    <div id="inv-tab-inv"></div>
+    <div id="inv-tab-rekap" style="display:none;"></div>
   </div>
 </div>
+
 
 <!-- MODAL DUPLIKAT ORDER -->
 <div class="overlay" id="m-confirm">
@@ -1301,32 +1327,50 @@ function buildCustPriceFields(prices={}){
 function openAddCust(){
   editCustId=null;
   document.getElementById('cust-modal-title').textContent='➕ Tambah Customer';
-  ['cm-nama','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('cm-jenis').value='';document.getElementById('cm-tempo').value='30';
+  ['cm-kode','cm-nama','cm-alamat','cm-telp','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat','cm-pic-nama','cm-pic-jabatan'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cm-jenis').value='Food Catering Service';document.getElementById('cm-tempo').value='30';
+  document.getElementById('cm-pb1').value='10';document.getElementById('cm-pph').value='2';
   buildCustPriceFields({});openM('m-cust');
 }
 function openEditCust(id){
   editCustId=id;const c=CUSTOMERS.find(x=>x.id==id);if(!c)return;
   document.getElementById('cust-modal-title').textContent='✏️ '+c.nama;
+  document.getElementById('cm-kode').value=c.kode_customer||'';
   document.getElementById('cm-nama').value=c.nama||'';
-  document.getElementById('cm-jenis').value=c.jenis_pelayanan||'';
+  document.getElementById('cm-alamat').value=c.alamat||'';
+  document.getElementById('cm-telp').value=c.telepon||'';
+  document.getElementById('cm-jenis').value=c.jenis_pelayanan||'Food Catering Service';
   document.getElementById('cm-tempo').value=c.tempo||'30';
+  document.getElementById('cm-pb1').value=c.pajak_pb1||10;
+  document.getElementById('cm-pph').value=c.pajak_pph||2;
   document.getElementById('cm-box').value=c.biaya_box||'';
   document.getElementById('cm-lain').value=c.biaya_lainnya||'';
   document.getElementById('cm-lauk').value=c.qty_lauk||'';
   document.getElementById('cm-pend').value=c.qty_pendamping||'';
+  document.getElementById('cm-pic-nama').value=c.pic_nama||'';
+  document.getElementById('cm-pic-jabatan').value=c.pic_jabatan||'';
   document.getElementById('cm-cat').value=c.catatan||'';
   buildCustPriceFields(c.column_prices||{});openM('m-cust');
 }
 async function saveCust(){
   const nama=document.getElementById('cm-nama').value.trim().toUpperCase();
+  const kode=document.getElementById('cm-kode').value.trim().toUpperCase();
   if(!nama){toast('Nama wajib diisi','error');return;}
+  if(!kode){toast('Kode customer wajib diisi','error');return;}
   const btn=document.getElementById('save-cust-btn');btn.disabled=true;btn.textContent='Menyimpan...';
-  // Collect column prices
   const column_prices={};
   aCols().forEach(c=>{const v=+document.getElementById('cp-'+c.key).value||0;if(v>0)column_prices[c.key]=v;});
-  const data={nama,jenis_pelayanan:document.getElementById('cm-jenis').value||null,tempo:+document.getElementById('cm-tempo').value||0,
-    default_harga:0, // will be computed from column_prices average or set manually — for now 0
+  const data={
+    nama,kode_customer:kode,
+    alamat:document.getElementById('cm-alamat').value||null,
+    telepon:document.getElementById('cm-telp').value||null,
+    jenis_pelayanan:document.getElementById('cm-jenis').value||null,
+    tempo:+document.getElementById('cm-tempo').value||0,
+    pajak_pb1:+document.getElementById('cm-pb1').value||0,
+    pajak_pph:+document.getElementById('cm-pph').value||0,
+    pic_nama:document.getElementById('cm-pic-nama').value||null,
+    pic_jabatan:document.getElementById('cm-pic-jabatan').value||null,
+    default_harga:0,
     biaya_box:+document.getElementById('cm-box').value||0,biaya_lainnya:+document.getElementById('cm-lain').value||0,
     qty_lauk:+document.getElementById('cm-lauk').value||null,qty_pendamping:+document.getElementById('cm-pend').value||null,
     catatan:document.getElementById('cm-cat').value||null,column_prices};
@@ -1346,10 +1390,38 @@ async function deleteCust(id){
 }
 
 // ══ INVOICE ════════════════════════════════════════
+// Config PT. Boga Pangan Sentosa (bisa dikustomisasi via Settings)
+const BILLER={
+  nama:'PT. BOGA PANGAN SENTOSA',
+  tagline:'Your Best Catering Service',
+  alamat:'Perumnas Bumi Telukjambe, blok PB No.1 RT. 006/020 Desa Sukaluyu\nKecamatan Telukjambe timur, Kabupaten Karawang, Karawang Barat.',
+  phone:'0267 - 8407252',
+  website:'www.pangan.co.id',
+  manager_nama:'Umad Jaelani',
+  manager_jabatan:'Manager',
+  bank_name:'Bank Mandiri KC Karawang 17300',
+  bank_no:'173-00-0153197-0',
+  npwp:'75.260.202.9-408.000',
+  npwpd:'03.0012478.03.005',
+  contact_name:'Mr. Somat',
+  contact_phone:'+6282210338880',
+  contact_email:'umad@pangansentosa.com'
+};
+
+function genInvoiceNo(cust,dari,sampai){
+  // Format: #KODE-YYYYMM-SEQ, e.g. #NICI-202602-001
+  const kode=cust?.kode_customer||cust?.nama?.replace(/[^A-Z0-9]/g,'').slice(0,6)||'INV';
+  const d=new Date(dari);
+  const ym=`${d.getFullYear()}${p2(d.getMonth()+1)}`;
+  const existing=INVOICES.filter(i=>i.invoice_no&&i.invoice_no.includes(kode)&&i.invoice_no.includes(ym));
+  const seq=String(existing.length+1).padStart(3,'0');
+  return`#${kode}${ym}${seq}`;
+}
+
 function renderInvoices(){
   const canEdit=canDo('manage_invoice');
   document.getElementById('inv-body').innerHTML=INVOICES.length?INVOICES.map(inv=>`<tr>
-    <td class="mono taccent" style="cursor:pointer;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
+    <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
     <td><strong>${inv.customer_nama}</strong></td>
     <td class="mono" style="font-size:11px;">${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}</td>
     <td class="mono">${(inv.orders_data||[]).length} order</td>
@@ -1370,7 +1442,7 @@ function renderInvoices(){
 
 function openCreateInvoice(){
   const sel=document.getElementById('inv-coy');
-  sel.innerHTML='<option value="">— Pilih Customer —</option>'+CUSTOMERS.map(c=>`<option value="${c.nama}">${c.nama}</option>`).join('');
+  sel.innerHTML='<option value="">— Pilih Customer —</option>'+CUSTOMERS.map(c=>`<option value="${c.nama}">${c.nama}${c.kode_customer?' ('+c.kode_customer+')':''}</option>`).join('');
   const now=new Date();
   const y=now.getFullYear(),m=now.getMonth();
   document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
@@ -1385,7 +1457,6 @@ function calcInvoiceData(custNama,dari,sampai){
   const cols=aCols();
   const orders=ORDERS.filter(o=>o.perusahaan===custNama&&o.tgl_order>=dari&&o.tgl_order<=sampai&&o.tipe==='real orderan').sort((a,b)=>a.tgl_order.localeCompare(b.tgl_order));
   if(!orders.length)return null;
-  // Kalkulasi per order
   const rows=orders.map(o=>{
     let subtotal=0;
     const colBreakdown=[];
@@ -1394,19 +1465,291 @@ function calcInvoiceData(custNama,dari,sampai){
       const harga=colPrice(cust,c.key);
       const amount=qty*harga;
       subtotal+=amount;
-      colBreakdown.push({label:c.label,qty,harga,amount});
+      colBreakdown.push({key:c.key,label:c.label,qty,harga,amount});
     });
-    const totalQty=tp(o);
-    const boxTotal=totalQty*(cust?.biaya_box||0);
-    const lainTotal=totalQty*(cust?.biaya_lainnya||0);
-    const rowTotal=subtotal+boxTotal+lainTotal;
-    return{...o,colBreakdown,subtotal,boxTotal,lainTotal,rowTotal,totalQty};
+    const totalQty=cols.reduce((s,c)=>s+(o[c.key]||0),0);
+    return{...o,colBreakdown,subtotal,totalQty};
   });
   const grandSubtotal=rows.reduce((s,r)=>s+r.subtotal,0);
-  const grandBox=rows.reduce((s,r)=>s+r.boxTotal,0);
-  const grandLain=rows.reduce((s,r)=>s+r.lainTotal,0);
-  const grandTotal=grandSubtotal+grandBox+grandLain;
-  return{cust,orders:rows,cols,grandSubtotal,grandBox,grandLain,grandTotal};
+  const pb1Rate=(cust?.pajak_pb1||0)/100;
+  const pphRate=(cust?.pajak_pph||0)/100;
+  const pb1Amount=Math.round(grandSubtotal*pb1Rate);
+  const pphAmount=-Math.round(grandSubtotal*pphRate);
+  const grandTotal=grandSubtotal+pb1Amount+pphAmount;
+  return{cust,orders:rows,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
+}
+
+function fmtPeriod(dari,sampai){
+  if(!dari||!sampai)return'';
+  const d1=new Date(dari+'T00:00:00'),d2=new Date(sampai+'T00:00:00');
+  const y=d1.getFullYear();
+  const m1=d1.toLocaleDateString('en-US',{day:'numeric',month:'long'});
+  const m2=d2.toLocaleDateString('en-US',{day:'numeric',month:'long'});
+  return`${y}   ${m1} to ${m2}`;
+}
+function fmtDayMonth(iso){
+  if(!iso)return{dd:'',mm:''};
+  const d=new Date(iso+'T00:00:00');
+  return{dd:p2(d.getDate()),mm:d.toLocaleDateString('en-US',{month:'long'})};
+}
+
+function buildInvoiceHTML(data,invNo,isPreview=false){
+  const{cust,orders,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const lineItems=[];
+  cols.forEach(c=>{
+    const totalQty=orders.reduce((s,o)=>s+(o[c.key]||0),0);
+    if(!totalQty)return;
+    const harga=colPrice(cust,c.key);
+    lineItems.push({desc:`${cust?.jenis_pelayanan||'Food Catering Service'} ${c.label}`,harga,qty:totalQty,amount:totalQty*harga});
+  });
+  const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const emptyRows=Math.max(0,14-lineItems.length);
+  return`<div style="font-family:'Times New Roman',serif;font-size:12px;max-width:780px;margin:0 auto;padding:0;background:#fff;color:#000;">
+  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">PREVIEW — BELUM DISIMPAN</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">Invoice Status : Confirmed</div>`}
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px 12px;border-bottom:2px solid #000;">
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${BILLER.nama}</div>
+      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:4px;">${BILLER.tagline}</div>
+      <div style="font-size:9.5px;color:#333;">${BILLER.alamat.replace('\n','<br>')}</div>
+      <div style="font-size:9.5px;color:#333;">Phone: ${BILLER.phone} &nbsp;|&nbsp; ${BILLER.website}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:28px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:2px;">INVOICE</div>
+      <div style="font-family:'Courier New',monospace;font-size:13px;font-weight:700;color:#1e4d6b;margin-top:4px;">${invNo}</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;padding:12px 22px;gap:20px;">
+    <div style="flex:1;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">BILL TO &mdash; Invoice Receiving</div>
+      <div style="font-size:13px;font-weight:700;color:#000;">${cust?.nama||''}</div>
+      ${cust?.alamat?`<div style="font-size:9.5px;color:#333;margin-top:3px;">${cust.alamat}</div>`:''}
+      ${cust?.telepon?`<div style="font-size:9.5px;color:#333;">Phone: ${cust.telepon}</div>`:''}
+    </div>
+    <div style="text-align:right;min-width:220px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">PERIOD</div>
+      <div style="font-size:11px;font-weight:700;">${fmtPeriod(orders[0]?.tgl_order,orders[orders.length-1]?.tgl_order)}</div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin:0;font-size:11px;">
+    <thead><tr style="background:#1e4d6b;color:#fff;">
+      <th style="padding:7px 10px;text-align:left;font-family:Arial,sans-serif;font-size:10px;">DESCRIPTION</th>
+      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">UNIT PRICE</th>
+      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">QTY</th>
+      <th style="padding:7px 10px;text-align:center;font-family:Arial,sans-serif;font-size:10px;">TAXED (Pb1)</th>
+      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">AMOUNT</th>
+    </tr></thead>
+    <tbody>
+      ${lineItems.map((li,i)=>`<tr style="background:${i%2===0?'#fff':'#f9f9f9'};">
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;">${li.desc}</td>
+        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.harga)}</td>
+        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${li.qty.toLocaleString('id-ID')}</td>
+        <td style="padding:6px 10px;text-align:center;border-bottom:1px solid #eee;"></td>
+        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.amount)}</td>
+      </tr>`).join('')}
+      ${Array(emptyRows).fill(`<tr><td style="padding:6px 10px;border-bottom:1px solid #eee;">&nbsp;</td><td colspan="4" style="border-bottom:1px solid #eee;"></td></tr>`).join('')}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="2"></td>
+        <td colspan="2" style="padding:6px 10px;text-align:right;font-weight:700;font-family:Arial,sans-serif;font-size:10px;border-top:2px solid #1e4d6b;">[${orders.length}] Subtotal</td>
+        <td style="padding:6px 10px;text-align:right;font-weight:700;font-family:'Courier New',monospace;border-top:2px solid #1e4d6b;">${fmtRpNum(grandSubtotal)}</td>
+      </tr>
+      ${pb1Rate>0?`<tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;color:#555;">Pb1 ${(pb1Rate*100).toFixed(2)}%</td><td></td></tr>
+      <tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;">Tax due</td><td style="padding:3px 10px;text-align:right;font-family:'Courier New',monospace;">${fmtRpNum(pb1Amount)}</td></tr>`:''}
+      ${pphRate>0?`<tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;color:#555;">PPh 23 ${(pphRate*100).toFixed(2)}%</td><td></td></tr>
+      <tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;">Tax due</td><td style="padding:3px 10px;text-align:right;font-family:'Courier New',monospace;color:#a8281e;">${fmtRpNum(pphAmount)}</td></tr>`:''}
+      <tr style="background:#1e4d6b;color:#fff;">
+        <td colspan="3" style="padding:9px 10px;"></td>
+        <td style="padding:9px 10px;text-align:right;font-weight:700;font-size:13px;font-family:Arial,sans-serif;letter-spacing:1px;">TOTAL</td>
+        <td style="padding:9px 10px;text-align:right;font-weight:700;font-family:'Courier New',monospace;font-size:14px;">${fmtRpNum(grandTotal)}</td>
+      </tr>
+    </tfoot>
+  </table>
+  <div style="display:flex;justify-content:space-between;padding:14px 22px;margin-top:8px;gap:16px;font-size:10px;">
+    <div style="flex:1;">
+      <div style="font-weight:700;font-family:Arial,sans-serif;font-size:10px;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;color:#1e4d6b;">OTHER COMMENTS</div>
+      <div>1. Total payment due in ${cust?.tempo||30} days</div>
+      <div>2. Please include the invoice number on your check</div>
+      <div>3. PPh a/n ${BILLER.nama}</div>
+      <div>4. NPWP : ${BILLER.npwp}</div>
+      <div>5. NPWPD : ${BILLER.npwpd}</div>
+    </div>
+    <div style="text-align:center;min-width:200px;">
+      <div style="font-size:10px;color:#555;margin-bottom:55px;">Karawang, ${today}</div>
+      <div style="font-weight:700;font-size:10px;">Make all checks payable to</div>
+      <div style="font-weight:700;font-size:11px;color:#1e4d6b;">${BILLER.nama}</div>
+      <div style="margin-top:6px;font-size:9.5px;">${BILLER.bank_name}</div>
+      <div style="font-size:9.5px;font-family:'Courier New',monospace;">No. Rekening : ${BILLER.bank_no}</div>
+      <div style="margin-top:44px;border-top:1px solid #000;padding-top:5px;display:inline-block;min-width:150px;">
+        <div style="font-weight:700;">${BILLER.manager_nama}</div>
+        <div style="font-size:9.5px;color:#555;">${BILLER.manager_jabatan}</div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:8px 22px;font-size:9px;color:#777;border-top:1px solid #eee;">
+    If you have any questions about this invoice, please contact ${BILLER.contact_name} - ${BILLER.contact_phone} - ${BILLER.contact_email}<br>
+    <strong style="color:#1e4d6b;">Thank You For Your Business!</strong>
+  </div>
+</div>`;
+}
+
+function buildRekapHTML(data,invNo,isPreview=false){
+  const{cust,orders,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const colTotals={};cols.forEach(c=>colTotals[c.key]=0);
+  orders.forEach(o=>cols.forEach(c=>{colTotals[c.key]+=(o[c.key]||0);}));
+  const grandPorsi=cols.reduce((s,c)=>s+colTotals[c.key],0);
+  const emptyRows=Math.max(0,14-orders.length);
+  return`<div style="font-family:'Times New Roman',serif;font-size:12px;max-width:780px;margin:0 auto;padding:0;background:#fff;color:#000;">
+  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">PREVIEW</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">Invoice Status : Confirmed</div>`}
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px 12px;border-bottom:2px solid #000;">
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${BILLER.nama}</div>
+      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:4px;">${BILLER.tagline}</div>
+      <div style="font-size:9.5px;color:#333;">${BILLER.alamat.replace('\n','<br>')}</div>
+      <div style="font-size:9.5px;color:#333;">Phone: ${BILLER.phone} &nbsp;|&nbsp; ${BILLER.website}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:20px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">INVOICE SUMMARY</div>
+      <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#1e4d6b;margin-top:4px;">${invNo}</div>
+      <div style="font-size:24px;font-weight:700;color:#1e4d6b;margin-top:4px;">2</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;padding:12px 22px;gap:20px;">
+    <div style="flex:1;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">BILL TO &mdash; Invoice Receiving</div>
+      <div style="font-size:13px;font-weight:700;color:#000;">${cust?.nama||''}</div>
+      ${cust?.alamat?`<div style="font-size:9.5px;color:#333;margin-top:3px;">${cust.alamat}</div>`:''}
+      ${cust?.telepon?`<div style="font-size:9.5px;color:#333;">Phone: ${cust.telepon}</div>`:''}
+    </div>
+    <div style="text-align:right;min-width:200px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">PERIOD</div>
+      <div style="font-size:11px;font-weight:700;">${fmtPeriod(orders[0]?.tgl_order,orders[orders.length-1]?.tgl_order)}</div>
+    </div>
+  </div>
+  <div style="padding:4px 22px 8px;font-weight:700;font-size:11px;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">
+    DESCRIPTION : ${cust?.jenis_pelayanan||'FOOD CATERING SERVICE'}
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead>
+      <tr style="background:#1e4d6b;color:#fff;">
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;width:24px;" rowspan="2">NO</th>
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" colspan="2">DATE ORDER</th>
+        ${cols.map(c=>`<th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;">${c.label.toUpperCase()}</th>`).join('')}
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" rowspan="2">QTY TOTAL</th>
+        <th style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;" rowspan="2">TOTAL</th>
+      </tr>
+      <tr style="background:#2a5f8a;color:#fff;font-size:9px;">
+        <th style="padding:3px 7px;text-align:center;">DD</th>
+        <th style="padding:3px 7px;text-align:center;">MM</th>
+        ${cols.map(c=>`<th style="padding:3px 7px;text-align:center;">${c.label}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${orders.map((o,i)=>{
+        const dm=fmtDayMonth(o.tgl_order);
+        const rowTotal=o.colBreakdown.reduce((s,b)=>s+b.amount,0);
+        const rowQty=cols.reduce((s,c)=>s+(o[c.key]||0),0);
+        return`<tr style="background:${i%2===0?'#fff':'#f5f8fc'};">
+          <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${i+1}</td>
+          <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${dm.dd}</td>
+          <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${dm.mm}</td>
+          ${cols.map(c=>`<td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${(o[c.key]||0)>0?o[c.key].toLocaleString('id-ID'):''}</td>`).join('')}
+          <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;font-weight:600;">${rowQty.toLocaleString('id-ID')}</td>
+          <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${fmtRpNum(rowTotal)}</td>
+        </tr>`;
+      }).join('')}
+      ${Array(emptyRows).fill(0).map((_,i)=>`<tr style="background:${(orders.length+i)%2===0?'#fff':'#f5f8fc'};"><td style="padding:5px 7px;border-bottom:1px solid #ddd;">&nbsp;</td><td colspan="${cols.length+3}" style="border-bottom:1px solid #ddd;"></td></tr>`).join('')}
+      <tr style="background:#dce8f0;font-weight:700;">
+        <td colspan="3" style="padding:7px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;border-top:2px solid #1e4d6b;text-transform:uppercase;letter-spacing:.5px;">SUB TOTAL</td>
+        ${cols.map(c=>`<td style="padding:7px 7px;text-align:center;border-top:2px solid #1e4d6b;font-family:'Courier New',monospace;">${colTotals[c.key]?colTotals[c.key].toLocaleString('id-ID'):0}</td>`).join('')}
+        <td style="padding:7px 7px;text-align:center;border-top:2px solid #1e4d6b;font-family:'Courier New',monospace;">${grandPorsi.toLocaleString('id-ID')}</td>
+        <td style="padding:7px 7px;text-align:right;border-top:2px solid #1e4d6b;font-family:'Courier New',monospace;color:#1e4d6b;">${fmtRpNum(grandSubtotal)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <!-- ADDITIONAL ORDER -->
+  <div style="padding:12px 0 5px;font-weight:700;font-size:10px;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">Additional Order</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px;">
+    <thead><tr style="background:#555;color:#fff;">
+      <th style="padding:5px 7px;text-align:center;width:24px;">NO</th>
+      <th style="padding:5px 7px;text-align:center;">DD</th>
+      <th style="padding:5px 7px;text-align:center;">MM</th>
+      <th style="padding:5px 7px;text-align:center;" colspan="${cols.length}">SHIFT</th>
+      <th style="padding:5px 7px;text-align:center;">QTY</th>
+      <th style="padding:5px 7px;text-align:right;">TOTAL</th>
+    </tr></thead>
+    <tbody>
+      ${Array(7).fill(0).map((_,i)=>`<tr style="background:${i%2===0?'#fff':'#f5f5f5'};"><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${i+1}</td><td style="padding:5px 7px;border-bottom:1px solid #ddd;"></td><td style="padding:5px 7px;border-bottom:1px solid #ddd;"></td><td colspan="${cols.length}" style="border-bottom:1px solid #ddd;"></td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">0</td><td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${fmtRpNum(0)}</td></tr>`).join('')}
+      <tr style="background:#e8edf2;font-weight:700;">
+        <td colspan="${cols.length+3}" style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;border-top:1px solid #555;text-transform:uppercase;">SUB TOTAL</td>
+        <td style="padding:6px 7px;text-align:center;border-top:1px solid #555;font-family:'Courier New',monospace;">0</td>
+        <td style="padding:6px 7px;text-align:right;border-top:1px solid #555;font-family:'Courier New',monospace;">${fmtRpNum(0)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <!-- SIGNATURES -->
+  <div style="display:flex;justify-content:space-between;padding:10px 0 16px;font-size:10px;font-family:Arial,sans-serif;">
+    <div>
+      <div style="font-weight:700;margin-bottom:4px;">Approved By :</div>
+      <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
+      <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
+        <div style="font-weight:700;">${cust?.pic_nama||'________________________'}</div>
+        <div style="color:#555;font-size:9.5px;">PIC ${cust?.nama||'...'}</div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
+      <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
+        <div style="font-weight:700;">${BILLER.manager_nama}</div>
+        <div style="color:#555;font-size:9.5px;">${BILLER.manager_jabatan}</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+let _currentInvData=null,_currentInvNo=null;
+
+function switchInvTab(tab){
+  document.getElementById('itab-inv').classList.toggle('active',tab==='inv');
+  document.getElementById('itab-rekap').classList.toggle('active',tab==='rekap');
+  document.getElementById('inv-tab-inv').style.display=tab==='inv'?'':'none';
+  document.getElementById('inv-tab-rekap').style.display=tab==='rekap'?'':'none';
+}
+
+function viewInvoice(id){
+  const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
+  const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai);
+  _currentInvData=data;_currentInvNo=inv.invoice_no;
+  document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
+  document.getElementById('inv-tab-inv').innerHTML=data?buildInvoiceHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
+  document.getElementById('inv-tab-rekap').innerHTML=data?buildRekapHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
+  switchInvTab('inv');
+  openM('m-inv-view');
+}
+
+function getPrintStyles(){
+  return`<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Times New Roman',serif;font-size:12px;background:#fff;color:#000;}table{width:100%;border-collapse:collapse;}@page{size:A4;margin:10mm;}@media print{body{margin:0;}}</style>`;
+}
+
+function printDoc(which){
+  if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
+  const html=which==='inv'?buildInvoiceHTML(_currentInvData,_currentInvNo,false):buildRekapHTML(_currentInvData,_currentInvNo,false);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA ${which==='inv'?'Invoice':'Rekap'} ${_currentInvNo}</title>${getPrintStyles()}</head><body>${html}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+
+function printInvoiceDual(){
+  if(!_currentInvData||!_currentInvNo){toast('Buka invoice dulu','error');return;}
+  const htmlInv=buildInvoiceHTML(_currentInvData,_currentInvNo,false);
+  const htmlRekap=buildRekapHTML(_currentInvData,_currentInvNo,false);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BECCA Invoice ${_currentInvNo}</title>${getPrintStyles()}
+  <style>.pbreak{page-break-after:always;}</style></head><body>
+  <div class="pbreak">${htmlInv}</div><div>${htmlRekap}</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.close();
 }
 
 function previewInvoice(){
@@ -1416,54 +1759,20 @@ function previewInvoice(){
   if(!custNama||!dari||!sampai){document.getElementById('inv-preview').innerHTML='';return;}
   const data=calcInvoiceData(custNama,dari,sampai);
   if(!data){document.getElementById('inv-preview').innerHTML='<div class="alert alert-warn">Tidak ada order real di periode ini.</div>';return;}
-  document.getElementById('inv-preview').innerHTML=renderInvoiceHTML(data,null,true);
-}
-
-function renderInvoiceHTML(data,invNo=null,isPreview=false){
-  const {cust,orders,cols,grandSubtotal,grandBox,grandLain,grandTotal}=data;
-  const no=invNo||'PREVIEW';
-  let html=`
-  <div class="inv-header">
-    <div class="inv-no">${isPreview?'PREVIEW':'NO. INVOICE'} · ${no}</div>
-    <div class="inv-co">${data.cust?.nama||''}</div>
-    <div class="inv-meta">
-      <div class="inv-meta-item"><strong>Jenis</strong>${cust?.jenis_pelayanan||'—'}</div>
-      <div class="inv-meta-item"><strong>Tempo</strong>${cust?.tempo||0} Hari</div>
-      <div class="inv-meta-item"><strong>Total Order</strong>${orders.length} transaksi</div>
-      <div class="inv-meta-item"><strong>Grand Total</strong>${fmtRpNum(grandTotal)}</div>
+  const no=genInvoiceNo(data.cust,dari,sampai);
+  document.getElementById('inv-preview').innerHTML=`
+    <div class="rtabs" style="margin-bottom:12px;">
+      <button class="rtab active" id="ptab-inv" onclick="switchPreviewTab('inv')">📄 Invoice</button>
+      <button class="rtab" id="ptab-rekap" onclick="switchPreviewTab('rekap')">📋 Rekapitulasi</button>
     </div>
-  </div>
-  <div class="tw" style="margin-bottom:16px;"><table class="inv-tbl">
-    <thead><tr>
-      <th style="text-align:left;">Tanggal</th>
-      ${cols.map(c=>`<th>Qty ${c.label}</th><th>Harga</th><th>Subtotal</th>`).join('')}
-      <th>Total Porsi</th>
-      ${(cust?.biaya_box||0)>0?'<th>Box</th>':''}
-      ${(cust?.biaya_lainnya||0)>0?'<th>Lainnya</th>':''}
-      <th>Total</th>
-    </tr></thead>
-    <tbody>`;
-  orders.forEach(o=>{
-    html+=`<tr><td class="mono">${fmtDate(o.tgl_order)}</td>`;
-    cols.forEach(c=>{
-      const bd=o.colBreakdown.find(b=>b.label===c.label);
-      if(bd){html+=`<td class="num">${bd.qty}</td><td class="num" style="font-size:11px;">${fmtRpNum(bd.harga)}</td><td class="num">${fmtRpNum(bd.amount)}</td>`;}
-      else{html+=`<td class="num tmuted">0</td><td class="num">—</td><td class="num">—</td>`;}
-    });
-    html+=`<td class="num">${o.totalQty}</td>`;
-    if((cust?.biaya_box||0)>0)html+=`<td class="num">${fmtRpNum(o.boxTotal)}</td>`;
-    if((cust?.biaya_lainnya||0)>0)html+=`<td class="num">${fmtRpNum(o.lainTotal)}</td>`;
-    html+=`<td class="num taccent"><strong>${fmtRpNum(o.rowTotal)}</strong></td></tr>`;
-  });
-  html+=`</tbody>
-    <tfoot>
-      <tr class="inv-total-row"><td colspan="${2+cols.length*3}" style="text-align:right;font-weight:700;">Subtotal Porsi</td><td colspan="1"></td>${(cust?.biaya_box||0)>0?'<td></td>':''}${(cust?.biaya_lainnya||0)>0?'<td></td>':''}<td class="num taccent">${fmtRpNum(grandSubtotal)}</td></tr>`;
-  if((cust?.biaya_box||0)>0)html+=`<tr class="inv-total-row"><td colspan="${3+cols.length*3}" style="text-align:right;font-weight:700;">Total Biaya Box</td><td class="num">${fmtRpNum(grandBox)}</td></tr>`;
-  if((cust?.biaya_lainnya||0)>0)html+=`<tr class="inv-total-row"><td colspan="${3+cols.length*3}" style="text-align:right;font-weight:700;">Total Biaya Lainnya</td><td class="num">${fmtRpNum(grandLain)}</td></tr>`;
-  html+=`<tr class="inv-grand"><td colspan="${2+cols.length*3}" style="text-align:right;padding:12px 10px;">GRAND TOTAL</td><td colspan="1"></td>${(cust?.biaya_box||0)>0?'<td></td>':''}${(cust?.biaya_lainnya||0)>0?'<td></td>':''}<td class="num inv-grand">${fmtRpNum(grandTotal)}</td></tr>
-    </tfoot>
-  </table></div>`;
-  return html;
+    <div id="prev-inv">${buildInvoiceHTML(data,no,true)}</div>
+    <div id="prev-rekap" style="display:none;">${buildRekapHTML(data,no,true)}</div>`;
+}
+function switchPreviewTab(tab){
+  document.getElementById('ptab-inv').classList.toggle('active',tab==='inv');
+  document.getElementById('ptab-rekap').classList.toggle('active',tab==='rekap');
+  document.getElementById('prev-inv').style.display=tab==='inv'?'':'none';
+  document.getElementById('prev-rekap').style.display=tab==='rekap'?'':'none';
 }
 
 async function saveInvoice(){
@@ -1475,14 +1784,13 @@ async function saveInvoice(){
   if(!data){toast('Tidak ada order untuk di-invoice','error');return;}
   const btn=document.getElementById('save-inv-btn');btn.disabled=true;btn.textContent='Menyimpan...';
   try{
-    const now=new Date();
-    const invNo=`INV-${now.getFullYear()}${p2(now.getMonth()+1)}-${String(INVOICES.length+1).padStart(4,'0')}`;
     const cust=CUSTOMERS.find(c=>c.nama===custNama);
+    const invNo=genInvoiceNo(cust,dari,sampai);
     const payload={
       invoice_no:invNo,customer_id:cust?.id||null,customer_nama:custNama,
       periode_dari:dari,periode_sampai:sampai,
-      orders_data:JSON.stringify(data.orders.map(o=>({id:o.id,tgl:o.tgl_order,total:o.rowTotal,totalQty:o.totalQty}))),
-      subtotal:data.grandSubtotal,biaya_box_total:data.grandBox,biaya_lainnya_total:data.grandLain,
+      orders_data:JSON.stringify(data.orders.map(o=>({id:o.id,tgl:o.tgl_order,total:o.subtotal,totalQty:o.totalQty||0}))),
+      subtotal:data.grandSubtotal,biaya_box_total:0,biaya_lainnya_total:0,
       grand_total:data.grandTotal,status:'draft',catatan:document.getElementById('inv-cat').value,created_by:CU.nama
     };
     await sbPost('invoices',payload);
@@ -1490,37 +1798,6 @@ async function saveInvoice(){
     toast(`Invoice ${invNo} tersimpan!`,'success');
   }catch(e){toast('Gagal: '+e.message,'error');}
   finally{btn.disabled=false;btn.textContent='💾 Simpan Invoice';}
-}
-
-function viewInvoice(id){
-  const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
-  const dari=inv.periode_dari,sampai=inv.periode_sampai;
-  const data=calcInvoiceData(inv.customer_nama,dari,sampai);
-  document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(dari)} – ${fmtDate(sampai)}`;
-  document.getElementById('inv-view-body').innerHTML=data?renderInvoiceHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan (mungkin sudah dihapus).</div>`;
-  openM('m-inv-view');
-}
-
-function printInvoice(){
-  const body=document.getElementById('inv-view-body').innerHTML;
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice BECCA</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
-  <style>body{font-family:'DM Sans',sans-serif;font-size:13px;padding:24px;color:#18150f;}
-  table{width:100%;border-collapse:collapse;}th,td{padding:7px 10px;border:1px solid #e0dbd2;font-size:12px;}
-  th{background:#f9f8f5;font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:#857e74;}
-  .inv-header{background:#1e4d6b;color:#fff;border-radius:10px;padding:22px 28px;margin-bottom:18px;}
-  .inv-no{font-family:'DM Mono',monospace;font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:2px;margin-bottom:5px;}
-  .inv-co{font-size:24px;font-weight:700;font-family:'Cormorant Garamond',serif;}
-  .inv-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:12px;opacity:.85;}
-  .inv-meta-item strong{display:block;font-size:9px;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin-bottom:2px;}
-  .num{text-align:right;font-family:'DM Mono',monospace;}
-  .taccent{color:#1e4d6b;font-weight:600;}
-  .inv-total-row td{border-top:2px solid #e0dbd2;font-weight:700;background:#edf3f8;}
-  .inv-grand td{background:#1e4d6b;color:#fff;font-size:14px;font-weight:700;}
-  @media print{body{padding:0;}}</style></head><body>
-  ${body}<script>window.onload=()=>window.print();<\/script></body></html>`);
-  w.document.close();
 }
 
 async function updateInvStatus(id,status){
