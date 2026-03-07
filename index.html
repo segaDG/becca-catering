@@ -1634,7 +1634,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
   const showTaxCol=pb1Aktif;
   const baseTotal=grandSubtotal+(aoTotal||0);
   return`<div style="font-family:'Times New Roman',serif;font-size:11px;width:100%;max-width:210mm;margin:0 auto;padding:8mm 10mm;background:#fff;color:#000;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">PREVIEW — BELUM DISIMPAN</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">Invoice Status : Confirmed</div>`}
+  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">PREVIEW — BELUM DISIMPAN</div>`:`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">Invoice Status : Confirmed</div>`}
   <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:14px 0 10px;border-bottom:2px solid #000;">
     <div>
       <div style="font-size:20px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${B.nama}</div>
@@ -1668,7 +1668,7 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
       <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">UNIT PRICE</th>
       <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">QTY</th>
       ${showTaxCol?`<th style="padding:6px 8px;text-align:center;font-family:Arial,sans-serif;font-size:9px;">TAXED (Pb1)</th>`:''}
-      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#2a7a52;">AMOUNT</th>
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#163d56;color:#fff;">AMOUNT</th>
     </tr></thead>
     <tbody>
       ${lineItems.map((li,i)=>`<tr style="background:${i%2===0?'#fff':'#f9f9f9'};">
@@ -1676,37 +1676,37 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
         <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.harga)}</td>
         <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${li.qty.toLocaleString('id-ID')}</td>
         ${showTaxCol?`<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #eee;"></td>`:''}
-        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.amount)}</td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;background:#ddeef8;">${fmtRpNum(li.amount)}</td>
       </tr>`).join('')}
       ${hasAO?ao.map((a,i)=>`<tr style="background:${(lineItems.length+i)%2===0?'#fff':'#f9f9f9'};">
         <td style="padding:5px 8px;border-bottom:1px solid #eee;color:#555;font-style:italic;">${a.desc||'Additional Order'} <span style="font-size:8px;color:#999;">(${fmtDateLong(a.tgl)})</span></td>
         <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(a.harga)}</td>
         <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${a.qty.toLocaleString('id-ID')}</td>
         ${showTaxCol?`<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #eee;"></td>`:''}
-        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;background:#f0faf4;">${fmtRpNum(a.amount)}</td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;background:#ddeef8;">${fmtRpNum(a.amount)}</td>
       </tr>`).join(''):''}
-      ${Array(emptyRows).fill(`<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;">&nbsp;</td><td colspan="${showTaxCol?3:2}" style="border-bottom:1px solid #eee;"></td><td style="border-bottom:1px solid #eee;background:#f0faf4;"></td></tr>`).join('')}
+      ${Array(emptyRows).fill(`<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;">&nbsp;</td><td colspan="${showTaxCol?3:2}" style="border-bottom:1px solid #eee;"></td><td style="border-bottom:1px solid #eee;background:#ddeef8;"></td></tr>`).join('')}
     </tbody>
     <tfoot>
       <tr><td colspan="${showTaxCol?2:2}"></td>
         <td ${showTaxCol?'':'colspan="2"'} style="padding:5px 8px;text-align:right;font-weight:700;font-family:Arial,sans-serif;font-size:9px;border-top:2px solid #1e4d6b;">[${orders.length}] Subtotal</td>
         ${showTaxCol?`<td style="border-top:2px solid #1e4d6b;"></td>`:''}
-        <td style="padding:5px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;border-top:2px solid #1e4d6b;background:#f0faf4;">${fmtRpNum(grandSubtotal)}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;border-top:2px solid #1e4d6b;background:#ddeef8;">${fmtRpNum(grandSubtotal)}</td>
       </tr>
       ${hasAO?`<tr><td colspan="${showTaxCol?3:2}"></td>
         <td style="padding:3px 8px;text-align:right;font-size:9px;font-family:Arial,sans-serif;">Additional Order Subtotal</td>
         ${showTaxCol?`<td></td>`:''}
-        <td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;background:#f0faf4;">${fmtRpNum(aoTotal)}</td>
+        <td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;background:#ddeef8;">${fmtRpNum(aoTotal)}</td>
       </tr>`:''}
       ${pb1Aktif&&pb1Rate>0?`<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#555;">Pb1 ${(pb1Rate*100).toFixed(2)}%</td>${showTaxCol?'':'<td></td>'}</tr>
-      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;background:#f0faf4;">${fmtRpNum(pb1Amount)}</td></tr>`:
-      `<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#999;">Pb1 10,00%</td>${showTaxCol?'':''}<td style="background:#f0faf4;"></td></tr>`}
+      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;background:#ddeef8;">${fmtRpNum(pb1Amount)}</td></tr>`:
+      `<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#999;">Pb1 10,00%</td>${showTaxCol?'':''}<td style="background:#ddeef8;"></td></tr>`}
       ${pphAktif&&pphRate>0?`<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#555;">PPh 23 ${(pphRate*100).toFixed(2)}%</td>${showTaxCol?'':''}</tr>
-      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;color:#a8281e;background:#f0faf4;">${fmtRpNum(pphAmount)}</td></tr>`:''}
+      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;color:#a8281e;background:#ddeef8;">${fmtRpNum(pphAmount)}</td></tr>`:''}
       <tr style="background:#1e4d6b;color:#fff;">
         <td colspan="${showTaxCol?3:2}" style="padding:8px 8px;"></td>
         <td style="padding:8px 8px;text-align:right;font-weight:700;font-size:12px;font-family:Arial,sans-serif;letter-spacing:1px;">TOTAL</td>
-        <td style="padding:8px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;font-size:13px;background:#2a7a52;">${fmtRpNum(grandTotal)}</td>
+        <td style="padding:8px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;font-size:13px;background:#163d56;color:#fff;">${fmtRpNum(grandTotal)}</td>
       </tr>
     </tfoot>
   </table>
@@ -1755,7 +1755,7 @@ function buildRekapHTML(data,invNo,isPreview=false){
   const grandPorsi=usedCols.reduce((s,c)=>s+colTotals[c.key],0);
   const emptyRows=Math.max(0,14-orders.length);
   return`<div style="font-family:'Times New Roman',serif;font-size:11px;width:100%;max-width:210mm;margin:0 auto;padding:8mm 10mm;background:#fff;color:#000;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">PREVIEW</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">Invoice Status : Confirmed</div>`}
+  ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">PREVIEW</div>`:`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">Invoice Status : Confirmed</div>`}
   <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px 12px;border-bottom:2px solid #000;">
     <div>
       <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${B.nama}</div>
@@ -1793,7 +1793,7 @@ function buildRekapHTML(data,invNo,isPreview=false){
         <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" colspan="2">DATE ORDER</th>
         <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" colspan="${usedCols.length}">SHIFT</th>
         <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" rowspan="2">QTY TOTAL</th>
-        <th style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#2a7a52;" rowspan="2">TOTAL</th>
+        <th style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#163d56;color:#fff;" rowspan="2">TOTAL</th>
       </tr>
       <tr style="background:#2a5f8a;color:#fff;font-size:9px;">
         <th style="padding:3px 7px;text-align:center;">DD</th>
@@ -1812,15 +1812,15 @@ function buildRekapHTML(data,invNo,isPreview=false){
           <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${dm.mm}</td>
           ${usedCols.map(c=>`<td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${(o[c.key]||0)>0?o[c.key].toLocaleString('id-ID'):''}</td>`).join('')}
           <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;font-weight:600;">${rowQty.toLocaleString('id-ID')}</td>
-          <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;font-weight:600;background:#f0faf4;">${fmtRpNum(rowTotal)}</td>
+          <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;font-weight:600;background:#ddeef8;">${fmtRpNum(rowTotal)}</td>
         </tr>`;
       }).join('')}
-      ${Array(emptyRows).fill(0).map((_,i)=>`<tr style="background:${(orders.length+i)%2===0?'#fff':'#f5f8fc'};"><td style="padding:5px 7px;border-bottom:1px solid #ddd;">&nbsp;</td><td colspan="${usedCols.length+3}" style="border-bottom:1px solid #ddd;"></td><td style="border-bottom:1px solid #ddd;background:#f0faf4;"></td></tr>`).join('')}
+      ${Array(emptyRows).fill(0).map((_,i)=>`<tr style="background:${(orders.length+i)%2===0?'#fff':'#f5f8fc'};"><td style="padding:5px 7px;border-bottom:1px solid #ddd;">&nbsp;</td><td colspan="${usedCols.length+3}" style="border-bottom:1px solid #ddd;"></td><td style="border-bottom:1px solid #ddd;background:#ddeef8;"></td></tr>`).join('')}
       <tr style="background:#1e4d6b;color:#fff;font-weight:700;">
         <td colspan="3" style="padding:7px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.5px;">SUB TOTAL</td>
         ${usedCols.map(c=>`<td style="padding:7px 7px;text-align:center;font-family:'Courier New',monospace;">${colTotals[c.key]?colTotals[c.key].toLocaleString('id-ID'):0}</td>`).join('')}
         <td style="padding:7px 7px;text-align:center;font-family:'Courier New',monospace;">${grandPorsi.toLocaleString('id-ID')}</td>
-        <td style="padding:7px 7px;text-align:right;font-family:'Courier New',monospace;background:#2a7a52;">${fmtRpNum(grandSubtotal)}</td>
+        <td style="padding:7px 7px;text-align:right;font-family:'Courier New',monospace;background:#163d56;color:#fff;">${fmtRpNum(grandSubtotal)}</td>
       </tr>
     </tbody>
   </table>
