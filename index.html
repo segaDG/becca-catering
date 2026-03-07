@@ -121,10 +121,10 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .pg-title{font-size:16px;font-weight:700;white-space:nowrap;}
 .tb-r{display:flex;align-items:center;gap:7px;}
 .clock-chip{display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:5px 11px;font-family:var(--mono);font-size:11px;color:var(--text2);}
-.db-chip{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--rs);font-size:11px;font-family:var(--mono);border:1px solid;}
-.db-chip.connected{background:var(--green-bg);border-color:#a8d0bc;color:var(--green);}
-.db-chip.disconnected{background:var(--red-bg);border-color:#dbb0ab;color:var(--red);}
-.db-chip.loading{background:var(--amber-bg);border-color:#e0c090;color:var(--amber);}
+.db-chip{width:10px;height:10px;border-radius:3px;flex-shrink:0;transition:background .4s;}
+.db-chip.connected{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
+.db-chip.disconnected{background:#ef4444;box-shadow:0 0 6px #ef444488;}
+.db-chip.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b88;}
 .content{padding:22px;}
 .page{display:none;}
 .page.active{display:block;animation:fadeUp .2s ease;}
@@ -436,12 +436,12 @@ tr:hover td{background:var(--bg);}
     <div class="topbar">
       <div class="tb-l"><button class="hbg" onclick="toggleSB()">☰</button><div class="pg-title" id="pgtitle">Dashboard</div></div>
       <div class="tb-r">
-        <div class="db-chip loading" id="dbchip">⬤ <span style="font-size:9px;letter-spacing:.5px;">DATABASE</span></div>
         <div id="online-users" style="display:flex;align-items:center;padding:0 4px;" title="Pengguna aktif"></div>
         <div class="clock-chip">🕐 <span id="clk"></span></div>
         <button id="notif-btn" onclick="openNotif()" style="position:relative;background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;border-radius:8px;transition:background .15s;" title="Notifikasi">
           🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
         </button>
+        <div class="db-chip loading" id="dbchip" title="Database: Menghubungkan..."></div>
       </div>
     </div>
     <div class="content">
@@ -723,6 +723,42 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
+      <div id="page-tasks" class="page">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
+            <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
+              <option value="">Semua Prioritas</option>
+              <option value="high">🔴 High</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
+          </div>
+          <button class="btn btn-primary" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
+        </div>
+        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#555;padding:8px 12px;background:#f3f4f6;border-radius:8px 8px 0 0;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;">
+              <span>📋 Todo</span><span id="task-count-todo" style="font-size:11px;background:#e5e7eb;padding:1px 7px;border-radius:10px;">0</span>
+            </div>
+            <div id="task-col-todo" style="min-height:200px;padding:8px;background:#f9fafb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1e4d6b;padding:8px 12px;background:#eef5fb;border-radius:8px 8px 0 0;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;">
+              <span>⚙️ In Progress</span><span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;padding:1px 7px;border-radius:10px;">0</span>
+            </div>
+            <div id="task-col-inprogress" style="min-height:200px;padding:8px;background:#f0f6fb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1e7e34;padding:8px 12px;background:#eaf4ef;border-radius:8px 8px 0 0;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;">
+              <span>✅ Done</span><span id="task-count-done" style="font-size:11px;background:#c6e6d0;padding:1px 7px;border-radius:10px;">0</span>
+            </div>
+            <div id="task-col-done" style="min-height:200px;padding:8px;background:#f2fbf5;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="page-activity" class="page">
         <div class="card">
           <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -744,9 +780,9 @@ tr:hover td{background:var(--bg);}
               <button class="btn btn-danger btn-sm" onclick="clearAllActivity()" style="margin-left:8px;">🗑 Hapus Semua</button>
             </div>
           </div>
-          <div class="card-body" style="padding:0;">
-            <div class="tw"><table id="act-table">
-              <thead><tr>
+          <div class="card-body" style="padding:0;overflow:hidden;">
+            <div style="overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 280px);"><table id="act-table" style="width:100%;">
+              <thead style="position:sticky;top:0;z-index:2;"><tr>
                 <th style="width:40px;">#</th>
                 <th style="min-width:120px;">User</th>
                 <th style="min-width:80px;">Role</th>
@@ -851,12 +887,64 @@ tr:hover td{background:var(--bg);}
 <!-- MODAL USER -->
 <div class="overlay" id="m-user">
   <div class="modal sm">
-    <div class="mhead"><div class="mtitle">➕ Tambah User</div><button class="mclose" onclick="closeM('m-user')">✕</button></div>
-    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="um-nm"></div>
-    <div class="form-group"><label>Username *</label><input type="text" id="um-un"></div>
-    <div class="form-group"><label>Password *</label><input type="password" id="um-pw"></div>
-    <div class="form-group"><label>Role</label><select id="um-rl"><option value="admin">Admin</option><option value="operator">Operator</option><option value="viewer">Viewer</option></select></div>
-    <div style="display:flex;gap:8px;margin-top:14px;"><button class="btn btn-primary" id="save-user-btn" onclick="saveUser()">💾 Simpan</button><button class="btn btn-secondary" onclick="closeM('m-user')">Batal</button></div>
+    <div class="mhead"><div><div class="mtitle" id="um-title">➕ Tambah User</div><div class="msub" id="um-sub"></div></div><button class="mclose" onclick="closeM('m-user')">✕</button></div>
+    <input type="hidden" id="um-id">
+    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="um-nm" placeholder="Contoh: Budi Santoso"></div>
+    <div class="form-group" id="um-un-group"><label>Username *</label><input type="text" id="um-un" placeholder="Contoh: budi01" autocomplete="off"></div>
+    <div class="form-group"><label id="um-pw-label">Password *</label><input type="password" id="um-pw" placeholder="Min. 6 karakter" autocomplete="new-password">
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="um-pw-hint"></div></div>
+    <div class="form-group"><label>Role</label>
+      <select id="um-rl" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+        <option value="admin">👔 Admin</option>
+        <option value="operator">🛠 Operator</option>
+        <option value="viewer">👁 Viewer</option>
+      </select>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="um-role-badges">
+        <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:#faeeed;color:#a8281e;font-weight:600;">Admin — Akses penuh kecuali superadmin</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:#eef5fb;color:#1e4d6b;font-weight:600;">Operator — Input & lihat order</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:#f3f3f3;color:#555;font-weight:600;">Viewer — Hanya bisa melihat</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()" style="flex:1;">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-user')" style="flex:1;">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TASK -->
+<div class="overlay" id="m-task">
+  <div class="modal" style="max-width:480px;">
+    <div class="mhead"><div><div class="mtitle" id="task-modal-title">➕ Tambah Task</div><div class="msub" id="task-modal-sub"></div></div><button class="mclose" onclick="closeM('m-task')">✕</button></div>
+    <input type="hidden" id="task-id">
+    <div class="fg">
+      <div class="form-group span2"><label>Judul Task *</label><input type="text" id="task-title" placeholder="Contoh: Buat invoice bulan Maret"></div>
+      <div class="form-group span2"><label>Deskripsi</label><textarea id="task-desc" style="min-height:64px;" placeholder="Detail tugas..."></textarea></div>
+      <div class="form-group"><label>Assignee (Ditugaskan ke)</label>
+        <select id="task-assignee" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">— Pilih User —</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Prioritas</label>
+        <select id="task-priority" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Deadline</label><input type="date" id="task-deadline"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="task-status" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="todo">📋 Todo</option>
+          <option value="inprogress">⚙️ In Progress</option>
+          <option value="done">✅ Done</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="save-task-btn" onclick="saveTask()" style="flex:1;">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-task')" style="flex:1;">Batal</button>
+    </div>
   </div>
 </div>
 
@@ -1035,6 +1123,7 @@ const ALL_PAGES={
   users:    {icon:'👤',label:'Manajemen User',    priv_key:'manage_users'},
   settings: {icon:'🔒',label:'Pengaturan Akun',   priv_key:'manage_settings'},
   activity: {icon:'📋',label:'Activity Log',       priv_key:'view_activity'},
+  tasks:    {icon:'✅',label:'Task Board',          priv_key:'view_tasks'},
 };
 let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],CUSTOMERS=[],INVOICES=[],editId=null,editCustId=null,rTab='daily',_pendingOrder=null;
 
@@ -1051,7 +1140,7 @@ function tp(o){return aCols().reduce((s,c)=>s+(o[c.key]||0),0);}
 function rcCount(o){return(o.history||[]).filter(h=>h.action==='edit').length;}
 function ledit(o){const e=(o.history||[]).filter(h=>h.action==='edit');return e.length?e[e.length-1]:null;}
 function loading(show,txt=''){document.getElementById('ldo').classList.toggle('show',show);if(txt)document.getElementById('ltxt').textContent=txt;}
-function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.title=s==='connected'?'Database: Terhubung':'Database: Terputus';el.innerHTML=s==='connected'?'<span style="font-size:9px;letter-spacing:.5px;">DATABASE</span>':'<span style="font-size:9px;letter-spacing:.5px;">DATABASE</span>';}
+function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.title=s==='connected'?'Database: Terhubung ✓':s==='disconnected'?'Database: Terputus ✗':'Database: Menghubungkan...';}
 function getRK(nama){const u=USERS_DATA.find(x=>x.nama===nama);return u?u.role:'viewer';}
 function canDo(key){if(CU.role==='superadmin')return true;const p=PRIVS.find(x=>x.feature_key===key);return p?p[`role_${CU.role}`]===true:false;}
 function allowedPages(){return Object.entries(ALL_PAGES).filter(([,v])=>canDo(v.priv_key)).map(([k])=>k);}
@@ -1126,7 +1215,7 @@ function buildNav(){
   const nav=document.getElementById('nav-menu');nav.innerHTML='';
   const allowed=allowedPages();
   const secs=[
-    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice','activity']},
+    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice','activity','tasks']},
     {l:'Kelola', pages:['customers','columns','privilege','users','settings']},
   ];
   secs.forEach(sec=>{
@@ -1165,6 +1254,7 @@ function renderPage(pg){
   if(pg==='users')renderUsers();
   if(pg==='settings')renderSettings();
   if(pg==='activity'){_actPage=1;renderActivity();}
+  if(pg==='tasks')renderTasks();
   if(pg==='input'){document.getElementById('f-tgl').value=new Date().toISOString().split('T')[0];buildInputForm();updImeta();}
 }
 
@@ -3049,6 +3139,167 @@ function stopOnlineTracker(){
 }
 // ═══════════════════════════════════════════════════
 
+
+// ══ TASK BOARD ══════════════════════════════════════
+const TASK_KEY='becca_tasks';
+let TASKS=JSON.parse(localStorage.getItem(TASK_KEY)||'[]');
+
+function saveTasks(){localStorage.setItem(TASK_KEY,JSON.stringify(TASKS));}
+
+const TASK_PRIORITY_CONFIG={
+  high:{label:'🔴 High',color:'#a8281e',bg:'#faeeed'},
+  medium:{label:'🟡 Medium',color:'#9a5a0a',bg:'#fff8f0'},
+  low:{label:'🟢 Low',color:'#1e7e34',bg:'#eaf4ef'}
+};
+
+function openAddTask(){
+  document.getElementById('task-id').value='';
+  document.getElementById('task-modal-title').textContent='➕ Tambah Task';
+  document.getElementById('task-modal-sub').textContent=`Dibuat oleh ${CU.nama}`;
+  document.getElementById('task-title').value='';
+  document.getElementById('task-desc').value='';
+  document.getElementById('task-priority').value='medium';
+  document.getElementById('task-status').value='todo';
+  document.getElementById('task-deadline').value='';
+  // Populate assignee
+  const sel=document.getElementById('task-assignee');
+  sel.innerHTML='<option value="">— Pilih User —</option>'+USERS_DATA.map(u=>`<option value="${u.username}" ${u.username===CU.username?'selected':''}>${u.nama} (${u.role})</option>`).join('');
+  document.getElementById('save-task-btn').textContent='💾 Simpan';
+  openM('m-task');
+}
+function openEditTask(id){
+  const t=TASKS.find(x=>x.id===id);if(!t)return;
+  document.getElementById('task-id').value=t.id;
+  document.getElementById('task-modal-title').textContent='✏️ Edit Task';
+  document.getElementById('task-modal-sub').textContent=`Dibuat oleh ${t.creator} · ${new Date(t.created_at).toLocaleDateString('id-ID')}`;
+  document.getElementById('task-title').value=t.title;
+  document.getElementById('task-desc').value=t.desc||'';
+  document.getElementById('task-priority').value=t.priority;
+  document.getElementById('task-status').value=t.status;
+  document.getElementById('task-deadline').value=t.deadline||'';
+  const sel=document.getElementById('task-assignee');
+  sel.innerHTML='<option value="">— Pilih User —</option>'+USERS_DATA.map(u=>`<option value="${u.username}" ${u.username===t.assignee?'selected':''}>${u.nama} (${u.role})</option>`).join('');
+  document.getElementById('save-task-btn').textContent='💾 Simpan Perubahan';
+  openM('m-task');
+}
+function saveTask(){
+  const id=document.getElementById('task-id').value;
+  const title=document.getElementById('task-title').value.trim();
+  if(!title){toast('Judul task wajib diisi','error');return;}
+  const data={
+    title,
+    desc:document.getElementById('task-desc').value.trim(),
+    assignee:document.getElementById('task-assignee').value,
+    priority:document.getElementById('task-priority').value,
+    status:document.getElementById('task-status').value,
+    deadline:document.getElementById('task-deadline').value||null,
+    updated_at:new Date().toISOString(),
+    updated_by:CU.username
+  };
+  if(id){
+    const idx=TASKS.findIndex(x=>x.id===id);
+    if(idx>=0)TASKS[idx]={...TASKS[idx],...data};
+    logActivity('system',`Edit task: "${title}"`,'Task Board');
+  } else {
+    TASKS.unshift({id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+      ...data,creator:CU.username,creator_nama:CU.nama,created_at:new Date().toISOString()});
+    logActivity('system',`Buat task baru: "${title}" → ${data.assignee||'Unassigned'}`,'Task Board');
+  }
+  saveTasks();renderTasks();closeM('m-task');
+  toast(id?'Task diperbarui':'Task ditambah','success');
+}
+function deleteTask(id){
+  if(!confirm('Hapus task ini?'))return;
+  const t=TASKS.find(x=>x.id===id);
+  TASKS=TASKS.filter(x=>x.id!==id);
+  saveTasks();renderTasks();
+  logActivity('system',`Hapus task: "${t?.title||id}"`,'Task Board');
+  toast('Task dihapus','info');
+}
+function moveTask(id,newStatus){
+  const t=TASKS.find(x=>x.id===id);if(!t)return;
+  t.status=newStatus;t.updated_at=new Date().toISOString();t.updated_by=CU.username;
+  if(newStatus==='done')t.completed_at=new Date().toISOString();
+  saveTasks();renderTasks();
+  logActivity('system',`Task "${t.title}" → ${newStatus}`,'Task Board');
+}
+function clearTaskFilters(){
+  document.getElementById('task-f-assign').value='';
+  document.getElementById('task-f-priority').value='';
+  renderTasks();
+}
+function renderTasks(){
+  // Populate assignee filter
+  const asel=document.getElementById('task-f-assign');
+  if(asel){
+    const assignees=[...new Set(TASKS.map(t=>t.assignee).filter(Boolean))];
+    const cur=asel.value;
+    asel.innerHTML='<option value="">Semua Assignee</option>'+assignees.map(a=>{
+      const u=USERS_DATA.find(x=>x.username===a);
+      return`<option value="${a}" ${a===cur?'selected':''}>${u?u.nama:a}</option>`;
+    }).join('');
+  }
+  const fAssign=document.getElementById('task-f-assign')?.value||'';
+  const fPrio=document.getElementById('task-f-priority')?.value||'';
+  const filtered=TASKS.filter(t=>{
+    if(fAssign&&t.assignee!==fAssign)return false;
+    if(fPrio&&t.priority!==fPrio)return false;
+    return true;
+  });
+  const cols=['todo','inprogress','done'];
+  const colLabels={todo:'📋 Todo',inprogress:'⚙️ In Progress',done:'✅ Done'};
+  cols.forEach(col=>{
+    const tasks=filtered.filter(t=>t.status===col);
+    const countEl=document.getElementById('task-count-'+col);
+    if(countEl)countEl.textContent=tasks.length;
+    const colEl=document.getElementById('task-col-'+col);
+    if(!colEl)return;
+    if(!tasks.length){colEl.innerHTML=`<div style="text-align:center;padding:24px 8px;color:var(--muted);font-size:12px;">Tidak ada task</div>`;return;}
+    colEl.innerHTML=tasks.map(t=>{
+      const pc=TASK_PRIORITY_CONFIG[t.priority]||TASK_PRIORITY_CONFIG.medium;
+      const u=USERS_DATA.find(x=>x.username===t.assignee);
+      const isAssignedToMe=t.assignee===CU.username;
+      const isCreatedByMe=t.creator===CU.username;
+      const canEdit=isAssignedToMe||isCreatedByMe||CU.role==='superadmin'||CU.role==='admin';
+      const deadline=t.deadline?new Date(t.deadline+'T00:00:00'):null;
+      const now=new Date();now.setHours(0,0,0,0);
+      const isOverdue=deadline&&deadline<now&&t.status!=='done';
+      const isDueSoon=deadline&&!isOverdue&&(deadline-now)<=2*86400000&&t.status!=='done';
+      const dlStr=deadline?deadline.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'';
+      // Status move buttons
+      const prevStatus=col==='inprogress'?'todo':col==='done'?'inprogress':null;
+      const nextStatus=col==='todo'?'inprogress':col==='inprogress'?'done':null;
+      return`<div style="background:#fff;border:1px solid ${isOverdue?'#dbb0ab':isAssignedToMe?'#b8d4e8':'var(--border)'};border-radius:8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);${isAssignedToMe?'border-left:3px solid #1e4d6b;':''}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;flex:1;">${t.title}</div>
+          <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
+        </div>
+        ${t.desc?`<div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.4;">${t.desc}</div>`:''}
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            ${u?`<div style="width:20px;height:20px;border-radius:50%;background:${RC_META[u.role]?.bg||'#eee'};color:${RC_META[u.role]?.color||'#555'};font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;">${u.nama.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><span style="font-size:10px;color:var(--muted);">${u.nama}</span>`:'<span style="font-size:10px;color:var(--muted);">Unassigned</span>'}
+          </div>
+          ${deadline?`<span style="font-size:10px;font-weight:600;color:${isOverdue?'#a8281e':isDueSoon?'#9a5a0a':'var(--muted)'};background:${isOverdue?'#faeeed':isDueSoon?'#fff8f0':'transparent'};padding:${isOverdue||isDueSoon?'1px 6px':'0'};border-radius:8px;">📅 ${dlStr}${isOverdue?' ⚠️ Lewat':isDueSoon?' ⏰':''}</span>`:''}
+        </div>
+        <div style="display:flex;gap:4px;justify-content:space-between;align-items:center;">
+          <div style="display:flex;gap:3px;">
+            ${prevStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${prevStatus}')" style="font-size:10px;padding:2px 6px;" title="Mundur ke ${prevStatus}">◀</button>`:''}
+            ${nextStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${nextStatus}')" style="font-size:10px;padding:2px 6px;background:${nextStatus==='done'?'#eaf4ef':'#eef5fb'};" title="Maju ke ${nextStatus}">▶</button>`:''}
+          </div>
+          <div style="display:flex;gap:3px;">
+            ${canEdit?`<button class="btn btn-secondary btn-sm" onclick="openEditTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Edit">✏️</button>`:''}
+            ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Hapus">🗑</button>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  });
+  // Responsive: on mobile stack columns
+  const board=document.getElementById('task-board');
+  if(board)board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
+}
+// ═══════════════════════════════════════════════════
+
 // ══ NOTIFICATIONS ══════════════════════════════════
 // NOTIF_DISMISSED: stores set of invoice IDs user has manually dismissed
 // Rule: overdue invoices (diffDays < 0) CANNOT be dismissed until paid
@@ -3266,22 +3517,65 @@ function renderUsers(){
       <div class="avatar" style="background:${r.bg};color:${r.color};border:2px solid ${r.color}40;font-size:11px;">${ini}</div>
       <div class="ui"><div class="un">${u.nama}${isMe?' <span style="font-size:10px;color:var(--muted);">(Anda)</span>':''}</div><div class="um">${u.username} · ${isRoot?'🔒 Protected':u.role}</div></div>
       <div style="display:flex;gap:5px;align-items:center;">
-        <select class="sel" style="padding:4px 24px 4px 8px;font-size:11px;" onchange="changeRole('${u.id}',this.value)" ${isRoot||isMe?'disabled':''}>
-          ${Object.entries(RC_META).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v.label}</option>`).join('')}
-        </select>
-        ${!isRoot&&!isMe?`<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')">🗑</button>`:''}
+        <span style="font-size:11px;font-weight:700;color:${r.color};background:${r.bg};padding:3px 10px;border-radius:10px;">${r.label}</span>
+        ${!isRoot&&canDo('manage_users')?`<button class="btn btn-secondary btn-sm" onclick="openEditUser('${u.id}')" title="Edit user">✏️</button>`:''}
+        ${!isRoot&&!isMe&&canDo('manage_users')?`<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')" title="Hapus user">🗑</button>`:''}
       </div>
     </div>`;
   }).join('');
 }
-function openUserModal(){['um-nm','um-un','um-pw'].forEach(id=>document.getElementById(id).value='');document.getElementById('um-rl').value='operator';openM('m-user');}
+function openUserModal(){
+  document.getElementById('um-id').value='';
+  document.getElementById('um-title').textContent='➕ Tambah User';
+  document.getElementById('um-sub').textContent='';
+  document.getElementById('um-un-group').style.display='';
+  document.getElementById('um-pw-label').textContent='Password *';
+  document.getElementById('um-pw-hint').textContent='';
+  ['um-nm','um-un','um-pw'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('um-rl').value='operator';
+  document.getElementById('save-user-btn').textContent='💾 Simpan';
+  openM('m-user');
+}
+function openEditUser(id){
+  const u=USERS_DATA.find(x=>x.id==id);if(!u)return;
+  document.getElementById('um-id').value=u.id;
+  document.getElementById('um-title').textContent='✏️ Edit User';
+  document.getElementById('um-sub').textContent=u.username;
+  document.getElementById('um-un-group').style.display='none'; // can't change username
+  document.getElementById('um-pw-label').textContent='Password Baru';
+  document.getElementById('um-pw-hint').textContent='Kosongkan jika tidak ingin mengganti password';
+  document.getElementById('um-nm').value=u.nama;
+  document.getElementById('um-pw').value='';
+  document.getElementById('um-rl').value=u.role;
+  document.getElementById('save-user-btn').textContent='💾 Simpan Perubahan';
+  openM('m-user');
+}
 async function saveUser(){
-  const nm=document.getElementById('um-nm').value.trim(),un=document.getElementById('um-un').value.trim(),pw=document.getElementById('um-pw').value;
-  if(!nm||!un||!pw){toast('Semua field wajib','error');return;}
+  const id=document.getElementById('um-id').value;
+  const nm=document.getElementById('um-nm').value.trim();
+  const pw=document.getElementById('um-pw').value;
+  const role=document.getElementById('um-rl').value;
   const btn=document.getElementById('save-user-btn');btn.disabled=true;
-  try{await sbPost('users',{username:un,password:pw,nama:nm,role:document.getElementById('um-rl').value});await loadUsers();closeM('m-user');renderUsers();toast('User ditambah!','success');}
-  catch(e){toast('Gagal: username mungkin sudah ada','error');}
-  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+  try{
+    if(id){
+      // Edit mode
+      if(!nm){toast('Nama wajib diisi','error');btn.disabled=false;return;}
+      const upd={nama:nm,role};
+      if(pw){if(pw.length<6){toast('Password min. 6 karakter','error');btn.disabled=false;return;}upd.password=pw;}
+      await sbPatch('users',id,upd);
+      logActivity('settings',`Edit user: ${nm} → role ${role}`,'Manajemen User');
+      await loadUsers();closeM('m-user');renderUsers();toast('User diperbarui!','success');
+    } else {
+      // Add mode
+      const un=document.getElementById('um-un').value.trim();
+      if(!nm||!un||!pw){toast('Semua field wajib diisi','error');btn.disabled=false;return;}
+      if(pw.length<6){toast('Password min. 6 karakter','error');btn.disabled=false;return;}
+      await sbPost('users',{username:un,password:pw,nama:nm,role});
+      logActivity('settings',`Tambah user baru: ${nm} (${un}) role ${role}`,'Manajemen User');
+      await loadUsers();closeM('m-user');renderUsers();toast('User ditambah!','success');
+    }
+  }catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;}
 }
 async function changeRole(id,role){try{await sbPatch('users',id,{role});await loadUsers();renderUsers();toast('Role diperbarui','success');}catch(e){toast('Gagal','error');}}
 async function delUser(id){if(!confirm('Hapus user ini?'))return;try{await sbDelete('users',id);await loadUsers();renderUsers();toast('Dihapus','info');}catch(e){toast('Gagal','error');}}
