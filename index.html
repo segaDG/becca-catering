@@ -400,7 +400,18 @@ tr:hover td{background:var(--bg);}
     </div>
     <nav class="nav" id="nav-menu"></nav>
     <div class="sb-foot">
-      <div style="text-align:center;padding:4px 0 6px;font-size:8px;color:var(--muted);font-family:var(--mono);opacity:0.45;letter-spacing:1px;border-bottom:1px solid var(--border);margin-bottom:6px;">Powered by BECCA</div>
+      <div style="text-align:center;padding:5px 0 7px;border-bottom:1px solid var(--border);margin-bottom:6px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;opacity:0.55;">
+          <!-- Monochrome BECCA logo mark -->
+          <svg width="18" height="18" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="52" height="52" rx="11" fill="#6b7280"/>
+            <text x="10" y="38" font-family="Georgia,serif" font-size="32" font-weight="700" fill="white">B</text>
+            <circle cx="40" cy="14" r="5" fill="#9ca3af"/>
+            <circle cx="40" cy="14" r="2.5" fill="white"/>
+          </svg>
+          <span style="font-size:9.5px;color:#4b5563;font-family:var(--mono);letter-spacing:1.5px;font-weight:600;">POWERED BY BECCA</span>
+        </div>
+      </div>
       <button onclick="openNotif()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border:none;background:var(--bg2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--text);font-family:var(--font);font-weight:500;margin-bottom:6px;position:relative;transition:background .15s;" title="Notifikasi">
         <span style="font-size:15px;">🔔</span> Notifikasi
         <span id="notif-badge-sb" style="display:none;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:2px;"></span>
@@ -1201,9 +1212,18 @@ function renderDashInvoicePanel(){
   } else {
     periodOrders=ORDERS.filter(o=>o.tgl_order?.slice(0,4)===String(_dashYear));
   }
-  const totalOrderNilai=periodOrders.reduce((s,o)=>s+tp(o),0);
-  sv('dash-inv-sent',totalOrderNilai.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}));
-  sv('dash-inv-sent-ct',`${periodOrders.length} order`);
+  // Nilai rupiah per order: qty × harga per customer per kolom
+  const totalOrderNilai=periodOrders.reduce((s,o)=>{
+    const cust=CUSTOMERS.find(c=>c.nama===o.perusahaan);
+    const val=aCols().reduce((cs,col)=>{
+      const qty=o[col.key]||0;
+      const harga=colPrice(cust,col.key);
+      return cs+(qty*harga);
+    },0);
+    return s+val;
+  },0);
+  sv('dash-inv-sent',fmtRpNum(totalOrderNilai));
+  sv('dash-inv-sent-ct',`${periodOrders.length} order masuk`);
   sv('dash-inv-paid',fmtRpNum(sumGrand(paid)));
   sv('dash-inv-paid-ct',`${paid.length} lunas`);
   sv('dash-inv-overdue',fmtRpNum(sumGrand(overdueInPeriod)));
