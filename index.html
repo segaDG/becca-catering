@@ -551,6 +551,29 @@ tr:hover td{background:var(--bg);}
 
       <!-- SETTINGS -->
       <div id="page-settings" class="page">
+        <!-- COMPANY DETAILS -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-head"><span class="card-title">🏢 Detail Perusahaan Penyedia</span><span style="font-size:11px;color:var(--muted);">Tampil di header invoice</span></div>
+          <div class="card-body">
+            <div class="fg">
+              <div class="form-group"><label>Nama Perusahaan</label><input type="text" id="co-nama" placeholder="PT. BOGA PANGAN SENTOSA"></div>
+              <div class="form-group"><label>Tagline</label><input type="text" id="co-tagline" placeholder="Your Best Catering Service"></div>
+              <div class="form-group span2"><label>Alamat</label><textarea id="co-alamat" style="min-height:52px;" placeholder="Jl. Contoh No.1, Kecamatan..."></textarea></div>
+              <div class="form-group"><label>No. Telepon</label><input type="text" id="co-phone" placeholder="0267 - 8407252"></div>
+              <div class="form-group"><label>Website</label><input type="text" id="co-website" placeholder="www.example.co.id"></div>
+              <div class="form-group"><label>Nama Manager / TTD</label><input type="text" id="co-mgr-nama" placeholder="Umad Jaelani"></div>
+              <div class="form-group"><label>Jabatan Manager</label><input type="text" id="co-mgr-jabatan" placeholder="Manager"></div>
+              <div class="form-group"><label>Nama Bank</label><input type="text" id="co-bank-name" placeholder="Bank Mandiri KC Karawang 17300"></div>
+              <div class="form-group"><label>No. Rekening</label><input type="text" id="co-bank-no" placeholder="173-00-0153197-0"></div>
+              <div class="form-group"><label>NPWP</label><input type="text" id="co-npwp" placeholder="75.260.202.9-408.000"></div>
+              <div class="form-group"><label>NPWPD</label><input type="text" id="co-npwpd" placeholder="03.0012478.03.005"></div>
+              <div class="form-group"><label>Kontak (Nama)</label><input type="text" id="co-ct-nama" placeholder="Mr. Somat"></div>
+              <div class="form-group"><label>Kontak (HP / Email)</label><input type="text" id="co-ct-info" placeholder="+6282210338880 - email@domain.com"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveCompany()" style="margin-top:8px;">💾 Simpan Detail Perusahaan</button>
+          </div>
+        </div>
+        <!-- AKUN -->
         <div class="card">
           <div class="card-head"><span class="card-title">🔒 Pengaturan Akun</span></div>
           <div class="card-body">
@@ -561,7 +584,7 @@ tr:hover td{background:var(--bg);}
               <div class="form-group"><label>Role</label><input type="text" id="set-rl" disabled></div>
               <div class="form-group"><label>Password Baru</label><input type="password" id="set-pw" placeholder="Kosongkan jika tidak ganti"></div>
             </div>
-            <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;">💾 Simpan</button>
+            <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;">💾 Simpan Akun</button>
           </div>
         </div>
       </div>
@@ -670,8 +693,24 @@ tr:hover td{background:var(--bg);}
       <div class="form-group"><label>No. Telepon</label><input type="text" id="cm-telp" placeholder="(0267) 8637994"></div>
       <div class="form-group"><label>Jenis Pelayanan</label><select id="cm-jenis"><option value="">— Pilih —</option><option value="Food Catering Service">Food Catering Service</option><option value="Rantang">Rantang</option><option value="Bento">Bento</option><option value="Paper Box">Paper Box</option><option value="Prasmanan">Prasmanan</option></select></div>
       <div class="form-group"><label>Tempo Pembayaran</label><select id="cm-tempo"><option value="0">0 Hari</option><option value="14">14 Hari</option><option value="30">30 Hari</option><option value="45">45 Hari</option><option value="60">60 Hari</option></select></div>
-      <div class="form-group"><label>Pajak (Pb1 %)</label><input type="number" id="cm-pb1" placeholder="0" min="0" max="100" step="0.01" value="10"></div>
-      <div class="form-group"><label>PPh 23 (%)</label><input type="number" id="cm-pph" placeholder="0" min="0" max="100" step="0.01" value="2"></div>
+      <div class="form-group">
+        <label>Pajak Pb1</label>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;">
+          <label class="tog"><input type="checkbox" id="cm-pb1-aktif" onchange="toggleTaxField('pb1')"><span class="tog-track"></span><span class="tog-knob"></span></label>
+          <span style="font-size:12px;color:var(--text2);">Aktif</span>
+          <input type="number" id="cm-pb1" value="10" min="0" max="100" step="0.01" style="width:80px;margin-left:auto;" placeholder="%">
+          <span style="font-size:12px;color:var(--muted);">%</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>PPh 23</label>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;">
+          <label class="tog"><input type="checkbox" id="cm-pph-aktif" onchange="toggleTaxField('pph')"><span class="tog-track"></span><span class="tog-knob"></span></label>
+          <span style="font-size:12px;color:var(--text2);">Aktif</span>
+          <input type="number" id="cm-pph" value="2" min="0" max="100" step="0.01" style="width:80px;margin-left:auto;" placeholder="%">
+          <span style="font-size:12px;color:var(--muted);">%</span>
+        </div>
+      </div>
     </div>
     <!-- PIC -->
     <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin:16px 0 10px;">👤 PIC Penerima Invoice</div>
@@ -709,6 +748,14 @@ tr:hover td{background:var(--bg);}
       <div class="form-group"><label>Periode Dari</label><input type="date" id="inv-dari" onchange="previewInvoice()"></div>
       <div class="form-group"><label>Periode Sampai</label><input type="date" id="inv-sampai" onchange="previewInvoice()"></div>
       <div class="form-group"><label>Catatan Invoice</label><input type="text" id="inv-cat" placeholder="Opsional..."></div>
+    </div>
+    <!-- ADDITIONAL ORDER -->
+    <div style="margin:14px 0 8px;padding:13px 14px;background:var(--amber-bg);border:1px solid #e0c090;border-radius:var(--rs);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--amber);">➕ Additional Order (Opsional)</div>
+        <button class="btn btn-amber btn-sm" onclick="addAORow()">+ Tambah Baris</button>
+      </div>
+      <div id="ao-rows"></div>
     </div>
     <div id="inv-preview"></div>
     <div style="display:flex;gap:8px;margin-top:16px;">
@@ -1324,12 +1371,20 @@ function buildCustPriceFields(prices={}){
       <input type="number" id="cp-${c.key}" value="${prices[c.key]||0}" min="0" placeholder="0">
     </div>`).join('');
 }
+function toggleTaxField(which){
+  // Visual feedback only — rate input always visible but opacity shows active state
+  const chk=document.getElementById(`cm-${which}-aktif`);
+  const inp=document.getElementById(`cm-${which}`);
+  if(inp)inp.style.opacity=chk?.checked?'1':'0.4';
+}
 function openAddCust(){
   editCustId=null;
   document.getElementById('cust-modal-title').textContent='➕ Tambah Customer';
   ['cm-kode','cm-nama','cm-alamat','cm-telp','cm-box','cm-lain','cm-lauk','cm-pend','cm-cat','cm-pic-nama','cm-pic-jabatan'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cm-jenis').value='Food Catering Service';document.getElementById('cm-tempo').value='30';
   document.getElementById('cm-pb1').value='10';document.getElementById('cm-pph').value='2';
+  document.getElementById('cm-pb1-aktif').checked=true;document.getElementById('cm-pph-aktif').checked=true;
+  toggleTaxField('pb1');toggleTaxField('pph');
   buildCustPriceFields({});openM('m-cust');
 }
 function openEditCust(id){
@@ -1343,6 +1398,9 @@ function openEditCust(id){
   document.getElementById('cm-tempo').value=c.tempo||'30';
   document.getElementById('cm-pb1').value=c.pajak_pb1||10;
   document.getElementById('cm-pph').value=c.pajak_pph||2;
+  document.getElementById('cm-pb1-aktif').checked=c.pajak_pb1_aktif||false;
+  document.getElementById('cm-pph-aktif').checked=c.pajak_pph_aktif||false;
+  toggleTaxField('pb1');toggleTaxField('pph');
   document.getElementById('cm-box').value=c.biaya_box||'';
   document.getElementById('cm-lain').value=c.biaya_lainnya||'';
   document.getElementById('cm-lauk').value=c.qty_lauk||'';
@@ -1368,6 +1426,8 @@ async function saveCust(){
     tempo:+document.getElementById('cm-tempo').value||0,
     pajak_pb1:+document.getElementById('cm-pb1').value||0,
     pajak_pph:+document.getElementById('cm-pph').value||0,
+    pajak_pb1_aktif:document.getElementById('cm-pb1-aktif').checked,
+    pajak_pph_aktif:document.getElementById('cm-pph-aktif').checked,
     pic_nama:document.getElementById('cm-pic-nama').value||null,
     pic_jabatan:document.getElementById('cm-pic-jabatan').value||null,
     default_harga:0,
@@ -1390,23 +1450,22 @@ async function deleteCust(id){
 }
 
 // ══ INVOICE ════════════════════════════════════════
-// Config PT. Boga Pangan Sentosa (bisa dikustomisasi via Settings)
-const BILLER={
-  nama:'PT. BOGA PANGAN SENTOSA',
-  tagline:'Your Best Catering Service',
+// BILLER config — loaded from localStorage (editable via Settings)
+const BILLER_DEFAULT={
+  nama:'PT. BOGA PANGAN SENTOSA',tagline:'Your Best Catering Service',
   alamat:'Perumnas Bumi Telukjambe, blok PB No.1 RT. 006/020 Desa Sukaluyu\nKecamatan Telukjambe timur, Kabupaten Karawang, Karawang Barat.',
-  phone:'0267 - 8407252',
-  website:'www.pangan.co.id',
-  manager_nama:'Umad Jaelani',
-  manager_jabatan:'Manager',
-  bank_name:'Bank Mandiri KC Karawang 17300',
-  bank_no:'173-00-0153197-0',
-  npwp:'75.260.202.9-408.000',
-  npwpd:'03.0012478.03.005',
-  contact_name:'Mr. Somat',
-  contact_phone:'+6282210338880',
-  contact_email:'umad@pangansentosa.com'
+  phone:'0267 - 8407252',website:'www.pangan.co.id',
+  manager_nama:'Umad Jaelani',manager_jabatan:'Manager',
+  bank_name:'Bank Mandiri KC Karawang 17300',bank_no:'173-00-0153197-0',
+  npwp:'75.260.202.9-408.000',npwpd:'03.0012478.03.005',
+  contact_name:'Mr. Somat',contact_phone:'+6282210338880',contact_email:'umad@pangansentosa.com'
 };
+function getBILLER(){
+  try{const s=localStorage.getItem('becca_company');return s?{...BILLER_DEFAULT,...JSON.parse(s)}:BILLER_DEFAULT;}
+  catch(e){return BILLER_DEFAULT;}
+}
+// Use getter so always fresh
+Object.defineProperty(window,'BILLER',{get:getBILLER});
 
 function genInvoiceNo(cust,dari,sampai){
   // Format: #KODE-YYYYMM-SEQ, e.g. #NICI-202602-001
@@ -1448,15 +1507,49 @@ function openCreateInvoice(){
   document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
   document.getElementById('inv-sampai').value=new Date(y,m+1,0).toISOString().split('T')[0];
   document.getElementById('inv-cat').value='';
+  document.getElementById('ao-rows').innerHTML='';
   document.getElementById('inv-preview').innerHTML='';
   openM('m-inv-create');
 }
 
-function calcInvoiceData(custNama,dari,sampai){
+let _aoIdx=0;
+function addAORow(){
+  const idx=_aoIdx++;
+  const now=new Date().toISOString().split('T')[0];
+  const row=document.createElement('div');
+  row.id=`ao-${idx}`;
+  row.style.cssText='display:grid;grid-template-columns:130px 1fr 90px 90px 28px;gap:7px;align-items:end;margin-bottom:8px;';
+  row.innerHTML=`
+    <div><label style="display:block;font-size:9px;font-weight:600;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Tanggal</label>
+      <input type="date" id="ao-tgl-${idx}" value="${now}" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--text);outline:none;"></div>
+    <div><label style="display:block;font-size:9px;font-weight:600;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Keterangan / Item</label>
+      <input type="text" id="ao-desc-${idx}" placeholder="Food Catering Service Shift 1 - Tambahan" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--text);outline:none;"></div>
+    <div><label style="display:block;font-size:9px;font-weight:600;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Qty</label>
+      <input type="number" id="ao-qty-${idx}" value="0" min="0" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--text);outline:none;text-align:right;"></div>
+    <div><label style="display:block;font-size:9px;font-weight:600;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Harga / pax (Rp)</label>
+      <input type="number" id="ao-harga-${idx}" value="0" min="0" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--text);outline:none;text-align:right;"></div>
+    <div style="padding-bottom:2px;"><button onclick="document.getElementById('ao-${idx}').remove()" style="width:28px;height:36px;background:var(--red-bg);border:1px solid #dbb0ab;border-radius:6px;cursor:pointer;color:var(--red);font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button></div>`;
+  document.getElementById('ao-rows').appendChild(row);
+}
+
+function getAOItems(){
+  const items=[];
+  document.querySelectorAll('[id^="ao-tgl-"]').forEach(el=>{
+    const idx=el.id.replace('ao-tgl-','');
+    const tgl=el.value;
+    const desc=document.getElementById(`ao-desc-${idx}`)?.value?.trim()||'';
+    const qty=+document.getElementById(`ao-qty-${idx}`)?.value||0;
+    const harga=+document.getElementById(`ao-harga-${idx}`)?.value||0;
+    if(qty>0&&harga>0)items.push({tgl,desc,qty,harga,amount:qty*harga});
+  });
+  return items;
+}
+
+function calcInvoiceData(custNama,dari,sampai,additionalOrders=[]){
   const cust=CUSTOMERS.find(c=>c.nama===custNama);
   const cols=aCols();
   const orders=ORDERS.filter(o=>o.perusahaan===custNama&&o.tgl_order>=dari&&o.tgl_order<=sampai&&o.tipe==='real orderan').sort((a,b)=>a.tgl_order.localeCompare(b.tgl_order));
-  if(!orders.length)return null;
+  if(!orders.length&&!additionalOrders.length)return null;
   const rows=orders.map(o=>{
     let subtotal=0;
     const colBreakdown=[];
@@ -1471,12 +1564,17 @@ function calcInvoiceData(custNama,dari,sampai){
     return{...o,colBreakdown,subtotal,totalQty};
   });
   const grandSubtotal=rows.reduce((s,r)=>s+r.subtotal,0);
-  const pb1Rate=(cust?.pajak_pb1||0)/100;
-  const pphRate=(cust?.pajak_pph||0)/100;
-  const pb1Amount=Math.round(grandSubtotal*pb1Rate);
-  const pphAmount=-Math.round(grandSubtotal*pphRate);
-  const grandTotal=grandSubtotal+pb1Amount+pphAmount;
-  return{cust,orders:rows,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
+  const aoTotal=additionalOrders.reduce((s,a)=>s+a.amount,0);
+  const baseTotal=grandSubtotal+aoTotal;
+  // Pajak dari setting customer (hanya jika aktif)
+  const pb1Aktif=cust?.pajak_pb1_aktif||false;
+  const pphAktif=cust?.pajak_pph_aktif||false;
+  const pb1Rate=pb1Aktif?(cust?.pajak_pb1||0)/100:0;
+  const pphRate=pphAktif?(cust?.pajak_pph||0)/100:0;
+  const pb1Amount=Math.round(baseTotal*pb1Rate);
+  const pphAmount=-Math.round(baseTotal*pphRate);
+  const grandTotal=baseTotal+pb1Amount+pphAmount;
+  return{cust,orders:rows,cols,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal};
 }
 
 function fmtDateLong(iso){
@@ -1498,7 +1596,9 @@ function fmtDayMonth(iso){
 }
 
 function buildInvoiceHTML(data,invNo,isPreview=false){
-  const{cust,orders,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const{cust,orders,cols,grandSubtotal,aoTotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const B=getBILLER();
+  const ao=additionalOrders||[];
   const lineItems=[];
   cols.forEach(c=>{
     const totalQty=orders.reduce((s,o)=>s+(o[c.key]||0),0);
@@ -1507,104 +1607,126 @@ function buildInvoiceHTML(data,invNo,isPreview=false){
     lineItems.push({desc:`${cust?.jenis_pelayanan||'Food Catering Service'} ${c.label}`,harga,qty:totalQty,amount:totalQty*harga});
   });
   const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  const emptyRows=Math.max(0,14-lineItems.length);
+  const hasAO=ao.length>0;
+  const totalRows=lineItems.length+ao.length;
+  const emptyRows=Math.max(0,14-totalRows);
+  const showTaxCol=pb1Aktif;
+  const baseTotal=grandSubtotal+(aoTotal||0);
   return`<div style="font-family:'Times New Roman',serif;font-size:11px;width:100%;max-width:210mm;margin:0 auto;padding:8mm 10mm;background:#fff;color:#000;box-sizing:border-box;">
   ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">PREVIEW — BELUM DISIMPAN</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;margin-bottom:0;">Invoice Status : Confirmed</div>`}
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px 12px;border-bottom:2px solid #000;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:14px 0 10px;border-bottom:2px solid #000;">
     <div>
-      <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${BILLER.nama}</div>
-      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:4px;">${BILLER.tagline}</div>
-      <div style="font-size:9.5px;color:#333;">${BILLER.alamat.replace('\n','<br>')}</div>
-      <div style="font-size:9.5px;color:#333;">Phone: ${BILLER.phone} &nbsp;|&nbsp; ${BILLER.website}</div>
+      <div style="font-size:20px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${B.nama}</div>
+      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:3px;">${B.tagline}</div>
+      <div style="font-size:9px;color:#333;">${B.alamat.replace('\n','<br>')}</div>
+      <div style="font-size:9px;color:#333;">Phone: ${B.phone}${B.website?` &nbsp;|&nbsp; ${B.website}`:''}</div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:28px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:2px;">INVOICE</div>
-      <div style="font-family:'Courier New',monospace;font-size:13px;font-weight:700;color:#1e4d6b;margin-top:4px;">${invNo}</div>
+      <div style="font-size:26px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:2px;">INVOICE</div>
+      <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#1e4d6b;margin-top:3px;">${invNo}</div>
     </div>
   </div>
-  <div style="display:flex;justify-content:space-between;padding:12px 22px;gap:20px;">
+  <div style="display:flex;justify-content:space-between;padding:10px 0;gap:20px;">
     <div style="flex:1;">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">BILL TO &mdash; Invoice Receiving</div>
-      <div style="font-size:13px;font-weight:700;color:#000;">${cust?.nama||''}</div>
-      ${cust?.alamat?`<div style="font-size:9.5px;color:#333;margin-top:3px;">${cust.alamat}</div>`:''}
-      ${cust?.telepon?`<div style="font-size:9.5px;color:#333;">Phone: ${cust.telepon}</div>`:''}
+      <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:4px;border-bottom:1px solid #ccc;padding-bottom:2px;">BILL TO &mdash; Invoice Receiving</div>
+      <div style="font-size:12px;font-weight:700;color:#000;">${cust?.nama||''}</div>
+      ${cust?.alamat?`<div style="font-size:9px;color:#333;margin-top:2px;">${cust.alamat}</div>`:''}
+      ${cust?.telepon?`<div style="font-size:9px;color:#333;">Phone: ${cust.telepon}</div>`:''}
     </div>
-    <div style="text-align:right;min-width:220px;">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px;border-bottom:1px solid #ccc;padding-bottom:3px;">PERIOD</div>
-      <div style="font-size:11px;font-weight:700;">${fmtPeriod(orders[0]?.tgl_order,orders[orders.length-1]?.tgl_order)}</div>
+    <div style="text-align:right;min-width:200px;">
+      <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:4px;border-bottom:1px solid #ccc;padding-bottom:2px;">PERIOD</div>
+      <div style="font-size:10px;font-weight:700;">${fmtPeriod(orders[0]?.tgl_order||'',orders[orders.length-1]?.tgl_order||'')}</div>
     </div>
   </div>
-  <table style="width:100%;border-collapse:collapse;margin:0;font-size:11px;">
+  <table style="width:100%;border-collapse:collapse;margin:0;font-size:10.5px;">
     <thead><tr style="background:#1e4d6b;color:#fff;">
-      <th style="padding:7px 10px;text-align:left;font-family:Arial,sans-serif;font-size:10px;">DESCRIPTION</th>
-      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">UNIT PRICE</th>
-      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">QTY</th>
-      <th style="padding:7px 10px;text-align:center;font-family:Arial,sans-serif;font-size:10px;">TAXED (Pb1)</th>
-      <th style="padding:7px 10px;text-align:right;font-family:Arial,sans-serif;font-size:10px;">AMOUNT</th>
+      <th style="padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:9px;">DESCRIPTION</th>
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">UNIT PRICE</th>
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">QTY</th>
+      ${showTaxCol?`<th style="padding:6px 8px;text-align:center;font-family:Arial,sans-serif;font-size:9px;">TAXED (Pb1)</th>`:''}
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">AMOUNT</th>
     </tr></thead>
     <tbody>
       ${lineItems.map((li,i)=>`<tr style="background:${i%2===0?'#fff':'#f9f9f9'};">
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;">${li.desc}</td>
-        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.harga)}</td>
-        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${li.qty.toLocaleString('id-ID')}</td>
-        <td style="padding:6px 10px;text-align:center;border-bottom:1px solid #eee;"></td>
-        <td style="padding:6px 10px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.amount)}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;">${li.desc}</td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.harga)}</td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${li.qty.toLocaleString('id-ID')}</td>
+        ${showTaxCol?`<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #eee;"></td>`:''}
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(li.amount)}</td>
       </tr>`).join('')}
-      ${Array(emptyRows).fill(`<tr><td style="padding:6px 10px;border-bottom:1px solid #eee;">&nbsp;</td><td colspan="4" style="border-bottom:1px solid #eee;"></td></tr>`).join('')}
+      ${hasAO?ao.map((a,i)=>`<tr style="background:${(lineItems.length+i)%2===0?'#fff':'#f9f9f9'};">
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;color:#555;font-style:italic;">${a.desc||'Additional Order'} <span style="font-size:8px;color:#999;">(${fmtDateLong(a.tgl)})</span></td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(a.harga)}</td>
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${a.qty.toLocaleString('id-ID')}</td>
+        ${showTaxCol?`<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #eee;"></td>`:''}
+        <td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee;font-family:'Courier New',monospace;">${fmtRpNum(a.amount)}</td>
+      </tr>`).join(''):''}
+      ${Array(emptyRows).fill(`<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;">&nbsp;</td><td colspan="${showTaxCol?3:2}" style="border-bottom:1px solid #eee;"></td></tr>`).join('')}
     </tbody>
     <tfoot>
-      <tr><td colspan="2"></td>
-        <td colspan="2" style="padding:6px 10px;text-align:right;font-weight:700;font-family:Arial,sans-serif;font-size:10px;border-top:2px solid #1e4d6b;">[${orders.length}] Subtotal</td>
-        <td style="padding:6px 10px;text-align:right;font-weight:700;font-family:'Courier New',monospace;border-top:2px solid #1e4d6b;">${fmtRpNum(grandSubtotal)}</td>
+      <tr><td colspan="${showTaxCol?2:2}"></td>
+        <td ${showTaxCol?'':'colspan="2"'} style="padding:5px 8px;text-align:right;font-weight:700;font-family:Arial,sans-serif;font-size:9px;border-top:2px solid #1e4d6b;">[${orders.length}] Subtotal</td>
+        ${showTaxCol?`<td style="border-top:2px solid #1e4d6b;"></td>`:''}
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;border-top:2px solid #1e4d6b;">${fmtRpNum(grandSubtotal)}</td>
       </tr>
-      ${pb1Rate>0?`<tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;color:#555;">Pb1 ${(pb1Rate*100).toFixed(2)}%</td><td></td></tr>
-      <tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;">Tax due</td><td style="padding:3px 10px;text-align:right;font-family:'Courier New',monospace;">${fmtRpNum(pb1Amount)}</td></tr>`:''}
-      ${pphRate>0?`<tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;color:#555;">PPh 23 ${(pphRate*100).toFixed(2)}%</td><td></td></tr>
-      <tr><td colspan="2"></td><td colspan="2" style="padding:3px 10px;text-align:right;font-size:10px;">Tax due</td><td style="padding:3px 10px;text-align:right;font-family:'Courier New',monospace;color:#a8281e;">${fmtRpNum(pphAmount)}</td></tr>`:''}
+      ${hasAO?`<tr><td colspan="${showTaxCol?3:2}"></td>
+        <td style="padding:3px 8px;text-align:right;font-size:9px;font-family:Arial,sans-serif;">Additional Order Subtotal</td>
+        ${showTaxCol?`<td></td>`:''}
+        <td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;">${fmtRpNum(aoTotal)}</td>
+      </tr>`:''}
+      ${pb1Aktif&&pb1Rate>0?`<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#555;">Pb1 ${(pb1Rate*100).toFixed(2)}%</td>${showTaxCol?'':'<td></td>'}</tr>
+      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;">${fmtRpNum(pb1Amount)}</td></tr>`:
+      `<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#999;">Pb1 10,00%</td>${showTaxCol?'':''}<td></td></tr>`}
+      ${pphAktif&&pphRate>0?`<tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;color:#555;">PPh 23 ${(pphRate*100).toFixed(2)}%</td>${showTaxCol?'':''}</tr>
+      <tr><td colspan="${showTaxCol?2:2}"></td><td colspan="${showTaxCol?2:1}" style="padding:3px 8px;text-align:right;font-size:9px;">Tax due</td>${showTaxCol?'':''}<td style="padding:3px 8px;text-align:right;font-family:'Courier New',monospace;color:#a8281e;">${fmtRpNum(pphAmount)}</td></tr>`:''}
       <tr style="background:#1e4d6b;color:#fff;">
-        <td colspan="3" style="padding:9px 10px;"></td>
-        <td style="padding:9px 10px;text-align:right;font-weight:700;font-size:13px;font-family:Arial,sans-serif;letter-spacing:1px;">TOTAL</td>
-        <td style="padding:9px 10px;text-align:right;font-weight:700;font-family:'Courier New',monospace;font-size:14px;">${fmtRpNum(grandTotal)}</td>
+        <td colspan="${showTaxCol?3:2}" style="padding:8px 8px;"></td>
+        <td style="padding:8px 8px;text-align:right;font-weight:700;font-size:12px;font-family:Arial,sans-serif;letter-spacing:1px;">TOTAL</td>
+        <td style="padding:8px 8px;text-align:right;font-weight:700;font-family:'Courier New',monospace;font-size:13px;">${fmtRpNum(grandTotal)}</td>
       </tr>
     </tfoot>
   </table>
-  <div style="display:flex;justify-content:space-between;padding:14px 22px;margin-top:8px;gap:16px;font-size:10px;">
+  <div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:6px;gap:16px;font-size:9.5px;">
     <div style="flex:1;">
-      <div style="font-weight:700;font-family:Arial,sans-serif;font-size:10px;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;color:#1e4d6b;">OTHER COMMENTS</div>
+      <!-- BANK DETAIL DULU -->
+      <div style="margin-bottom:10px;padding:8px 10px;background:#f0f5fa;border:1px solid #c8d8e8;border-radius:5px;">
+        <div style="font-weight:700;font-size:9.5px;color:#1e4d6b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Make all checks payable to</div>
+        <div style="font-weight:700;font-size:11px;color:#1e4d6b;">${B.nama}</div>
+        <div style="margin-top:4px;color:#333;">${B.bank_name}</div>
+        <div style="font-family:'Courier New',monospace;color:#333;">No. Rekening : ${B.bank_no}</div>
+      </div>
+      <!-- OTHER COMMENTS -->
+      <div style="font-weight:700;font-family:Arial,sans-serif;font-size:9.5px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;color:#1e4d6b;">OTHER COMMENTS</div>
       <div>1. Total payment due in ${cust?.tempo||30} days</div>
       <div>2. Please include the invoice number on your check</div>
-      <div>3. PPh a/n ${BILLER.nama}</div>
-      <div>4. NPWP : ${BILLER.npwp}</div>
-      <div>5. NPWPD : ${BILLER.npwpd}</div>
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
-        <div style="font-weight:700;font-size:10px;margin-bottom:4px;">Make all checks payable to</div>
-        <div style="font-weight:700;font-size:11px;color:#1e4d6b;">${BILLER.nama}</div>
-        <div style="margin-top:5px;color:#333;">${BILLER.bank_name}</div>
-        <div style="font-family:'Courier New',monospace;color:#333;">No. Rekening : ${BILLER.bank_no}</div>
-      </div>
+      <div>3. PPh a/n ${B.nama}</div>
+      <div>4. NPWP : ${B.npwp}</div>
+      <div>5. NPWPD : ${B.npwpd}</div>
     </div>
-    <div style="text-align:center;min-width:200px;">
-      <div style="font-size:10px;color:#555;margin-bottom:55px;">Karawang, ${today}</div>
-      <div style="margin-top:44px;border-top:1px solid #000;padding-top:5px;display:inline-block;min-width:150px;">
-        <div style="font-weight:700;">${BILLER.manager_nama}</div>
-        <div style="font-size:9.5px;color:#555;">${BILLER.manager_jabatan}</div>
+    <div style="text-align:center;min-width:185px;">
+      <div style="font-size:9.5px;color:#555;margin-bottom:52px;">Karawang, ${today}</div>
+      <div style="border-top:1px solid #000;padding-top:4px;display:inline-block;min-width:140px;">
+        <div style="font-weight:700;">${B.manager_nama}</div>
+        <div style="font-size:9px;color:#555;">${B.manager_jabatan}</div>
       </div>
     </div>
   </div>
-  <div style="text-align:center;padding:8px 22px;font-size:9px;color:#777;border-top:1px solid #eee;">
-    If you have any questions about this invoice, please contact ${BILLER.contact_name} - ${BILLER.contact_phone} - ${BILLER.contact_email}<br>
+  <div style="text-align:center;padding:6px 0;font-size:8.5px;color:#777;border-top:1px solid #eee;">
+    If you have any questions about this invoice, please contact ${B.contact_name} - ${B.contact_phone} - ${B.contact_email}<br>
     <strong style="color:#1e4d6b;">Thank You For Your Business!</strong>
   </div>
 </div>`;
 }
 
+
 function buildRekapHTML(data,invNo,isPreview=false){
-  const{cust,orders,cols,grandSubtotal,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const{cust,orders,cols,grandSubtotal,additionalOrders,pb1Aktif,pphAktif,pb1Rate,pphRate,pb1Amount,pphAmount,grandTotal}=data;
+  const B=getBILLER();
+  const ao=additionalOrders||[];
+  const hasAO=ao.length>0;
   const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  // Hitung total per kolom
   const colTotals={};cols.forEach(c=>colTotals[c.key]=0);
   orders.forEach(o=>cols.forEach(c=>{colTotals[c.key]+=(o[c.key]||0);}));
-  // Filter hanya kolom yang punya data
   const usedCols=cols.filter(c=>colTotals[c.key]>0);
   const grandPorsi=usedCols.reduce((s,c)=>s+colTotals[c.key],0);
   const emptyRows=Math.max(0,14-orders.length);
@@ -1612,10 +1734,10 @@ function buildRekapHTML(data,invNo,isPreview=false){
   ${isPreview?`<div style="background:#1e4d6b;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">PREVIEW</div>`:`<div style="background:#2a6b47;color:#fff;text-align:center;padding:4px;font-size:10px;letter-spacing:2px;font-family:Arial,sans-serif;">Invoice Status : Confirmed</div>`}
   <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px 12px;border-bottom:2px solid #000;">
     <div>
-      <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${BILLER.nama}</div>
-      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:4px;">${BILLER.tagline}</div>
-      <div style="font-size:9.5px;color:#333;">${BILLER.alamat.replace('\n','<br>')}</div>
-      <div style="font-size:9.5px;color:#333;">Phone: ${BILLER.phone} &nbsp;|&nbsp; ${BILLER.website}</div>
+      <div style="font-size:22px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">${B.nama}</div>
+      <div style="font-size:10px;color:#555;font-style:italic;margin-bottom:4px;">${B.tagline}</div>
+      <div style="font-size:9.5px;color:#333;">${B.alamat.replace('\n','<br>')}</div>
+      <div style="font-size:9.5px;color:#333;">Phone: ${B.phone} &nbsp;|&nbsp; ${B.website}</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:20px;font-weight:700;color:#1e4d6b;font-family:Arial,sans-serif;letter-spacing:1px;">INVOICE SUMMARY</div>
@@ -1675,26 +1797,33 @@ function buildRekapHTML(data,invNo,isPreview=false){
       </tr>
     </tbody>
   </table>
-  <!-- ADDITIONAL ORDER -->
-  <div style="padding:12px 0 5px;font-weight:700;font-size:10px;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">Additional Order</div>
-  <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px;">
+  <!-- ADDITIONAL ORDER — only shown if has data -->
+  ${hasAO?`
+  <div style="padding:10px 0 5px;font-weight:700;font-size:10px;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">Additional Order</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;">
     <thead><tr style="background:#555;color:#fff;">
       <th style="padding:5px 7px;text-align:center;width:24px;">NO</th>
-      <th style="padding:5px 7px;text-align:center;">DD</th>
-      <th style="padding:5px 7px;text-align:center;">MM</th>
-      <th style="padding:5px 7px;text-align:center;" colspan="${usedCols.length}">SHIFT</th>
-      <th style="padding:5px 7px;text-align:center;">QTY</th>
+      <th style="padding:5px 7px;text-align:left;">KETERANGAN / ITEM</th>
+      <th style="padding:5px 7px;text-align:center;">TANGGAL</th>
+      <th style="padding:5px 7px;text-align:right;">QTY</th>
+      <th style="padding:5px 7px;text-align:right;">HARGA</th>
       <th style="padding:5px 7px;text-align:right;">TOTAL</th>
     </tr></thead>
     <tbody>
-      ${Array(7).fill(0).map((_,i)=>`<tr style="background:${i%2===0?'#fff':'#f5f5f5'};"><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${i+1}</td><td style="padding:5px 7px;border-bottom:1px solid #ddd;"></td><td style="padding:5px 7px;border-bottom:1px solid #ddd;"></td><td colspan="${usedCols.length}" style="border-bottom:1px solid #ddd;"></td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">0</td><td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${fmtRpNum(0)}</td></tr>`).join('')}
+      ${ao.map((a,i)=>`<tr style="background:${i%2===0?'#fff':'#f5f5f5'};">
+        <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${i+1}</td>
+        <td style="padding:5px 7px;border-bottom:1px solid #ddd;">${a.desc||''}</td>
+        <td style="padding:5px 7px;text-align:center;border-bottom:1px solid #ddd;">${fmtDateLong(a.tgl)}</td>
+        <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${a.qty.toLocaleString('id-ID')}</td>
+        <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${fmtRpNum(a.harga)}</td>
+        <td style="padding:5px 7px;text-align:right;border-bottom:1px solid #ddd;font-family:'Courier New',monospace;">${fmtRpNum(a.amount)}</td>
+      </tr>`).join('')}
       <tr style="background:#e8edf2;font-weight:700;">
-        <td colspan="${usedCols.length+3}" style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;border-top:1px solid #555;text-transform:uppercase;">SUB TOTAL</td>
-        <td style="padding:6px 7px;text-align:center;border-top:1px solid #555;font-family:'Courier New',monospace;">0</td>
-        <td style="padding:6px 7px;text-align:right;border-top:1px solid #555;font-family:'Courier New',monospace;">${fmtRpNum(0)}</td>
+        <td colspan="5" style="padding:5px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;border-top:1px solid #555;text-transform:uppercase;">SUB TOTAL Additional</td>
+        <td style="padding:5px 7px;text-align:right;border-top:1px solid #555;font-family:'Courier New',monospace;">${fmtRpNum(ao.reduce((s,a)=>s+a.amount,0))}</td>
       </tr>
     </tbody>
-  </table>
+  </table>`:''}
   <!-- SIGNATURES -->
   <div style="display:flex;justify-content:space-between;padding:10px 0 16px;font-size:10px;font-family:Arial,sans-serif;">
     <div>
@@ -1708,8 +1837,8 @@ function buildRekapHTML(data,invNo,isPreview=false){
     <div style="text-align:center;">
       <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
-        <div style="font-weight:700;">${BILLER.manager_nama}</div>
-        <div style="color:#555;font-size:9.5px;">${BILLER.manager_jabatan}</div>
+        <div style="font-weight:700;">${B.manager_nama}</div>
+        <div style="color:#555;font-size:9.5px;">${B.manager_jabatan}</div>
       </div>
     </div>
   </div>
@@ -1727,7 +1856,13 @@ function switchInvTab(tab){
 
 function viewInvoice(id){
   const inv=INVOICES.find(x=>x.id==id);if(!inv)return;
-  const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai);
+  // Extract saved additional orders if any
+  let savedAO=[];
+  try{
+    const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
+    if(od&&od.additional)savedAO=od.additional;
+  }catch(e){}
+  const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai,savedAO);
   _currentInvData=data;_currentInvNo=inv.invoice_no;
   document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
   document.getElementById('inv-tab-inv').innerHTML=data?buildInvoiceHTML(data,inv.invoice_no,false):`<div class="alert alert-warn">Data order tidak ditemukan.</div>`;
@@ -1771,7 +1906,8 @@ function previewInvoice(){
   const dari=document.getElementById('inv-dari').value;
   const sampai=document.getElementById('inv-sampai').value;
   if(!custNama||!dari||!sampai){document.getElementById('inv-preview').innerHTML='';return;}
-  const data=calcInvoiceData(custNama,dari,sampai);
+  const ao=getAOItems();
+  const data=calcInvoiceData(custNama,dari,sampai,ao);
   if(!data){document.getElementById('inv-preview').innerHTML='<div class="alert alert-warn">Tidak ada order real di periode ini.</div>';return;}
   const no=genInvoiceNo(data.cust,dari,sampai);
   document.getElementById('inv-preview').innerHTML=`
@@ -1794,7 +1930,8 @@ async function saveInvoice(){
   const dari=document.getElementById('inv-dari').value;
   const sampai=document.getElementById('inv-sampai').value;
   if(!custNama||!dari||!sampai){toast('Lengkapi semua field','error');return;}
-  const data=calcInvoiceData(custNama,dari,sampai);
+  const ao=getAOItems();
+  const data=calcInvoiceData(custNama,dari,sampai,ao);
   if(!data){toast('Tidak ada order untuk di-invoice','error');return;}
   const btn=document.getElementById('save-inv-btn');btn.disabled=true;btn.textContent='Menyimpan...';
   try{
@@ -1803,8 +1940,11 @@ async function saveInvoice(){
     const payload={
       invoice_no:invNo,customer_id:cust?.id||null,customer_nama:custNama,
       periode_dari:dari,periode_sampai:sampai,
-      orders_data:JSON.stringify(data.orders.map(o=>({id:o.id,tgl:o.tgl_order,total:o.subtotal,totalQty:o.totalQty||0}))),
-      subtotal:data.grandSubtotal,biaya_box_total:0,biaya_lainnya_total:0,
+      orders_data:JSON.stringify({
+        orders:data.orders.map(o=>({id:o.id,tgl:o.tgl_order,total:o.subtotal,totalQty:o.totalQty||0})),
+        additional:ao
+      }),
+      subtotal:data.grandSubtotal,biaya_box_total:0,biaya_lainnya_total:data.aoTotal||0,
       grand_total:data.grandTotal,status:'draft',catatan:document.getElementById('inv-cat').value,created_by:CU.nama
     };
     await sbPost('invoices',payload);
@@ -1950,11 +2090,39 @@ async function changeRole(id,role){try{await sbPatch('users',id,{role});await lo
 async function delUser(id){if(!confirm('Hapus user ini?'))return;try{await sbDelete('users',id);await loadUsers();renderUsers();toast('Dihapus','info');}catch(e){toast('Gagal','error');}}
 
 // ══ SETTINGS ═══════════════════════════════════════
-function renderSettings(){document.getElementById('set-nm').value=CU.nama;document.getElementById('set-un').value=CU.username;document.getElementById('set-rl').value=RC_META[CU.role].label;document.getElementById('set-pw').value='';}
+function renderSettings(){
+  document.getElementById('set-nm').value=CU.nama;
+  document.getElementById('set-un').value=CU.username;
+  document.getElementById('set-rl').value=RC_META[CU.role].label;
+  document.getElementById('set-pw').value='';
+  // Load company data
+  const B=getBILLER();
+  const fv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  fv('co-nama',B.nama);fv('co-tagline',B.tagline);fv('co-alamat',B.alamat);
+  fv('co-phone',B.phone);fv('co-website',B.website);
+  fv('co-mgr-nama',B.manager_nama);fv('co-mgr-jabatan',B.manager_jabatan);
+  fv('co-bank-name',B.bank_name);fv('co-bank-no',B.bank_no);
+  fv('co-npwp',B.npwp);fv('co-npwpd',B.npwpd);
+  fv('co-ct-nama',B.contact_name);fv('co-ct-info',B.contact_phone+(B.contact_email?' - '+B.contact_email:''));
+}
+function saveCompany(){
+  const gv=id=>document.getElementById(id)?.value?.trim()||'';
+  const ctInfo=gv('co-ct-info').split(' - ');
+  const data={
+    nama:gv('co-nama'),tagline:gv('co-tagline'),alamat:gv('co-alamat'),
+    phone:gv('co-phone'),website:gv('co-website'),
+    manager_nama:gv('co-mgr-nama'),manager_jabatan:gv('co-mgr-jabatan'),
+    bank_name:gv('co-bank-name'),bank_no:gv('co-bank-no'),
+    npwp:gv('co-npwp'),npwpd:gv('co-npwpd'),
+    contact_name:ctInfo[0]||'',contact_phone:ctInfo[1]||'',contact_email:ctInfo[2]||''
+  };
+  try{localStorage.setItem('becca_company',JSON.stringify(data));toast('Detail perusahaan tersimpan!','success');}
+  catch(e){toast('Gagal simpan','error');}
+}
 async function saveSettings(){
   const nm=document.getElementById('set-nm').value.trim(),pw=document.getElementById('set-pw').value;
   if(!nm){toast('Nama tidak boleh kosong','error');return;}
-  try{const upd={nama:nm};if(pw)upd.password=pw;await sbPatch('users',CU.id,upd);CU.nama=nm;await loadUsers();document.getElementById('nav-nm').textContent=nm;toast('Tersimpan!','success');}
+  try{const upd={nama:nm};if(pw)upd.password=pw;await sbPatch('users',CU.id,upd);CU.nama=nm;await loadUsers();document.getElementById('nav-nm').textContent=nm;toast('Akun tersimpan!','success');}
   catch(e){toast('Gagal','error');}
 }
 
