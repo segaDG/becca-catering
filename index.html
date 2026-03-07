@@ -1887,7 +1887,7 @@ function renderInvoices(){
     const diffDays=due?Math.round((due-today)/(1000*60*60*24)):null;
     const isOverdue=inv.status!=='paid'&&diffDays!==null&&diffDays<0;
     const isNearDue=inv.status!=='paid'&&diffDays!==null&&diffDays>=0&&diffDays<=7;
-    const rowBg=inv.status==='paid'?'background:#f0f0f0;':isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
+    const rowBg=inv.status==='paid'?'background:#dde0e3;color:#555;':isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
     // Jatuh tempo cell
     let dueCell='';
     if(inv.status==='paid'){
@@ -2674,10 +2674,16 @@ async function saveInvoice(){
 async function updateInvField(id,field,value,autoStatus){
   try{
     const patch={};
-    patch[field]=value||null;
+    // Cast correctly per field type
+    if(field==='jumlah_bayar'){
+      // Strip formatting dots, cast to number; empty string → null
+      const cleaned=String(value||'').replace(/\./g,'').trim();
+      patch[field]=cleaned===''?null:Number(cleaned);
+    } else {
+      patch[field]=value||null;
+    }
     // Auto-set status based on which field was filled
     if(value&&autoStatus){
-      // tgl_bayar → paid; tgl_invoice → sent (only if not already paid)
       const inv=INVOICES.find(x=>x.id==id);
       if(autoStatus==='paid'){
         patch.status='paid';
@@ -2688,8 +2694,10 @@ async function updateInvField(id,field,value,autoStatus){
     }
     await sbPatch('invoices',id,patch);
     await loadInvoices();renderInvoices();updateNotifBadge();
-    toast(`${field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah'} disimpan`+(autoStatus&&value?` · Status → ${patch.status||''}`:''),(autoStatus==='paid'&&value)?'success':'info');
-  }catch(e){toast('Gagal: '+e.message,'error');}
+    const label=field==='tgl_invoice'?'Tgl Invoice':field==='tgl_bayar'?'Tgl Bayar':'Jumlah Terbayar';
+    const statusNote=patch.status?` · Status → ${patch.status}`:'';
+    toast(`${label} disimpan${statusNote}`,patch.status==='paid'?'success':'info');
+  }catch(e){toast('Gagal menyimpan: '+e.message,'error');}
 }
 async function updateInvStatus(id,status){
   try{
