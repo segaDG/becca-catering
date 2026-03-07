@@ -2090,12 +2090,16 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
   const B=getBILLER();
   const ao=additionalOrders||[];
   const lineItems=[];
-  cols.forEach(c=>{
+  (cols||[]).forEach(c=>{
     const totalQty=orders.reduce((s,o)=>s+(o[c.key]||0),0);
     if(!totalQty)return;
     const harga=colPrice(cust,c.key);
     lineItems.push({desc:`${cust?.jenis_pelayanan||'Food Catering Service'} ${c.label}`,harga,qty:totalQty,amount:totalQty*harga});
   });
+  // If no line items built (snapshot/imported invoice), show total as single line
+  if(lineItems.length===0&&ao.length===0&&grandTotal){
+    lineItems.push({desc:'Food Catering Service',harga:grandTotal,qty:1,amount:grandTotal,isLumpSum:true});
+  }
   const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   const hasAO=ao.length>0;
   const totalRows=lineItems.length+ao.length;
@@ -2222,9 +2226,10 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
   const ao=additionalOrders||[];
   const hasAO=ao.length>0;
   const today=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  const colTotals={};cols.forEach(c=>colTotals[c.key]=0);
-  orders.forEach(o=>cols.forEach(c=>{colTotals[c.key]+=(o[c.key]||0);}));
-  const usedCols=cols.filter(c=>colTotals[c.key]>0);
+  const safeCols=cols||[];
+  const colTotals={};safeCols.forEach(c=>colTotals[c.key]=0);
+  orders.forEach(o=>safeCols.forEach(c=>{colTotals[c.key]+=(o[c.key]||0);}));
+  const usedCols=safeCols.filter(c=>colTotals[c.key]>0);
   const grandPorsi=usedCols.reduce((s,c)=>s+colTotals[c.key],0);
   const emptyRows=Math.max(0,14-orders.length);
   return`<div style="font-family:'Times New Roman',serif;font-size:11px;width:100%;max-width:210mm;margin:0 auto;padding:8mm 10mm;background:#fff;color:#000;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
@@ -2446,17 +2451,20 @@ function viewInvoice(id){
       if(od&&od.orders)storedOrders=od.orders;
     }catch(e){}
     // Build minimal data object from stored grand_total
+    // Use correct key 'cust' to match buildInvoiceHTML destructuring
+    const _cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama)||{nama:inv.customer_nama};
     const syntheticData={
+      cust:_cust,
       orders:storedOrders,
       additional:savedAO,
+      additionalOrders:savedAO,
       dari:inv.periode_dari,
       sampai:inv.periode_sampai,
       grandTotal:+inv.grand_total||0,
       grandSubtotal:+inv.grand_total||0,
       aoTotal:0,
-      customer:CUSTOMERS.find(c=>c.nama===inv.customer_nama)||{nama:inv.customer_nama},
-      cols:[],
-      rows:[],
+      pb1Aktif:false,pphAktif:false,pb1Rate:0,pphRate:0,pb1Amount:0,pphAmount:0,
+      cols:[],rows:[],
       usedStoredSnapshot:true
     };
     _currentInvData=syntheticData;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;_currentInvTab='inv';
