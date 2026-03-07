@@ -595,7 +595,7 @@ tr:hover td{background:var(--bg);}
             </div>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th style="min-width:100px;">Tgl Invoice</th><th style="min-width:110px;">Jatuh Tempo</th><th style="min-width:90px;">Grand Total</th><th style="min-width:110px;">Tgl Bayar</th><th style="min-width:110px;">Jml Terbayar</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th style="min-width:105px;">Tgl Invoice</th><th style="min-width:110px;">Jatuh Tempo</th><th style="min-width:90px;">Grand Total</th><th style="min-width:105px;">Tgl Bayar</th><th style="min-width:110px;">Jml Terbayar</th><th style="min-width:90px;">Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="inv-body"></tbody>
           </table></div>
         </div>
@@ -1832,9 +1832,12 @@ function renderInvoices(){
   const fDue=document.getElementById('inv-f-due')?.value||'';
   const today=new Date();today.setHours(0,0,0,0);
   function getDueDate(inv){
+    // Jatuh tempo = tgl_invoice + tempo customer (bukan periode_sampai)
+    const baseStr=inv.tgl_invoice?inv.tgl_invoice.slice(0,10):null;
+    if(!baseStr)return null; // belum ada tgl invoice
     const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
     const tempo=+(cust?.tempo||30);
-    const base=new Date((inv.periode_sampai||inv.created_at?.slice(0,10))+'T00:00:00');
+    const base=new Date(baseStr+'T00:00:00');
     base.setDate(base.getDate()+tempo);
     return base;
   }
@@ -1848,7 +1851,9 @@ function renderInvoices(){
     }
     if(fDue){
       if(inv.status==='paid')return false;
-      const diff=Math.round((getDueDate(inv)-today)/(1000*60*60*24));
+      const _due=getDueDate(inv);
+      if(!_due)return false; // no tgl_invoice yet → exclude from due filters
+      const diff=Math.round((_due-today)/(1000*60*60*24));
       if(fDue==='overdue'&&diff>=0)return false;
       if(fDue==='neardue'&&!(diff>=0&&diff<=7))return false;
     }
@@ -1865,27 +1870,29 @@ function renderInvoices(){
   }
   const canEdit=canDo('manage_invoice');
   document.getElementById('inv-body').innerHTML=filtered.length?filtered.map(inv=>{
-    const due=getDueDate(inv);
-    const diffDays=Math.round((due-today)/(1000*60*60*24));
-    const isOverdue=inv.status!=='paid'&&diffDays<0;
-    const isNearDue=inv.status!=='paid'&&diffDays>=0&&diffDays<=7;
+    const due=getDueDate(inv); // null if no tgl_invoice yet
+    const diffDays=due?Math.round((due-today)/(1000*60*60*24)):null;
+    const isOverdue=inv.status!=='paid'&&diffDays!==null&&diffDays<0;
+    const isNearDue=inv.status!=='paid'&&diffDays!==null&&diffDays>=0&&diffDays<=7;
     const rowBg=isOverdue?'background:#fdf0ef;':isNearDue?'background:#fffbf2;':'';
-    // Tgl invoice submitted (created_at)
-    const tglSubmit=inv.created_at?fmtDate(inv.created_at.slice(0,10)):'—';
     // Jatuh tempo cell
-    const dueDateStr=due.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'});
     let dueCell='';
     if(inv.status==='paid'){
       dueCell=`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">✓ Lunas</span>`;
-    } else if(isOverdue){
-      dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#a8281e;">${dueDateStr}</div>`+
-               `<div style="font-size:9px;color:#a8281e;font-weight:700;">🔴 ${Math.abs(diffDays)} hari lewat</div>`;
-    } else if(isNearDue){
-      dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:#9a5a0a;">${dueDateStr}</div>`+
-               `<div style="font-size:9px;color:#9a5a0a;">⏰ ${diffDays} hari lagi</div>`;
+    } else if(due===null){
+      dueCell=`<span style="color:var(--muted);font-size:10px;font-style:italic;">Isi Tgl Invoice dulu</span>`;
     } else {
-      dueCell=`<div style="font-family:var(--mono);font-size:11px;">${dueDateStr}</div>`+
-               `<div style="font-size:9px;color:var(--muted);">${diffDays} hari lagi</div>`;
+      const dueDateStr=due.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'});
+      if(isOverdue){
+        dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#a8281e;">${dueDateStr}</div>`+
+                 `<div style="font-size:9px;color:#a8281e;font-weight:700;">🔴 ${Math.abs(diffDays)} hari lewat</div>`;
+      } else if(isNearDue){
+        dueCell=`<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:#9a5a0a;">${dueDateStr}</div>`+
+                 `<div style="font-size:9px;color:#9a5a0a;">⏰ ${diffDays} hari lagi</div>`;
+      } else {
+        dueCell=`<div style="font-family:var(--mono);font-size:11px;">${dueDateStr}</div>`+
+                 `<div style="font-size:9px;color:var(--muted);">${diffDays} hari lagi</div>`;
+      }
     }
     const custBadge=isOverdue
       ?`<span style="display:inline-block;background:#a8281e;color:#fff;font-size:8px;padding:1px 5px;border-radius:4px;font-family:var(--mono);margin-left:5px;vertical-align:middle;">OVERDUE</span>`
@@ -1902,11 +1909,23 @@ function renderInvoices(){
     const tglBayarCell=canEdit
       ?`<input type="date" value="${tglBayarVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_bayar',this.value,'paid')" title="Isi tanggal → status otomatis Paid">`
       :`<span class="mono" style="font-size:11px;">${tglBayarVal?fmtDate(tglBayarVal):'—'}</span>`;
-    // Jumlah Bayar — editable number input
-    const jmlBayarVal=inv.jumlah_bayar||'';
+    // Jumlah Bayar — editable Rp input (stored as numeric)
+    const jmlBayarVal=inv.jumlah_bayar?+inv.jumlah_bayar:null;
     const jmlBayarCell=canEdit
-      ?`<input type="number" value="${jmlBayarVal}" placeholder="0" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','jumlah_bayar',this.value,null)" title="Jumlah yang diterima">`
+      ?`<div style="position:relative;display:inline-flex;align-items:center;gap:2px;">
+          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">Rp</span>
+          <input type="number" value="${jmlBayarVal||''}" placeholder="0" min="0" step="1000"
+            style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:100px;"
+            onchange="updateInvField('${inv.id}','jumlah_bayar',this.value,null)" title="Jumlah terbayar (Rp)">
+        </div>`
       :`<span class="mono" style="font-size:11px;">${jmlBayarVal?fmtRpNum(jmlBayarVal):'—'}</span>`;
+    // Sisa pembayaran = grand_total - jumlah_bayar
+    const sisa=(+inv.grand_total||0)-(jmlBayarVal||0);
+    const sisaCell=inv.status==='paid'
+      ?`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">✓ Lunas</span>`
+      :sisa<=0&&jmlBayarVal
+      ?`<span style="color:var(--green);font-size:11px;font-family:var(--mono);">0</span>`
+      :`<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${sisa>(+inv.grand_total*0.5)?'#a8281e':'#9a5a0a'};">${fmtRpNum(sisa)}</span>`;
     return`<tr style="${rowBg}">
     <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
     <td><strong>${inv.customer_nama}</strong>${custBadge}</td>
@@ -1916,6 +1935,7 @@ function renderInvoices(){
     <td class="mono taccent" style="font-weight:700;white-space:nowrap;">${fmtRpNum(inv.grand_total)}</td>
     <td>${tglBayarCell}</td>
     <td>${jmlBayarCell}</td>
+    <td style="min-width:100px;">${sisaCell}</td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
     <td><div style="display:flex;gap:4px;">
       <button class="btn btn-secondary btn-sm" onclick="viewInvoice('${inv.id}')">👁</button>
@@ -1926,7 +1946,7 @@ function renderInvoices(){
       </select>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
     </div></td>
-  </tr>`}).join(''):'<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
+  </tr>`}).join(''):'<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
   updateNotifBadge();
 }
 function clearInvFilters(){
@@ -2416,7 +2436,35 @@ function viewInvoice(id){
     openM('m-inv-view');
     return;
   }
-  const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai,savedAO);
+  const data=calcInvoiceData(inv.customer_nama,inv.periode_dari,inv.periode_sampai,savedAO,inv.id);
+  // If no orders found from current ORDERS data, rebuild from stored orders_data snapshot
+  if(!data||(!data.orders?.length&&!savedAO.length)){
+    // Try to reconstruct minimal data from saved snapshot
+    let storedOrders=[];
+    try{
+      const od=typeof inv.orders_data==='string'?JSON.parse(inv.orders_data):inv.orders_data;
+      if(od&&od.orders)storedOrders=od.orders;
+    }catch(e){}
+    // Build minimal data object from stored grand_total
+    const syntheticData={
+      orders:storedOrders,
+      additional:savedAO,
+      dari:inv.periode_dari,
+      sampai:inv.periode_sampai,
+      grandTotal:+inv.grand_total||0,
+      grandSubtotal:+inv.grand_total||0,
+      aoTotal:0,
+      customer:CUSTOMERS.find(c=>c.nama===inv.customer_nama)||{nama:inv.customer_nama},
+      cols:[],
+      rows:[],
+      usedStoredSnapshot:true
+    };
+    _currentInvData=syntheticData;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;_currentInvTab='inv';
+    document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
+    renderInvDoc('inv');
+    openM('m-inv-view');
+    return;
+  }
   _currentInvData=data;_currentInvNo=inv.invoice_no;_currentInvPO=savedPO;_currentInvTab='inv';
   document.getElementById('inv-view-sub').textContent=`${inv.invoice_no} · ${inv.customer_nama} · ${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}`;
   renderInvDoc('inv');
