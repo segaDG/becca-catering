@@ -722,6 +722,45 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
+      <div id="page-activity" class="page">
+        <div class="card">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span class="card-title">📋 Activity Log</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="act-search" placeholder="Cari nama / aktivitas..." style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);width:200px;" oninput="renderActivity()">
+              <select id="act-f-user" class="sel" style="font-size:12px;" onchange="renderActivity()"><option value="">Semua User</option></select>
+              <select id="act-f-type" class="sel" style="font-size:12px;" onchange="renderActivity()">
+                <option value="">Semua Aktivitas</option>
+                <option value="login">Login</option>
+                <option value="logout">Logout</option>
+                <option value="order">Order</option>
+                <option value="invoice">Invoice</option>
+                <option value="customer">Customer</option>
+                <option value="settings">Settings</option>
+                <option value="system">System</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">✕ Reset</button>
+              <button class="btn btn-danger btn-sm" onclick="clearAllActivity()" style="margin-left:8px;">🗑 Hapus Semua</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="tw"><table id="act-table">
+              <thead><tr>
+                <th style="width:40px;">#</th>
+                <th style="min-width:120px;">User</th>
+                <th style="min-width:80px;">Role</th>
+                <th style="min-width:160px;">Waktu</th>
+                <th style="min-width:90px;">Tipe</th>
+                <th>Aktivitas</th>
+                <th style="min-width:100px;">Halaman</th>
+              </tr></thead>
+              <tbody id="act-body"></tbody>
+            </table></div>
+            <div id="act-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
 <!-- MODAL NOTIFIKASI -->
 <div class="overlay" id="m-notif">
   <div class="modal" style="max-width:520px;">
@@ -994,6 +1033,7 @@ const ALL_PAGES={
   privilege:{icon:'🔑',label:'Privilege Matrix',  priv_key:'manage_privilege'},
   users:    {icon:'👤',label:'Manajemen User',    priv_key:'manage_users'},
   settings: {icon:'🔒',label:'Pengaturan Akun',   priv_key:'manage_settings'},
+  activity: {icon:'📋',label:'Activity Log',       priv_key:'view_activity'},
 };
 let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],CUSTOMERS=[],INVOICES=[],editId=null,editCustId=null,rTab='daily',_pendingOrder=null;
 
@@ -1050,7 +1090,11 @@ async function doLogin(){
   finally{btn.textContent='Masuk ke BECCA →';btn.disabled=false;}
 }
 function showErr(m){const el=document.getElementById('lerr');el.style.display='flex';el.textContent='❌ '+m;}
-function doLogout(){CU=null;ORDERS=[];USERS_DATA=[];COLS=[];PRIVS=[];CUSTOMERS=[];INVOICES=[];document.getElementById('app').style.display='none';document.getElementById('ls').style.display='flex';}
+function doLogout(){
+  logActivity('logout','Logout dari sistem','');
+  CU=null;ORDERS=[];USERS_DATA=[];COLS=[];PRIVS=[];CUSTOMERS=[];INVOICES=[];
+  document.getElementById('app').style.display='none';document.getElementById('ls').style.display='flex';
+}
 
 // ══ INIT ══════════════════════════════════════════
 async function initApp(){
@@ -1069,6 +1113,7 @@ async function initApp(){
   buildNav();tickClk();setInterval(tickClk,1000);
   updateSidebarBranding();
   updateNotifBadge();
+  logActivity('login',`Login berhasil sebagai ${CU.role} (${CU.nama})`,'Login');
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
   navigateTo('dashboard');
 }
@@ -1115,6 +1160,7 @@ function renderPage(pg){
   if(pg==='privilege')renderPrivs();
   if(pg==='users')renderUsers();
   if(pg==='settings')renderSettings();
+  if(pg==='activity'){_actPage=1;renderActivity();}
   if(pg==='input'){document.getElementById('f-tgl').value=new Date().toISOString().split('T')[0];buildInputForm();updImeta();}
 }
 
@@ -1356,6 +1402,7 @@ async function confirmReplaceOrder(){
 async function doSaveOrder(data){
   const[no]=await sbPost('orders',data);
   await sbPost('order_history',{order_id:no.id,action:'create',user_name:CU.nama,user_role:RC_META[CU.role].label,note:data.tipe});
+  logActivity('order',`Input order baru - ${document.getElementById('f-coy')?.value||''}`,'Input Order');
   await loadOrders();toast('Order berhasil disimpan!','success');resetForm();
 }
 function resetForm(){
@@ -1502,6 +1549,7 @@ async function saveEdit(){
     await sbPost('order_history',{order_id:editId,action:'edit',user_name:CU.nama,user_role:RC_META[CU.role].label,note});
     await loadOrders();closeM('m-edit');filterOrders();
     const o=ORDERS.find(x=>x.id==editId);
+    logActivity('order',`Edit order Rev ke-${rcCount(o||{history:[]})} ID ${editId}`,'Data Order');
     toast(`Diperbarui! Rev ke-${rcCount(o||{history:[]})}`, 'success');
   }catch(e){toast('Gagal: '+e.message,'error');}
   finally{btn.disabled=false;btn.textContent='💾 Simpan';}
@@ -1783,6 +1831,7 @@ async function saveCust(){
     if(editCustId)await sbPatch('customers',editCustId,data);
     else await sbPost('customers',data);
     await loadCustomers();renderCustomers();populateCustDropdown();closeM('m-cust');
+    logActivity('customer',editCustId?`Edit customer ${data.nama}`:`Tambah customer: ${data.nama}`,'Data Customer');
     toast(editCustId?'Customer diperbarui!':'Customer ditambah!','success');
   }catch(e){toast('Gagal: '+e.message,'error');}
   finally{btn.disabled=false;btn.textContent='💾 Simpan';}
@@ -1916,19 +1965,20 @@ function renderInvoices(){
       :'';
     // Tgl Invoice — editable date input
     const tglInvVal=inv.tgl_invoice?inv.tgl_invoice.slice(0,10):'';
-    const tglInvCell=canEdit
+    const isLocked=!canEdit||isInvLocked(inv.id);
+    const tglInvCell=!isLocked
       ?`<input type="date" value="${tglInvVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_invoice',this.value,'sent')" title="Isi tanggal → status otomatis Sent">`
       :`<span class="mono" style="font-size:11px;">${tglInvVal?fmtDate(tglInvVal):'—'}</span>`;
     // Tgl Bayar — editable date input
     const tglBayarVal=inv.tgl_bayar?inv.tgl_bayar.slice(0,10):'';
-    const tglBayarCell=canEdit
+    const tglBayarCell=!isLocked
       ?`<input type="date" value="${tglBayarVal}" style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 5px;background:var(--bg);color:var(--text);width:110px;" onchange="updateInvField('${inv.id}','tgl_bayar',this.value,'paid')" title="Isi tanggal → status otomatis Paid">`
       :`<span class="mono" style="font-size:11px;">${tglBayarVal?fmtDate(tglBayarVal):'—'}</span>`;
     // Jumlah Bayar — editable Rp input with formatted display
     const jmlBayarVal=inv.jumlah_bayar?+inv.jumlah_bayar:null;
     // Use text input showing formatted number; strip dots on focus, reformat on blur
     const jmlFmt=jmlBayarVal?jmlBayarVal.toLocaleString('id-ID'):'';
-    const jmlBayarCell=canEdit
+    const jmlBayarCell=!isLocked
       ?`<input type="text" inputmode="numeric" value="${jmlFmt}" placeholder="—"
             data-inv-id="${inv.id}"
             style="font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--bg);color:var(--text);width:115px;text-align:right;"
@@ -1969,14 +2019,18 @@ function renderInvoices(){
     <td>${jmlBayarCell}</td>
     <td style="min-width:100px;">${sisaCell}</td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
-    <td><div style="display:flex;gap:4px;">
-      <button class="btn btn-secondary btn-sm" onclick="viewInvoice('${inv.id}')">👁</button>
-      ${canEdit?`<select class="sel" style="padding:4px 24px 4px 8px;font-size:11px;" onchange="updateInvStatus('${inv.id}',this.value)">
+    <td style="white-space:nowrap;min-width:130px;"><div style="display:flex;gap:4px;align-items:center;flex-wrap:nowrap;">
+      <button class="btn btn-secondary btn-sm" onclick="viewInvoice('${inv.id}')" title="Lihat Invoice">👁</button>
+      ${canEdit&&!isLocked?`<select class="sel" style="padding:4px 24px 4px 8px;font-size:11px;" onchange="updateInvStatus('${inv.id}',this.value)">
         <option value="draft" ${inv.status==='draft'?'selected':''}>Draft</option>
         <option value="sent" ${inv.status==='sent'?'selected':''}>Sent</option>
         <option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option>
       </select>`:''}
-      ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
+      ${canEdit?`<button class="btn btn-sm" onclick="toggleInvLock('${inv.id}')"
+        title="${isLocked?'Klik untuk edit (unlock)':'Klik untuk kunci (lock)'}"
+        style="font-size:14px;padding:3px 7px;border:1.5px solid ${isLocked?'#9a5a0a':'#b0b8c1'};background:${isLocked?'#fff8f0':'#f5f7f9'};border-radius:5px;cursor:pointer;line-height:1;"
+        >${isLocked?'🔒':'🔓'}</button>`:''}
+      ${canEdit&&!isLocked?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')" title="Hapus">🗑</button>`:''}
     </div></td>
   </tr>`}).join(''):'<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
   updateNotifBadge();
@@ -2726,6 +2780,7 @@ async function saveInvoice(){
       grand_total:data.grandTotal,status:'draft',catatan:document.getElementById('inv-cat').value,created_by:CU.nama
     };
     await sbPost('invoices',payload);
+    logActivity('invoice',`Buat invoice ${invNo} - ${custNama}`,'Invoice');
     await loadInvoices();renderInvoices();closeM('m-inv-create');
     toast(`Invoice ${invNo} tersimpan!`,'success');
   }catch(e){toast('Gagal: '+e.message,'error');}
@@ -2769,6 +2824,7 @@ async function updateInvField(id,field,value,autoStatus){
     pushUndo(id,oldSnap,label+(patch.status?` → ${patch.status}`:''));
     await loadInvoices();renderInvoices();updateNotifBadge();
     const statusNote=patch.status?` · Status → ${patch.status}`:'';
+    logActivity('invoice',`Update ${label}${statusNote} - Invoice ID ${id}`,'Invoice');
     toast(`${label} disimpan${statusNote}`,patch.status==='paid'?'success':'info');
   }catch(e){
     console.error('updateInvField error:',field,value,e);
@@ -2781,15 +2837,148 @@ async function updateInvStatus(id,status){
     await sbPatch('invoices',id,{status});
     if(status==='paid'){NOTIF_DISMISSED.delete(String(id));saveNotifDismissed();}
     pushUndo(id,oldSnap,`Status → ${status}`);
+    logActivity('invoice',`Status invoice ID ${id} → ${status}`,'Invoice');
     await loadInvoices();renderInvoices();updateNotifBadge();toast('Status diperbarui','success');
   }
   catch(e){toast('Gagal','error');}
 }
 async function deleteInvoice(id){
   if(!confirm('Hapus invoice ini?'))return;
-  try{await sbDelete('invoices',id);await loadInvoices();renderInvoices();toast('Invoice dihapus','info');}
+  try{
+    const inv=INVOICES.find(x=>x.id==id);
+    logActivity('invoice',`Hapus invoice ${inv?.invoice_no||id}`,'Invoice');
+    await sbDelete('invoices',id);await loadInvoices();renderInvoices();toast('Invoice dihapus','info');}
   catch(e){toast('Gagal','error');}
 }
+
+
+// ══ INVOICE ROW LOCK ═══════════════════════════════
+// Locked rows show read-only values (no editable inputs)
+// Persisted in localStorage across sessions
+const INV_LOCK_KEY='becca_inv_locked';
+let INV_LOCKED=new Set(JSON.parse(localStorage.getItem(INV_LOCK_KEY)||'[]'));
+function saveInvLocked(){localStorage.setItem(INV_LOCK_KEY,JSON.stringify([...INV_LOCKED]));}
+function toggleInvLock(id){
+  const sid=String(id);
+  const willLock=!INV_LOCKED.has(sid);
+  if(willLock){INV_LOCKED.add(sid);}else{INV_LOCKED.delete(sid);}
+  saveInvLocked();
+  const inv=INVOICES.find(x=>x.id==id);
+  logActivity('invoice',`${willLock?'🔒 Lock':'🔓 Unlock'} invoice ${inv?.invoice_no||id}`,'Invoice');
+  renderInvoices();
+}
+function isInvLocked(id){return INV_LOCKED.has(String(id));}
+// ═══════════════════════════════════════════════════
+
+
+// ══ ACTIVITY LOG ═══════════════════════════════════
+const ACT_KEY='becca_activity_log';
+const ACT_MAX=500; // keep last 500 entries
+let ACTIVITY=JSON.parse(localStorage.getItem(ACT_KEY)||'[]');
+let _actPage=1;
+const ACT_PER_PAGE=50;
+
+const ACT_TYPE_COLORS={
+  login:'#1e7e34',logout:'#6c757d',order:'#1e4d6b',invoice:'#7b2d8b',
+  customer:'#9a5a0a',settings:'#555',system:'#333',error:'#a8281e'
+};
+const ACT_TYPE_BG={
+  login:'#d4edda',logout:'#e2e3e5',order:'#edf3f8',invoice:'#f3e8f7',
+  customer:'#fff3cd',settings:'#f1f1f1',system:'#e9ecef',error:'#faeeed'
+};
+
+function logActivity(type,desc,page=''){
+  if(!CU)return;
+  const entry={
+    id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    user:CU.nama||CU.username,
+    username:CU.username,
+    role:CU.role,
+    type,
+    desc,
+    page:page||document.getElementById('pgtitle')?.textContent||'',
+    ts:new Date().toISOString()
+  };
+  ACTIVITY.unshift(entry);
+  if(ACTIVITY.length>ACT_MAX)ACTIVITY=ACTIVITY.slice(0,ACT_MAX);
+  localStorage.setItem(ACT_KEY,JSON.stringify(ACTIVITY));
+  // Refresh activity page if open
+  if(document.getElementById('page-activity')?.classList.contains('active'))renderActivity();
+}
+
+function clearAllActivity(){
+  if(!confirm('Hapus semua catatan aktivitas?'))return;
+  ACTIVITY=[];localStorage.setItem(ACT_KEY,'[]');renderActivity();
+  toast('Activity log dihapus','info');
+}
+function clearActivityFilters(){
+  document.getElementById('act-search').value='';
+  document.getElementById('act-f-user').value='';
+  document.getElementById('act-f-type').value='';
+  _actPage=1;renderActivity();
+}
+
+function renderActivity(){
+  const search=(document.getElementById('act-search')?.value||'').toLowerCase();
+  const fUser=document.getElementById('act-f-user')?.value||'';
+  const fType=document.getElementById('act-f-type')?.value||'';
+
+  // Populate user filter
+  const userSel=document.getElementById('act-f-user');
+  if(userSel){
+    const users=[...new Set(ACTIVITY.map(a=>a.username))].sort();
+    const cur=userSel.value;
+    userSel.innerHTML='<option value="">Semua User</option>'+users.map(u=>`<option value="${u}" ${u===cur?'selected':''}>${u}</option>`).join('');
+  }
+
+  let filtered=ACTIVITY.filter(a=>{
+    if(fUser&&a.username!==fUser)return false;
+    if(fType&&a.type!==fType)return false;
+    if(search&&!(a.user.toLowerCase().includes(search)||a.desc.toLowerCase().includes(search)||a.page.toLowerCase().includes(search)))return false;
+    return true;
+  });
+
+  const total=filtered.length;
+  const pages=Math.max(1,Math.ceil(total/ACT_PER_PAGE));
+  if(_actPage>pages)_actPage=pages;
+  const slice=filtered.slice((_actPage-1)*ACT_PER_PAGE,_actPage*ACT_PER_PAGE);
+  const offset=(_actPage-1)*ACT_PER_PAGE;
+
+  const tbody=document.getElementById('act-body');
+  if(!tbody)return;
+  if(!slice.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--muted);">Belum ada aktivitas tercatat</td></tr>';
+  } else {
+    tbody.innerHTML=slice.map((a,i)=>{
+      const tc=ACT_TYPE_COLORS[a.type]||'#333';
+      const tbg=ACT_TYPE_BG[a.type]||'#f1f1f1';
+      const dt=new Date(a.ts);
+      const tsFmt=dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const roleColor=a.role==='superadmin'?'#a8281e':a.role==='admin'?'#1e4d6b':'#555';
+      return`<tr>
+        <td style="text-align:center;color:var(--muted);font-size:11px;">${offset+i+1}</td>
+        <td><strong style="font-size:12px;">${a.user}</strong><br><span style="font-size:10px;color:var(--muted);">@${a.username}</span></td>
+        <td><span style="font-size:10px;font-weight:700;color:${roleColor};background:${roleColor}22;padding:2px 7px;border-radius:10px;">${a.role}</span></td>
+        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap;">${tsFmt}</td>
+        <td><span style="font-size:10px;font-weight:700;color:${tc};background:${tbg};padding:2px 8px;border-radius:10px;">${a.type}</span></td>
+        <td style="font-size:12px;">${a.desc}</td>
+        <td style="font-size:11px;color:var(--muted);">${a.page||'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Pagination
+  const pag=document.getElementById('act-pagination');
+  if(pag){
+    pag.innerHTML=`<span>${total} aktivitas tercatat</span>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="btn btn-secondary btn-sm" onclick="_actPage=Math.max(1,_actPage-1);renderActivity();" ${_actPage<=1?'disabled':''}>◀ Prev</button>
+      <span>Hal ${_actPage} / ${pages}</span>
+      <button class="btn btn-secondary btn-sm" onclick="_actPage=Math.min(${pages},_actPage+1);renderActivity();" ${_actPage>=pages?'disabled':''}>Next ▶</button>
+    </div>`;
+  }
+}
+// ═══════════════════════════════════════════════════
 
 // ══ NOTIFICATIONS ══════════════════════════════════
 // NOTIF_DISMISSED: stores set of invoice IDs user has manually dismissed
@@ -3124,7 +3313,7 @@ function saveCompany(){
 async function saveSettings(){
   const nm=document.getElementById('set-nm').value.trim(),pw=document.getElementById('set-pw').value;
   if(!nm){toast('Nama tidak boleh kosong','error');return;}
-  try{const upd={nama:nm};if(pw)upd.password=pw;await sbPatch('users',CU.id,upd);CU.nama=nm;await loadUsers();document.getElementById('nav-nm').textContent=nm;toast('Akun tersimpan!','success');}
+  try{const upd={nama:nm};if(pw)upd.password=pw;await sbPatch('users',CU.id,upd);CU.nama=nm;await loadUsers();document.getElementById('nav-nm').textContent=nm;logActivity('settings',`Update akun: ${nm}`,'Pengaturan Akun');toast('Akun tersimpan!','success');}
   catch(e){toast('Gagal','error');}
 }
 
