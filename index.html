@@ -392,7 +392,13 @@ tr:hover td{background:var(--bg);}
       <div style="flex:1;min-width:0;"><div class="dn" id="nav-nm"></div><div class="dr" id="nav-rl"></div></div>
     </div>
     <nav class="nav" id="nav-menu"></nav>
-    <div class="sb-foot"><button class="btn btn-ghost btn-full" onclick="doLogout()" style="color:var(--red);justify-content:center;font-size:13px;">⎋ Logout</button></div>
+    <div class="sb-foot">
+      <button onclick="openNotif()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border:none;background:var(--bg2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--text);font-family:var(--font);font-weight:500;margin-bottom:6px;position:relative;transition:background .15s;" title="Notifikasi">
+        <span style="font-size:15px;">🔔</span> Notifikasi
+        <span id="notif-badge-sb" style="display:none;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;margin-left:2px;"></span>
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="doLogout()" style="color:var(--red);justify-content:center;font-size:13px;">⎋ Logout</button>
+    </div>
   </div>
   <div class="main">
     <div class="topbar">
@@ -400,6 +406,9 @@ tr:hover td{background:var(--bg);}
       <div class="tb-r">
         <div class="db-chip loading" id="dbchip">⬤ DB</div>
         <div class="clock-chip">🕐 <span id="clk"></span></div>
+        <button id="notif-btn" onclick="openNotif()" style="position:relative;background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;border-radius:8px;transition:background .15s;" title="Notifikasi">
+          🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#a8281e;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
+        </button>
       </div>
     </div>
     <div class="content">
@@ -487,6 +496,21 @@ tr:hover td{background:var(--bg);}
           <div class="card-head">
             <span class="card-title">🧾 Invoice</span>
             <button class="btn btn-primary btn-sm" onclick="openCreateInvoice()">➕ Buat Invoice</button>
+          </div>
+          <!-- FILTER BAR -->
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);">
+            <input type="month" id="inv-f-period" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;" placeholder="Periode">
+            <select id="inv-f-coy" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:160px;">
+              <option value="">Semua Customer</option>
+            </select>
+            <select id="inv-f-status" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;">
+              <option value="">Semua Status</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()">✕ Reset</button>
+            <span id="inv-f-count" style="margin-left:auto;font-size:11px;color:var(--muted);align-self:center;font-family:var(--mono);"></span>
           </div>
           <div class="tw"><table>
             <thead><tr><th>No Invoice</th><th>Customer</th><th>Periode</th><th>Total Order</th><th>Grand Total</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
@@ -590,6 +614,17 @@ tr:hover td{background:var(--bg);}
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- MODAL NOTIFIKASI -->
+<div class="overlay" id="m-notif">
+  <div class="modal" style="max-width:520px;">
+    <div class="mhead">
+      <div><div class="mtitle">🔔 Notifikasi Invoice</div><div class="msub">Jatuh tempo & mendekati batas pembayaran</div></div>
+      <button class="mclose" onclick="closeM('m-notif')">✕</button>
+    </div>
+    <div id="notif-body" style="max-height:420px;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -927,6 +962,8 @@ async function initApp(){
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
   buildNav();tickClk();setInterval(tickClk,1000);
+  updateNotifBadge();
+  setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
   navigateTo('dashboard');
 }
 function tickClk(){const n=new Date();document.getElementById('clk').textContent=`${n.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;}
@@ -1509,12 +1546,48 @@ function genInvoiceNo(cust,dari,sampai){
 }
 
 function renderInvoices(){
+  // Populate customer filter dropdown
+  const fCoy=document.getElementById('inv-f-coy');
+  if(fCoy){
+    const cur=fCoy.value;
+    const names=[...new Set(INVOICES.map(i=>i.customer_nama))].sort();
+    fCoy.innerHTML='<option value="">Semua Customer</option>'+names.map(n=>`<option value="${n}" ${cur===n?'selected':''}>${n}</option>`).join('');
+  }
+  const fPeriod=document.getElementById('inv-f-period')?.value||'';
+  const fStatus=document.getElementById('inv-f-status')?.value||'';
+  const fCoyVal=fCoy?.value||'';
+  let filtered=INVOICES.filter(inv=>{
+    if(fCoyVal&&inv.customer_nama!==fCoyVal)return false;
+    if(fStatus&&inv.status!==fStatus)return false;
+    if(fPeriod){
+      const pd=inv.periode_dari?.slice(0,7)||'';
+      const ps=inv.periode_sampai?.slice(0,7)||'';
+      if(pd>fPeriod||ps<fPeriod)return false;
+    }
+    return true;
+  });
+  const fCount=document.getElementById('inv-f-count');
+  if(fCount)fCount.textContent=`${filtered.length} / ${INVOICES.length} invoice`;
+  const today=new Date();today.setHours(0,0,0,0);
+  function getDueDate(inv){
+    const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
+    const tempo=+(cust?.tempo||30);
+    const base=new Date(inv.periode_sampai||inv.created_at);
+    base.setDate(base.getDate()+tempo);
+    return base;
+  }
   const canEdit=canDo('manage_invoice');
-  document.getElementById('inv-body').innerHTML=INVOICES.length?INVOICES.map(inv=>`<tr>
-    <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}</td>
-    <td><strong>${inv.customer_nama}</strong></td>
+  document.getElementById('inv-body').innerHTML=filtered.length?filtered.map(inv=>{
+    const due=getDueDate(inv);
+    const diffDays=Math.round((due-today)/(1000*60*60*24));
+    const isOverdue=inv.status!=='paid'&&diffDays<0;
+    const isNearDue=inv.status!=='paid'&&diffDays>=0&&diffDays<=7;
+    const rowStyle=isOverdue?'background:#fdf0ef;':'';
+    const dueBadge=inv.status==='paid'?'':isOverdue?`<span style="color:#a8281e;font-size:9px;font-family:var(--mono);font-weight:700;margin-left:4px;">⚠ ${Math.abs(diffDays)}h lewat</span>`:isNearDue?`<span style="color:#9a5a0a;font-size:9px;font-family:var(--mono);margin-left:4px;">⏰ ${diffDays}h lagi</span>`:'';
+    return`<tr style="${rowStyle}">
+    <td class="mono taccent" style="cursor:pointer;font-weight:700;" onclick="viewInvoice('${inv.id}')">${inv.invoice_no}${isOverdue?'<span title="Jatuh tempo!" style="margin-left:4px;">🔴</span>':''}</td>
+    <td><strong>${inv.customer_nama}</strong>${dueBadge}</td>
     <td class="mono" style="font-size:11px;">${fmtDate(inv.periode_dari)} – ${fmtDate(inv.periode_sampai)}</td>
-    <td class="mono">${(inv.orders_data||[]).length} order</td>
     <td class="mono taccent"><strong>${fmtRpNum(inv.grand_total)}</strong></td>
     <td><span class="badge ${inv.status==='paid'?'b-paid':inv.status==='sent'?'b-sent':'b-draft'}">${inv.status}</span></td>
     <td class="mono tmuted" style="font-size:10px;">${fmtTs(inv.created_at)}</td>
@@ -1527,12 +1600,23 @@ function renderInvoices(){
       </select>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">🗑</button>`:''}
     </div></td>
-  </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--muted);">Belum ada invoice</td></tr>';
+  </tr>`}).join(''):'<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada invoice sesuai filter</td></tr>';
+  updateNotifBadge();
+}
+function clearInvFilters(){
+  document.getElementById('inv-f-period').value='';
+  document.getElementById('inv-f-status').value='';
+  document.getElementById('inv-f-coy').value='';
+  renderInvoices();
 }
 
 function openCreateInvoice(){
   const sel=document.getElementById('inv-coy');
-  sel.innerHTML='<option value="">— Pilih Customer —</option>'+CUSTOMERS.map(c=>`<option value="${c.nama}">${c.nama}${c.kode_customer?' ('+c.kode_customer+')':''}</option>`).join('');
+  const unpaidNames=new Set(INVOICES.filter(i=>i.status!=='paid').map(i=>i.customer_nama));
+  sel.innerHTML='<option value="">— Pilih Customer —</option>'+CUSTOMERS.map(c=>{
+    const hasPending=unpaidNames.has(c.nama);
+    return`<option value="${c.nama}">${c.nama}${c.kode_customer?' ('+c.kode_customer+')':''}${hasPending?' ⚠ ada invoice pending':''}`;
+  }).join('');
   const now=new Date();
   const y=now.getFullYear(),m=now.getMonth();
   document.getElementById('inv-dari').value=new Date(y,m,1).toISOString().split('T')[0];
@@ -1692,10 +1776,10 @@ function buildInvoiceHTML(data,invNo,isPreview=false,poNum=''){
   </div>
   <table style="width:100%;border-collapse:collapse;margin:0;font-size:10.5px;">
     <thead><tr style="background:#1e4d6b;color:#fff;">
-      <th style="padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:9px;">DESCRIPTION</th>
-      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">UNIT PRICE</th>
-      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;">QTY</th>
-      ${showTaxCol?`<th style="padding:6px 8px;text-align:center;font-family:Arial,sans-serif;font-size:9px;">TAXED (Pb1)</th>`:''}
+      <th style="padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;">DESCRIPTION</th>
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;">UNIT PRICE</th>
+      <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;">QTY</th>
+      ${showTaxCol?`<th style="padding:6px 8px;text-align:center;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;">TAXED (Pb1)</th>`:''}
       <th style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#163d56;color:#fff;">AMOUNT</th>
     </tr></thead>
     <tbody>
@@ -1820,11 +1904,11 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
   </div>
   <table style="width:100%;border-collapse:collapse;font-size:10px;">
     <thead>
-      <tr style="background:#1e4d6b;color:#fff;">
-        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;width:24px;" rowspan="2">NO</th>
-        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" colspan="2">DATE ORDER</th>
-        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" colspan="${usedCols.length}">SHIFT</th>
-        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;" rowspan="2">QTY TOTAL</th>
+      <tr style="background:#244f6e;color:#fff;">
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;width:24px;background:#244f6e;color:#fff;" rowspan="2">NO</th>
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;" colspan="2">DATE ORDER</th>
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;" colspan="${usedCols.length}">SHIFT</th>
+        <th style="padding:6px 7px;text-align:center;font-family:Arial,sans-serif;font-size:9px;background:#244f6e;color:#fff;" rowspan="2">QTY TOTAL</th>
         <th style="padding:6px 7px;text-align:right;font-family:Arial,sans-serif;font-size:9px;background:#163d56;color:#fff;" rowspan="2">TOTAL</th>
       </tr>
       <tr style="background:#2a5f8a;color:#fff;font-size:9px;">
@@ -1887,14 +1971,14 @@ function buildRekapHTML(data,invNo,isPreview=false,poNum=''){
   <div style="display:flex;justify-content:space-between;padding:10px 0 16px;font-size:10px;font-family:Arial,sans-serif;">
     <div>
       <div style="font-weight:700;margin-bottom:4px;">Approved By :</div>
-      <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
+      <div style="color:#555;margin-bottom:67px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
         <div style="font-weight:700;">${cust?.pic_nama||'________________________'}</div>
         <div style="color:#555;font-size:9.5px;">${cust?.pic_jabatan||('PIC '+(cust?.nama||'...'))}</div>
       </div>
     </div>
     <div style="text-align:center;">
-      <div style="color:#555;margin-bottom:52px;">Karawang, ${today}</div>
+      <div style="color:#555;margin-bottom:67px;">Karawang, ${today}</div>
       <div style="border-top:1px solid #000;padding-top:5px;min-width:160px;display:inline-block;">
         <div style="font-weight:700;">${B.manager_nama}</div>
         <div style="color:#555;font-size:9.5px;">${B.manager_jabatan}</div>
@@ -2019,13 +2103,130 @@ async function saveInvoice(){
 }
 
 async function updateInvStatus(id,status){
-  try{await sbPatch('invoices',id,{status});await loadInvoices();renderInvoices();toast('Status diperbarui','success');}
+  try{
+    await sbPatch('invoices',id,{status});
+    // If paid, clear from dismissed so it disappears from notif cleanly
+    if(status==='paid'){NOTIF_DISMISSED.delete(String(id));saveNotifDismissed();}
+    await loadInvoices();renderInvoices();updateNotifBadge();toast('Status diperbarui','success');
+  }
   catch(e){toast('Gagal','error');}
 }
 async function deleteInvoice(id){
   if(!confirm('Hapus invoice ini?'))return;
   try{await sbDelete('invoices',id);await loadInvoices();renderInvoices();toast('Invoice dihapus','info');}
   catch(e){toast('Gagal','error');}
+}
+
+// ══ NOTIFICATIONS ══════════════════════════════════
+// NOTIF_DISMISSED: stores set of invoice IDs user has manually dismissed
+// Rule: overdue invoices (diffDays < 0) CANNOT be dismissed until paid
+// Near-due (0–7 days) CAN be dismissed per session
+let NOTIF_DISMISSED = new Set(
+  JSON.parse(sessionStorage.getItem('becca_notif_dismissed')||'[]')
+);
+
+function saveNotifDismissed(){
+  sessionStorage.setItem('becca_notif_dismissed', JSON.stringify([...NOTIF_DISMISSED]));
+}
+
+function getNotifications(){
+  if(!canDo('view_invoice')&&!canDo('manage_invoice'))return[];
+  const today=new Date(); today.setHours(0,0,0,0);
+  const notifs=[];
+  INVOICES.filter(i=>i.status!=='paid').forEach(inv=>{
+    const cust=CUSTOMERS.find(c=>c.nama===inv.customer_nama);
+    const tempo=+(cust?.tempo||30);
+    const base=new Date(inv.periode_sampai||inv.created_at);
+    base.setDate(base.getDate()+tempo);
+    const diffDays=Math.round((base-today)/(1000*60*60*24));
+    const isOverdue=diffDays<0;
+    const isNearDue=diffDays>=0&&diffDays<=7;
+    if(isOverdue||isNearDue){
+      notifs.push({
+        inv, cust, diffDays, isOverdue, isNearDue,
+        dueDate: base.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
+      });
+    }
+  });
+  // Sort: overdue first (most overdue first), then near-due
+  notifs.sort((a,b)=>a.diffDays-b.diffDays);
+  return notifs;
+}
+
+function updateNotifBadge(){
+  const notifs=getNotifications();
+  const overdue=notifs.filter(n=>n.isOverdue);
+  const nearUndismissed=notifs.filter(n=>n.isNearDue&&!NOTIF_DISMISSED.has(String(n.inv.id)));
+  const total=overdue.length+nearUndismissed.length;
+  // Update topbar badge
+  const badge=document.getElementById('notif-badge');
+  if(badge){
+    badge.style.display=total>0?'inline-block':'none';
+    badge.textContent=total>99?'99+':total;
+  }
+  // Update sidebar badge
+  const sbBadge=document.getElementById('notif-badge-sb');
+  if(sbBadge){
+    sbBadge.style.display=total>0?'inline-block':'none';
+    sbBadge.textContent=total>99?'99+':total;
+  }
+}
+
+function openNotif(){
+  const notifs=getNotifications();
+  const body=document.getElementById('notif-body');
+  if(!notifs.length){
+    body.innerHTML=`<div style="padding:32px;text-align:center;color:var(--muted);">
+      <div style="font-size:32px;margin-bottom:12px;">✅</div>
+      <div style="font-weight:600;">Tidak ada notifikasi</div>
+      <div style="font-size:12px;margin-top:4px;">Semua invoice dalam kondisi baik</div>
+    </div>`;
+    openM('m-notif'); return;
+  }
+  body.innerHTML=notifs.map(n=>{
+    const isDismissed=NOTIF_DISMISSED.has(String(n.inv.id));
+    const canDismiss=n.isNearDue; // overdue CANNOT be dismissed
+    const cardBg=n.isOverdue?'#fdf0ef':'#fdf8ec';
+    const borderCol=n.isOverdue?'#e8b4b0':'#e8d4a0';
+    const iconColor=n.isOverdue?'#a8281e':'#9a5a0a';
+    const icon=n.isOverdue?'🔴':'⏰';
+    const label=n.isOverdue
+      ?`<span style="color:#a8281e;font-weight:700;">JATUH TEMPO ${Math.abs(n.diffDays)} hari yang lalu</span>`
+      :`<span style="color:#9a5a0a;font-weight:700;">Jatuh tempo dalam ${n.diffDays} hari</span>`;
+    const overdueNote=n.isOverdue
+      ?`<div style="font-size:10px;color:#a8281e;margin-top:4px;font-style:italic;">⚠ Notifikasi ini tidak dapat ditutup sebelum invoice dilunasi (Paid)</div>`:'';
+    const dismissBtn=canDismiss&&!isDismissed
+      ?`<button onclick="dismissNotif('${n.inv.id}')" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;">Tutup</button>`
+      :canDismiss&&isDismissed
+      ?`<span style="font-size:10px;color:var(--muted);font-style:italic;">Ditutup</span>`
+      :`<span style="font-size:10px;color:#a8281e;font-weight:600;">Tidak bisa ditutup ⚠</span>`;
+    return`<div style="padding:14px 16px;border-left:4px solid ${iconColor};background:${cardBg};border-bottom:1px solid ${borderCol};opacity:${isDismissed?'0.5':'1'};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">${icon} ${n.inv.customer_nama}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);">${n.inv.invoice_no} &nbsp;·&nbsp; ${fmtDate(n.inv.periode_dari)} – ${fmtDate(n.inv.periode_sampai)}</div>
+          <div style="font-size:11px;margin-top:5px;">${label} &nbsp;·&nbsp; <span style="color:var(--muted);">Jatuh tempo: ${n.dueDate}</span></div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-top:4px;">Total: ${fmtRpNum(n.inv.grand_total)}</div>
+          ${overdueNote}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <button onclick="closeM('m-notif');viewInvoice('${n.inv.id}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Lihat Invoice</button>
+          ${dismissBtn}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  openM('m-notif');
+}
+
+function dismissNotif(invId){
+  // Only near-due can be dismissed; overdue cannot
+  const n=getNotifications().find(x=>String(x.inv.id)===String(invId));
+  if(!n||n.isOverdue){toast('Invoice jatuh tempo tidak bisa ditutup sebelum dibayar','error');return;}
+  NOTIF_DISMISSED.add(String(invId));
+  saveNotifDismissed();
+  updateNotifBadge();
+  openNotif(); // re-render modal
 }
 
 // ══ REPORTS ════════════════════════════════════════
