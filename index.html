@@ -465,19 +465,9 @@ tr:hover td{background:var(--bg);}
               <button onclick="shiftDashPeriod(1)" style="padding:3px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:13px;" title="Berikutnya">›</button>
             </div>
           </div>
-          <!-- ALL TIME SUMMARY BAR -->
-          <div id="dash-inv-alltime" style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);">
-            <span>📊 Semua Invoice:</span>
-            <span style="font-weight:700;color:var(--text);" id="dash-inv-alltime-total">—</span>
-            <span style="margin-left:8px;">Lunas:</span>
-            <span style="font-weight:700;color:var(--green);" id="dash-inv-alltime-paid">—</span>
-            <span style="margin-left:8px;">Belum Lunas:</span>
-            <span style="font-weight:700;color:var(--red);" id="dash-inv-alltime-unpaid">—</span>
-            <span style="margin-left:8px;color:var(--muted);" id="dash-inv-alltime-ct"></span>
-          </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;padding:14px;">
             <div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='';renderInvoices();},100)">
-              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL PERIODE INI</div>
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL INVOICE</div>
               <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent);" id="dash-inv-total">Rp 0</div>
               <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-count">0 invoice</div>
             </div>
@@ -1459,14 +1449,6 @@ function renderDashInvoicePanel(){
     return base<todayD;
   });
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  // All-time totals — semua invoice tanpa filter periode
-  const allTotal=sumGrand(INVOICES);
-  const allPaid=sumGrand(INVOICES.filter(i=>i.status==='paid'));
-  const allUnpaid=sumGrand(INVOICES.filter(i=>i.status!=='paid'));
-  sv('dash-inv-alltime-total',fmtRpNum(allTotal));
-  sv('dash-inv-alltime-paid',fmtRpNum(allPaid));
-  sv('dash-inv-alltime-unpaid',fmtRpNum(allUnpaid));
-  sv('dash-inv-alltime-ct',`${INVOICES.length} invoice total`);
   sv('dash-inv-total',fmtRpNum(sumGrand(periodInvs)));
   sv('dash-inv-count',`${periodInvs.length} invoice`);
   // Total nilai order (all orders, or filtered by period)
