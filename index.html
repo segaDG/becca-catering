@@ -725,7 +725,7 @@ tr:hover td{background:var(--bg);}
 
       <div id="page-tasks" class="page">
         <!-- Filter bar: sticky inside .content scroll area -->
-        <div id="task-filterbar" style="position:sticky;top:-22px;z-index:10;background:var(--bg);padding:14px 0 12px;margin-top:-6px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <div id="task-filterbar" style="position:sticky;top:0;z-index:10;background:var(--bg);padding:14px 0 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
             <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
@@ -763,7 +763,7 @@ tr:hover td{background:var(--bg);}
 
       <div id="page-activity" class="page">
         <div class="card">
-          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:-22px;z-index:10;background:var(--surface);border-radius:var(--r) var(--r) 0 0;">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <span class="card-title">📋 Activity Log</span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="text" id="act-search" placeholder="Cari nama / aktivitas..." style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);width:200px;" oninput="renderActivity()">
