@@ -620,32 +620,33 @@ tr:hover td{background:var(--bg);}
                 <option value="low">Low</option>
               </select>
               <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
+              <button class="btn btn-secondary btn-sm" onclick="showTaskArchive()" title="Lihat task yang diarsip">📦 Arsip</button>
               <button class="btn btn-primary btn-sm" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
             </div>
           </div>
           <div class="tw">
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;min-width:600px;">
               <!-- TODO column -->
-              <div style="border-right:1px solid var(--border);">
-                <div style="padding:10px 14px;background:#f3f4f6;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.5px;">📋 Todo</span>
-                  <span id="task-count-todo" style="font-size:11px;background:#e5e7eb;color:#555;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+              <div style="border-right:1px solid var(--border);background:#faf9ff;">
+                <div style="padding:10px 14px;background:#ede9fe;border-bottom:3px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#5b21b6;text-transform:uppercase;letter-spacing:.5px;">📋 Todo</span>
+                  <span id="task-count-todo" style="font-size:11px;background:#ddd6fe;color:#5b21b6;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
                 </div>
                 <div id="task-col-todo" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
               </div>
               <!-- IN PROGRESS column -->
-              <div style="border-right:1px solid var(--border);">
-                <div style="padding:10px 14px;background:#eef5fb;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#1e4d6b;text-transform:uppercase;letter-spacing:.5px;">⚙️ In Progress</span>
-                  <span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;color:#1e4d6b;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+              <div style="border-right:1px solid var(--border);background:#fffbf0;">
+                <div style="padding:10px 14px;background:#fef3c7;border-bottom:3px solid #d97706;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#92400e;text-transform:uppercase;letter-spacing:.5px;">⚙️ In Progress</span>
+                  <span id="task-count-inprogress" style="font-size:11px;background:#fde68a;color:#92400e;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
                 </div>
                 <div id="task-col-inprogress" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
               </div>
               <!-- DONE column -->
-              <div>
-                <div style="padding:10px 14px;background:#eaf4ef;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#1e7e34;text-transform:uppercase;letter-spacing:.5px;">✅ Done</span>
-                  <span id="task-count-done" style="font-size:11px;background:#c6e6d0;color:#1e7e34;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+              <div style="background:#f0fdf4;">
+                <div style="padding:10px 14px;background:#dcfce7;border-bottom:3px solid #16a34a;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#15803d;text-transform:uppercase;letter-spacing:.5px;">✅ Done</span>
+                  <span id="task-count-done" style="font-size:11px;background:#bbf7d0;color:#15803d;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
                 </div>
                 <div id="task-col-done" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
               </div>
@@ -1106,7 +1107,16 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
-<!-- MODAL CUSTOMER -->
+<!-- MODAL TASK ARCHIVE -->
+<div class="overlay" id="m-task-archive">
+  <div class="modal lg" style="max-width:680px;">
+    <div class="mhead">
+      <div><div class="mtitle">📦 Arsip Task</div><div class="msub">Task yang telah selesai dan diarsipkan</div></div>
+      <button class="mclose" onclick="closeM('m-task-archive')">✕</button>
+    </div>
+    <div id="task-archive-body" style="max-height:500px;overflow-y:auto;padding:4px 0;"></div>
+  </div>
+</div>
 <div class="overlay" id="m-cust">
   <div class="modal lg">
     <div class="mhead"><div><div class="mtitle" id="cust-modal-title">➕ Tambah Customer</div><div class="msub">Data lengkap & harga per kolom porsi</div></div><button class="mclose" onclick="closeM('m-cust')">✕</button></div>
@@ -3518,15 +3528,72 @@ function stopOnlineTracker(){
 
 // ══ TASK BOARD ══════════════════════════════════════
 const TASK_KEY='becca_tasks';
+const TASK_ARCHIVE_KEY='becca_tasks_archive';
 let TASKS=JSON.parse(localStorage.getItem(TASK_KEY)||'[]');
+let TASKS_ARCHIVE=JSON.parse(localStorage.getItem(TASK_ARCHIVE_KEY)||'[]');
 
 function saveTasks(){localStorage.setItem(TASK_KEY,JSON.stringify(TASKS));}
+function saveTasksArchive(){localStorage.setItem(TASK_ARCHIVE_KEY,JSON.stringify(TASKS_ARCHIVE));}
 
 const TASK_PRIORITY_CONFIG={
   high:{label:'🔴 High',color:'#a8281e',bg:'#faeeed'},
   medium:{label:'🟡 Medium',color:'#9a5a0a',bg:'#fff8f0'},
   low:{label:'🟢 Low',color:'#1e7e34',bg:'#eaf4ef'}
 };
+
+function archiveTask(id){
+  const t=TASKS.find(x=>x.id===id);if(!t)return;
+  if(!confirm(`Arsipkan task "${t.title}"?`))return;
+  t.archived_at=new Date().toISOString();
+  t.archived_by=CU.username;
+  TASKS_ARCHIVE.unshift(t);
+  TASKS=TASKS.filter(x=>x.id!==id);
+  saveTasks();saveTasksArchive();renderTasks();
+  logActivity('system',`Arsip task: "${t.title}"`,'Task Board');
+  toast('Task diarsipkan','info');
+}
+
+function showTaskArchive(){
+  const isSA=CU.role==='superadmin';
+  const visible=isSA?TASKS_ARCHIVE:TASKS_ARCHIVE.filter(t=>t.assignee===CU.username||t.creator===CU.username);
+  const body=document.getElementById('task-archive-body');
+  if(!body)return;
+  if(!visible.length){
+    body.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted);"><div style="font-size:32px;">📦</div><div style="margin-top:8px;">Arsip kosong</div></div>`;
+  } else {
+    body.innerHTML=visible.map(t=>{
+      const pc=TASK_PRIORITY_CONFIG[t.priority]||TASK_PRIORITY_CONFIG.medium;
+      const u=USERS_DATA.find(x=>x.username===t.assignee);
+      const archivedAt=t.archived_at?new Date(t.archived_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+      const completedAt=t.completed_at?new Date(t.completed_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:13px;">${t.title}</div>
+          <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
+        </div>
+        ${t.desc?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${t.desc}</div>`:''}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);">
+          <span>👤 ${u?u.nama:t.assignee||'Unassigned'}</span>
+          <span>✅ Selesai: ${completedAt}</span>
+          <span>📦 Diarsip: ${archivedAt}</span>
+          <span>by ${t.archived_by||'—'}</span>
+        </div>
+        ${isSA?`<div style="margin-top:8px;"><button class="btn btn-secondary btn-sm" onclick="restoreTask('${t.id}')" style="font-size:10px;">↩️ Restore</button></div>`:''}
+      </div>`;
+    }).join('');
+  }
+  openM('m-task-archive');
+}
+
+function restoreTask(id){
+  const t=TASKS_ARCHIVE.find(x=>x.id===id);if(!t)return;
+  delete t.archived_at;delete t.archived_by;
+  t.status='todo';t.updated_at=new Date().toISOString();
+  TASKS.unshift(t);
+  TASKS_ARCHIVE=TASKS_ARCHIVE.filter(x=>x.id!==id);
+  saveTasks();saveTasksArchive();showTaskArchive();renderTasks();
+  toast('Task di-restore ke Todo','success');
+}
 
 function openAddTask(){
   document.getElementById('task-id').value='';
@@ -3605,10 +3672,12 @@ function clearTaskFilters(){
   renderTasks();
 }
 function renderTasks(){
-  // Populate assignee filter
+  const isSA=CU.role==='superadmin';
+  // Populate assignee filter — superadmin sees all, others see only their tasks
+  const visibleTasks=isSA?TASKS:TASKS.filter(t=>t.assignee===CU.username||t.creator===CU.username);
   const asel=document.getElementById('task-f-assign');
   if(asel){
-    const assignees=[...new Set(TASKS.map(t=>t.assignee).filter(Boolean))];
+    const assignees=[...new Set(visibleTasks.map(t=>t.assignee).filter(Boolean))];
     const cur=asel.value;
     asel.innerHTML='<option value="">Semua Assignee</option>'+assignees.map(a=>{
       const u=USERS_DATA.find(x=>x.username===a);
@@ -3617,13 +3686,12 @@ function renderTasks(){
   }
   const fAssign=document.getElementById('task-f-assign')?.value||'';
   const fPrio=document.getElementById('task-f-priority')?.value||'';
-  const filtered=TASKS.filter(t=>{
+  const filtered=visibleTasks.filter(t=>{
     if(fAssign&&t.assignee!==fAssign)return false;
     if(fPrio&&t.priority!==fPrio)return false;
     return true;
   });
   const cols=['todo','inprogress','done'];
-  const colLabels={todo:'📋 Todo',inprogress:'⚙️ In Progress',done:'✅ Done'};
   cols.forEach(col=>{
     const tasks=filtered.filter(t=>t.status===col);
     const countEl=document.getElementById('task-count-'+col);
@@ -3642,7 +3710,6 @@ function renderTasks(){
       const isOverdue=deadline&&deadline<now&&t.status!=='done';
       const isDueSoon=deadline&&!isOverdue&&(deadline-now)<=2*86400000&&t.status!=='done';
       const dlStr=deadline?deadline.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'';
-      // Status move buttons
       const prevStatus=col==='inprogress'?'todo':col==='done'?'inprogress':null;
       const nextStatus=col==='todo'?'inprogress':col==='inprogress'?'done':null;
       return`<div class="task-card" style="border-color:${isOverdue?'#dbb0ab':isAssignedToMe?'#b8d4e8':'var(--border)'};${isAssignedToMe?'border-left:3px solid #1e4d6b;':''}">
@@ -3659,10 +3726,11 @@ function renderTasks(){
         </div>
         <div style="display:flex;gap:4px;justify-content:space-between;align-items:center;">
           <div style="display:flex;gap:3px;">
-            ${prevStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${prevStatus}')" style="font-size:10px;padding:2px 6px;" title="Mundur ke ${prevStatus}">◀</button>`:''}
-            ${nextStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${nextStatus}')" style="font-size:10px;padding:2px 6px;background:${nextStatus==='done'?'#eaf4ef':'#eef5fb'};" title="Maju ke ${nextStatus}">▶</button>`:''}
+            ${prevStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${prevStatus}')" style="font-size:10px;padding:2px 6px;" title="Mundur">◀</button>`:''}
+            ${nextStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${nextStatus}')" style="font-size:10px;padding:2px 6px;background:${nextStatus==='done'?'#dcfce7':'#fef3c7'};" title="Maju">▶</button>`:''}
           </div>
           <div style="display:flex;gap:3px;">
+            ${col==='done'&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="archiveTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Arsipkan">📦</button>`:''}
             ${canEdit?`<button class="btn btn-secondary btn-sm" onclick="openEditTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Edit">✏️</button>`:''}
             ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Hapus">🗑</button>`:''}
           </div>
@@ -3670,9 +3738,6 @@ function renderTasks(){
       </div>`;
     }).join('');
   });
-  // Responsive: stack on mobile
-  const board=document.getElementById('task-board');
-  if(board)board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
 }
 // task board uses natural card layout — no JS sizing needed
 // ═══════════════════════════════════════════════════
