@@ -1382,7 +1382,7 @@ async function initApp(){
   document.getElementById('nav-rl').textContent=r.label;
   loading(true,'Memuat data...');
   try{
-    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices()]);
+    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices(),loadTasks()]);
     setDb('connected');
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
@@ -1392,6 +1392,11 @@ async function initApp(){
   logActivity('login',`Login berhasil sebagai ${CU.role} (${CU.nama})`,'Login');
   startOnlineTracker();
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
+  // Auto-refresh tasks every 30s for realtime-like sync between users
+  setInterval(async()=>{
+    await loadTasks();
+    if(document.getElementById('page-tasks').classList.contains('active'))renderTasks();
+  },30*1000);
   navigateTo('dashboard');
 }
 function tickClk(){const n=new Date();document.getElementById('clk').textContent=`${n.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;}
@@ -3529,10 +3534,20 @@ function stopOnlineTracker(){
 // ══ TASK BOARD ══════════════════════════════════════
 const TASK_KEY='becca_tasks';
 const TASK_ARCHIVE_KEY='becca_tasks_archive';
-let TASKS=JSON.parse(localStorage.getItem(TASK_KEY)||'[]');
-let TASKS_ARCHIVE=JSON.parse(localStorage.getItem(TASK_ARCHIVE_KEY)||'[]');
+let TASKS=[];
+let TASKS_ARCHIVE=[];
 
-function saveTasks(){localStorage.setItem(TASK_KEY,JSON.stringify(TASKS));}
+async function loadTasks(){
+  try{
+    TASKS=await sbGet('tasks','select=*&is_archived=eq.false&order=created_at.desc');
+    TASKS_ARCHIVE=await sbGet('tasks','select=*&is_archived=eq.true&order=archived_at.desc');
+  }catch(e){
+    // fallback to localStorage if table not yet created
+    TASKS=JSON.parse(localStorage.getItem(TASK_KEY)||'[]');
+    TASKS_ARCHIVE=JSON.parse(localStorage.getItem(TASK_ARCHIVE_KEY)||'[]');
+  }
+}
+function saveTasks(){localStorage.setItem(TASK_KEY,JSON.stringify(TASKS));} // legacy fallback
 function saveTasksArchive(){localStorage.setItem(TASK_ARCHIVE_KEY,JSON.stringify(TASKS_ARCHIVE));}
 
 const TASK_PRIORITY_CONFIG={
@@ -3541,16 +3556,16 @@ const TASK_PRIORITY_CONFIG={
   low:{label:'🟢 Low',color:'#1e7e34',bg:'#eaf4ef'}
 };
 
-function archiveTask(id){
+async function archiveTask(id){
   const t=TASKS.find(x=>x.id===id);if(!t)return;
   if(!confirm(`Arsipkan task "${t.title}"?`))return;
-  t.archived_at=new Date().toISOString();
-  t.archived_by=CU.username;
-  TASKS_ARCHIVE.unshift(t);
-  TASKS=TASKS.filter(x=>x.id!==id);
-  saveTasks();saveTasksArchive();renderTasks();
-  logActivity('system',`Arsip task: "${t.title}"`,'Task Board');
-  toast('Task diarsipkan','info');
+  const now=new Date().toISOString();
+  try{
+    await sbPatch('tasks',id,{is_archived:true,archived_at:now,archived_by:CU.username});
+    await loadTasks();renderTasks();
+    logActivity('system',`Arsip task: "${t.title}"`,'Task Board');
+    toast('Task diarsipkan','info');
+  }catch(e){toast('Gagal mengarsipkan task','error');}
 }
 
 function showTaskArchive(){
@@ -3571,7 +3586,7 @@ function showTaskArchive(){
           <div style="font-weight:700;font-size:13px;">${t.title}</div>
           <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
         </div>
-        ${t.desc?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${t.desc}</div>`:''}
+        ${(t.description||t.desc)?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${t.description||t.desc}</div>`:''}
         <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);">
           <span>👤 ${u?u.nama:t.assignee||'Unassigned'}</span>
           <span>✅ Selesai: ${completedAt}</span>
@@ -3585,14 +3600,13 @@ function showTaskArchive(){
   openM('m-task-archive');
 }
 
-function restoreTask(id){
+async function restoreTask(id){
   const t=TASKS_ARCHIVE.find(x=>x.id===id);if(!t)return;
-  delete t.archived_at;delete t.archived_by;
-  t.status='todo';t.updated_at=new Date().toISOString();
-  TASKS.unshift(t);
-  TASKS_ARCHIVE=TASKS_ARCHIVE.filter(x=>x.id!==id);
-  saveTasks();saveTasksArchive();showTaskArchive();renderTasks();
-  toast('Task di-restore ke Todo','success');
+  try{
+    await sbPatch('tasks',id,{is_archived:false,archived_at:null,archived_by:null,status:'todo',updated_at:new Date().toISOString()});
+    await loadTasks();showTaskArchive();renderTasks();
+    toast('Task di-restore ke Todo','success');
+  }catch(e){toast('Gagal merestore task','error');}
 }
 
 function openAddTask(){
@@ -3616,7 +3630,7 @@ function openEditTask(id){
   document.getElementById('task-modal-title').textContent='✏️ Edit Task';
   document.getElementById('task-modal-sub').textContent=`Dibuat oleh ${t.creator} · ${new Date(t.created_at).toLocaleDateString('id-ID')}`;
   document.getElementById('task-title').value=t.title;
-  document.getElementById('task-desc').value=t.desc||'';
+  document.getElementById('task-desc').value=t.description||t.desc||'';
   document.getElementById('task-priority').value=t.priority;
   document.getElementById('task-status').value=t.status;
   document.getElementById('task-deadline').value=t.deadline||'';
@@ -3625,46 +3639,60 @@ function openEditTask(id){
   document.getElementById('save-task-btn').textContent='💾 Simpan Perubahan';
   openM('m-task');
 }
-function saveTask(){
+async function saveTask(){
   const id=document.getElementById('task-id').value;
   const title=document.getElementById('task-title').value.trim();
   if(!title){toast('Judul task wajib diisi','error');return;}
   const data={
     title,
-    desc:document.getElementById('task-desc').value.trim(),
-    assignee:document.getElementById('task-assignee').value,
+    description:document.getElementById('task-desc').value.trim(),
+    assignee:document.getElementById('task-assignee').value||null,
     priority:document.getElementById('task-priority').value,
     status:document.getElementById('task-status').value,
     deadline:document.getElementById('task-deadline').value||null,
     updated_at:new Date().toISOString(),
     updated_by:CU.username
   };
-  if(id){
-    const idx=TASKS.findIndex(x=>x.id===id);
-    if(idx>=0)TASKS[idx]={...TASKS[idx],...data};
-    logActivity('system',`Edit task: "${title}"`,'Task Board');
-  } else {
-    TASKS.unshift({id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
-      ...data,creator:CU.username,creator_nama:CU.nama,created_at:new Date().toISOString()});
-    logActivity('system',`Buat task baru: "${title}" → ${data.assignee||'Unassigned'}`,'Task Board');
-  }
-  saveTasks();renderTasks();closeM('m-task');
-  toast(id?'Task diperbarui':'Task ditambah','success');
+  try{
+    if(id){
+      await sbPatch('tasks',id,data);
+      logActivity('system',`Edit task: "${title}"`,'Task Board');
+      toast('Task diperbarui','success');
+    } else {
+      const newTask={
+        id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+        ...data,
+        creator:CU.username,
+        creator_nama:CU.nama,
+        created_at:new Date().toISOString(),
+        is_archived:false
+      };
+      await sbPost('tasks',newTask);
+      logActivity('system',`Buat task baru: "${title}" → ${data.assignee||'Unassigned'}`,'Task Board');
+      toast('Task ditambah','success');
+    }
+    await loadTasks();renderTasks();closeM('m-task');
+  }catch(e){toast('Gagal menyimpan task','error');console.error(e);}
 }
-function deleteTask(id){
+async function deleteTask(id){
   if(!confirm('Hapus task ini?'))return;
   const t=TASKS.find(x=>x.id===id);
-  TASKS=TASKS.filter(x=>x.id!==id);
-  saveTasks();renderTasks();
-  logActivity('system',`Hapus task: "${t?.title||id}"`,'Task Board');
-  toast('Task dihapus','info');
+  try{
+    await sbDelete('tasks',id);
+    await loadTasks();renderTasks();
+    logActivity('system',`Hapus task: "${t?.title||id}"`,'Task Board');
+    toast('Task dihapus','info');
+  }catch(e){toast('Gagal menghapus task','error');}
 }
-function moveTask(id,newStatus){
+async function moveTask(id,newStatus){
   const t=TASKS.find(x=>x.id===id);if(!t)return;
-  t.status=newStatus;t.updated_at=new Date().toISOString();t.updated_by=CU.username;
-  if(newStatus==='done')t.completed_at=new Date().toISOString();
-  saveTasks();renderTasks();
-  logActivity('system',`Task "${t.title}" → ${newStatus}`,'Task Board');
+  const upd={status:newStatus,updated_at:new Date().toISOString(),updated_by:CU.username};
+  if(newStatus==='done')upd.completed_at=new Date().toISOString();
+  try{
+    await sbPatch('tasks',id,upd);
+    await loadTasks();renderTasks();
+    logActivity('system',`Task "${t.title}" → ${newStatus}`,'Task Board');
+  }catch(e){toast('Gagal memindahkan task','error');}
 }
 function clearTaskFilters(){
   document.getElementById('task-f-assign').value='';
@@ -3717,7 +3745,7 @@ function renderTasks(){
           <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;flex:1;">${t.title}</div>
           <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
         </div>
-        ${t.desc?`<div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.4;">${t.desc}</div>`:''}
+        ${(t.description||t.desc)?`<div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.4;">${t.description||t.desc}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:5px;">
             ${u?`<div style="width:20px;height:20px;border-radius:50%;background:${RC_META[u.role]?.bg||'#eee'};color:${RC_META[u.role]?.color||'#555'};font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;">${u.nama.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><span style="font-size:10px;color:var(--muted);">${u.nama}</span>`:'<span style="font-size:10px;color:var(--muted);">Unassigned</span>'}
