@@ -3720,13 +3720,32 @@ function renderTasks(){
     return true;
   });
   const cols=['todo','inprogress','done'];
+  const PRIO_SCORE={high:3,medium:2,low:1};
+  const now=new Date();now.setHours(0,0,0,0);
+
   cols.forEach(col=>{
-    const tasks=filtered.filter(t=>t.status===col);
+    let tasks=filtered.filter(t=>t.status===col);
+
+    // Sort: overdue first, then by priority desc, then deadline asc, then created asc
+    tasks.sort((a,b)=>{
+      const da=a.deadline?new Date(a.deadline+'T00:00:00'):null;
+      const db=b.deadline?new Date(b.deadline+'T00:00:00'):null;
+      const aOverdue=da&&da<now&&col!=='done';
+      const bOverdue=db&&db<now&&col!=='done';
+      if(aOverdue!==bOverdue)return aOverdue?-1:1;
+      const pa=PRIO_SCORE[a.priority]||2, pb=PRIO_SCORE[b.priority]||2;
+      if(pa!==pb)return pb-pa;
+      if(da&&db)return da-db;
+      if(da)return -1; if(db)return 1;
+      return new Date(a.created_at)-new Date(b.created_at);
+    });
+
     const countEl=document.getElementById('task-count-'+col);
     if(countEl)countEl.textContent=tasks.length;
     const colEl=document.getElementById('task-col-'+col);
     if(!colEl)return;
     if(!tasks.length){colEl.innerHTML=`<div style="text-align:center;padding:24px 8px;color:var(--muted);font-size:12px;">Tidak ada task</div>`;return;}
+
     colEl.innerHTML=tasks.map(t=>{
       const pc=TASK_PRIORITY_CONFIG[t.priority]||TASK_PRIORITY_CONFIG.medium;
       const u=USERS_DATA.find(x=>x.username===t.assignee);
@@ -3734,13 +3753,28 @@ function renderTasks(){
       const isCreatedByMe=t.creator===CU.username;
       const canEdit=isAssignedToMe||isCreatedByMe||CU.role==='superadmin'||CU.role==='admin';
       const deadline=t.deadline?new Date(t.deadline+'T00:00:00'):null;
-      const now=new Date();now.setHours(0,0,0,0);
       const isOverdue=deadline&&deadline<now&&t.status!=='done';
       const isDueSoon=deadline&&!isOverdue&&(deadline-now)<=2*86400000&&t.status!=='done';
       const dlStr=deadline?deadline.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'';
       const prevStatus=col==='inprogress'?'todo':col==='done'?'inprogress':null;
       const nextStatus=col==='todo'?'inprogress':col==='inprogress'?'done':null;
-      return`<div class="task-card" style="border-color:${isOverdue?'#dbb0ab':isAssignedToMe?'#b8d4e8':'var(--border)'};${isAssignedToMe?'border-left:3px solid #1e4d6b;':''}">
+
+      // Card background & border based on state
+      let cardBg,cardBorder,cardAccent;
+      if(isOverdue){
+        cardBg='#fff5f5';cardBorder='#fca5a5';cardAccent='#dc2626';
+      } else if(isDueSoon){
+        cardBg='#fffbeb';cardBorder='#fcd34d';cardAccent='#d97706';
+      } else if(t.priority==='high'){
+        cardBg='#fff8f8';cardBorder='#fecaca';cardAccent='#a8281e';
+      } else if(t.priority==='medium'){
+        cardBg='#fefce8';cardBorder='#fde68a';cardAccent='#ca8a04';
+      } else {
+        cardBg='#f0fdf4';cardBorder='#bbf7d0';cardAccent='#16a34a';
+      }
+      if(col==='done'){cardBg='#f8fafc';cardBorder='#cbd5e1';cardAccent='#64748b';}
+
+      return`<div class="task-card" style="background:${cardBg};border-color:${cardBorder};border-left:3px solid ${cardAccent};">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
           <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;flex:1;">${t.title}</div>
           <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
@@ -3748,14 +3782,14 @@ function renderTasks(){
         ${(t.description||t.desc)?`<div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.4;">${t.description||t.desc}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:5px;">
-            ${u?`<div style="width:20px;height:20px;border-radius:50%;background:${RC_META[u.role]?.bg||'#eee'};color:${RC_META[u.role]?.color||'#555'};font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;">${u.nama.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><span style="font-size:10px;color:var(--muted);">${u.nama}</span>`:'<span style="font-size:10px;color:var(--muted);">Unassigned</span>'}
+            ${u?`<div style="width:22px;height:22px;border-radius:50%;background:${RC_META[u.role]?.bg||'#eee'};color:${RC_META[u.role]?.color||'#555'};font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid ${cardAccent}40;">${u.nama.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><span style="font-size:10px;color:var(--muted);font-weight:500;">${u.nama}</span>`:`<span style="font-size:10px;color:var(--muted);font-style:italic;">Unassigned</span>`}
           </div>
-          ${deadline?`<span style="font-size:10px;font-weight:600;color:${isOverdue?'#a8281e':isDueSoon?'#9a5a0a':'var(--muted)'};background:${isOverdue?'#faeeed':isDueSoon?'#fff8f0':'transparent'};padding:${isOverdue||isDueSoon?'1px 6px':'0'};border-radius:8px;">📅 ${dlStr}${isOverdue?' ⚠️ Lewat':isDueSoon?' ⏰':''}</span>`:''}
+          ${deadline?`<span style="font-size:10px;font-weight:600;color:${isOverdue?'#dc2626':isDueSoon?'#d97706':'var(--muted)'};background:${isOverdue?'#fee2e2':isDueSoon?'#fef3c7':'transparent'};padding:${isOverdue||isDueSoon?'2px 7px':'0'};border-radius:8px;">📅 ${dlStr}${isOverdue?' ⚠️':isDueSoon?' ⏰':''}</span>`:''}
         </div>
-        <div style="display:flex;gap:4px;justify-content:space-between;align-items:center;">
+        <div style="display:flex;gap:4px;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid ${cardBorder};">
           <div style="display:flex;gap:3px;">
-            ${prevStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${prevStatus}')" style="font-size:10px;padding:2px 6px;" title="Mundur">◀</button>`:''}
-            ${nextStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${nextStatus}')" style="font-size:10px;padding:2px 6px;background:${nextStatus==='done'?'#dcfce7':'#fef3c7'};" title="Maju">▶</button>`:''}
+            ${prevStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${prevStatus}')" style="font-size:10px;padding:2px 8px;" title="Mundur">◀</button>`:''}
+            ${nextStatus&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="moveTask('${t.id}','${nextStatus}')" style="font-size:10px;padding:2px 8px;background:${nextStatus==='done'?'#dcfce7':'#fef3c7'};border-color:${nextStatus==='done'?'#86efac':'#fde68a'};" title="Maju">▶</button>`:''}
           </div>
           <div style="display:flex;gap:3px;">
             ${col==='done'&&canEdit?`<button class="btn btn-secondary btn-sm" onclick="archiveTask('${t.id}')" style="font-size:10px;padding:2px 6px;" title="Arsipkan">📦</button>`:''}
