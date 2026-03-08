@@ -3759,20 +3759,18 @@ function renderTasks(){
       const prevStatus=col==='inprogress'?'todo':col==='done'?'inprogress':null;
       const nextStatus=col==='todo'?'inprogress':col==='inprogress'?'done':null;
 
-      // Card background & border based on state
+      // Card background & border based on COLUMN (not priority/state)
       let cardBg,cardBorder,cardAccent;
-      if(isOverdue){
-        cardBg='#fff5f5';cardBorder='#fca5a5';cardAccent='#dc2626';
-      } else if(isDueSoon){
-        cardBg='#fffbeb';cardBorder='#fcd34d';cardAccent='#d97706';
-      } else if(t.priority==='high'){
-        cardBg='#fff8f8';cardBorder='#fecaca';cardAccent='#a8281e';
-      } else if(t.priority==='medium'){
-        cardBg='#fefce8';cardBorder='#fde68a';cardAccent='#ca8a04';
+      if(col==='todo'){
+        cardBg='#eff6ff';cardBorder='#bfdbfe';cardAccent='#3b82f6';
+      } else if(col==='inprogress'){
+        cardBg='#fffbeb';cardBorder='#fde68a';cardAccent='#f59e0b';
       } else {
-        cardBg='#f0fdf4';cardBorder='#bbf7d0';cardAccent='#16a34a';
+        cardBg='#f1f5f9';cardBorder='#cbd5e1';cardAccent='#64748b';
       }
-      if(col==='done'){cardBg='#f8fafc';cardBorder='#cbd5e1';cardAccent='#64748b';}
+      // Overdue & due soon only affect the accent stripe, not background
+      if(isOverdue){cardAccent='#dc2626';cardBorder='#fca5a5';}
+      else if(isDueSoon){cardAccent='#d97706';cardBorder='#fcd34d';}
 
       return`<div class="task-card" style="background:${cardBg};border-color:${cardBorder};border-left:3px solid ${cardAccent};">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
