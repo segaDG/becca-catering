@@ -114,7 +114,7 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .ni .ico{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .sb-foot{padding:8px;border-top:1px solid var(--border);}
 .main{margin-left:var(--sb);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{position:sticky;top:0;background:rgba(255,255,255,.92);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;z-index:100;backdrop-filter:blur(14px);}
+.topbar{flex-shrink:0;background:rgba(255,255,255,.92);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;z-index:100;backdrop-filter:blur(14px);}
 .tb-l{display:flex;align-items:center;gap:11px;}
 .hbg{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:4px 6px;border-radius:6px;transition:background .15s;line-height:1;}
 .hbg:hover{background:var(--bg2);color:var(--text);}
@@ -125,9 +125,9 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .db-chip.connected{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
 .db-chip.disconnected{background:#ef4444;box-shadow:0 0 6px #ef444488;}
 .db-chip.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b88;}
-.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;}
 .page{display:none;width:100%;}
-.page.active{display:block;animation:fadeUp .2s ease;}.page-flex.active{display:flex!important;flex-direction:column;height:calc(100vh - 53px - 44px);margin:-22px;padding:22px;box-sizing:border-box;}
+.page.active{display:block;animation:fadeUp .2s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
 
 /* ── STATS ─────────────────────────────────── */
@@ -723,9 +723,9 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
-      <div id="page-tasks" class="page page-flex">
-        <!-- Filter bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <div id="page-tasks" class="page">
+        <!-- Filter bar: sticky inside .content scroll area -->
+        <div id="task-filterbar" style="position:sticky;top:-22px;z-index:10;background:var(--bg);padding:14px 0 12px;margin-top:-6px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
             <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
@@ -738,32 +738,32 @@ tr:hover td{background:var(--bg);}
           </div>
           <button class="btn btn-primary" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
         </div>
-        <!-- Board columns -->
-        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;min-height:0;overflow:hidden;">
-          <div style="display:flex;flex-direction:column;min-height:0;">
+        <!-- Board: height set by JS to fill remaining space -->
+        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div style="display:flex;flex-direction:column;">
             <div style="font-weight:700;font-size:13px;color:#555;padding:8px 12px;background:#f3f4f6;border-radius:8px 8px 0 0;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
               <span>📋 Todo</span><span id="task-count-todo" style="font-size:11px;background:#e5e7eb;padding:1px 7px;border-radius:10px;">0</span>
             </div>
-            <div id="task-col-todo" style="flex:1;overflow-y:auto;padding:8px;background:#f9fafb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="task-col-todo" style="overflow-y:auto;padding:8px;background:#f9fafb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
           </div>
-          <div style="display:flex;flex-direction:column;min-height:0;">
+          <div style="display:flex;flex-direction:column;">
             <div style="font-weight:700;font-size:13px;color:#1e4d6b;padding:8px 12px;background:#eef5fb;border-radius:8px 8px 0 0;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
               <span>⚙️ In Progress</span><span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;padding:1px 7px;border-radius:10px;">0</span>
             </div>
-            <div id="task-col-inprogress" style="flex:1;overflow-y:auto;padding:8px;background:#f0f6fb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="task-col-inprogress" style="overflow-y:auto;padding:8px;background:#f0f6fb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
           </div>
-          <div style="display:flex;flex-direction:column;min-height:0;">
+          <div style="display:flex;flex-direction:column;">
             <div style="font-weight:700;font-size:13px;color:#1e7e34;padding:8px 12px;background:#eaf4ef;border-radius:8px 8px 0 0;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
               <span>✅ Done</span><span id="task-count-done" style="font-size:11px;background:#c6e6d0;padding:1px 7px;border-radius:10px;">0</span>
             </div>
-            <div id="task-col-done" style="flex:1;overflow-y:auto;padding:8px;background:#f2fbf5;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="task-col-done" style="overflow-y:auto;padding:8px;background:#f2fbf5;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
           </div>
         </div>
       </div>
 
-      <div id="page-activity" class="page page-flex">
-        <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+      <div id="page-activity" class="page">
+        <div class="card">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:-22px;z-index:10;background:var(--surface);border-radius:var(--r) var(--r) 0 0;">
             <span class="card-title">📋 Activity Log</span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="text" id="act-search" placeholder="Cari nama / aktivitas..." style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);width:200px;" oninput="renderActivity()">
@@ -782,8 +782,8 @@ tr:hover td{background:var(--bg);}
               <button class="btn btn-danger btn-sm" onclick="clearAllActivity()" style="margin-left:8px;">🗑 Hapus Semua</button>
             </div>
           </div>
-          <div class="card-body" style="padding:0;overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0;">
-            <div style="overflow-x:auto;overflow-y:auto;flex:1;min-height:0;"><table id="act-table" style="width:100%;">
+          <div class="card-body" style="padding:0;">
+            <div style="overflow-x:auto;"><table id="act-table" style="width:100%;">
               <thead style="position:sticky;top:0;z-index:2;background:var(--surface2);"><tr>
                 <th style="width:40px;">#</th>
                 <th style="min-width:120px;">User</th>
@@ -3296,10 +3296,43 @@ function renderTasks(){
       </div>`;
     }).join('');
   });
-  // Responsive: on mobile stack columns
+  // Responsive grid
   const board=document.getElementById('task-board');
-  if(board)board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
+  if(!board)return;
+  board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
+  // Size columns to fill remaining viewport height
+  sizeTaskBoard();
 }
+function sizeTaskBoard(){
+  const board=document.getElementById('task-board');
+  const content=document.querySelector('.content');
+  const filterbar=document.getElementById('task-filterbar');
+  if(!board||!content)return;
+  const topbarH=document.querySelector('.topbar')?.offsetHeight||53;
+  const filterH=filterbar?.offsetHeight||60;
+  const pad=44; // content padding top+bottom
+  const available=window.innerHeight-topbarH-filterH-pad-16;
+  const colBodies=['task-col-todo','task-col-inprogress','task-col-done'];
+  colBodies.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.height=Math.max(200,available)+'px';
+  });
+}
+// Resize observer for task board
+if(typeof ResizeObserver!=='undefined'){
+  const _taskRO=new ResizeObserver(()=>{
+    if(document.getElementById('page-tasks')?.classList.contains('active'))sizeTaskBoard();
+  });
+  document.addEventListener('DOMContentLoaded',()=>{
+    const c=document.querySelector('.content');
+    if(c)_taskRO.observe(c);
+  });
+}
+window.addEventListener('resize',()=>{
+  if(document.getElementById('page-tasks')?.classList.contains('active')){
+    renderTasks();
+  }
+});
 // ═══════════════════════════════════════════════════
 
 // ══ NOTIFICATIONS ══════════════════════════════════
