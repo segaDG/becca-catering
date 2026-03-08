@@ -155,6 +155,10 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 /* Frozen columns for customer table */
 #page-customers .tw{position:relative;}
+#page-tasks .tw{overflow-x:auto;}
+#page-tasks .task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:11px 12px;transition:box-shadow .15s;}
+#page-tasks .task-card:hover{box-shadow:var(--sh-sm);}
+#page-activity table{width:100%;}
 #page-customers table{border-collapse:separate;border-spacing:0;}
 #page-customers thead th:nth-child(1),
 #page-customers thead th:nth-child(2){position:sticky;z-index:3;background:var(--surface2);}
@@ -730,52 +734,61 @@ tr:hover td{background:var(--bg);}
 </div>
 
       <div id="page-tasks" class="page">
-        <!-- Filter bar: sticky inside .content scroll area -->
-        <div id="task-filterbar" style="position:sticky;top:0;z-index:10;background:var(--bg);padding:14px 0 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
-            <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
-              <option value="">Semua Prioritas</option>
-              <option value="high">🔴 High</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="low">🟢 Low</option>
-            </select>
-            <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
-          </div>
-          <button class="btn btn-primary" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
-        </div>
-        <!-- Board: height set by JS to fill remaining space -->
-        <div id="task-board" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-          <div style="display:flex;flex-direction:column;">
-            <div style="font-weight:700;font-size:13px;color:#555;padding:8px 12px;background:#f3f4f6;border-radius:8px 8px 0 0;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-              <span>📋 Todo</span><span id="task-count-todo" style="font-size:11px;background:#e5e7eb;padding:1px 7px;border-radius:10px;">0</span>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">✅ Task Board</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
+              <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
+                <option value="">Semua Prioritas</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
             </div>
-            <div id="task-col-todo" style="overflow-y:auto;padding:8px;background:#f9fafb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
           </div>
-          <div style="display:flex;flex-direction:column;">
-            <div style="font-weight:700;font-size:13px;color:#1e4d6b;padding:8px 12px;background:#eef5fb;border-radius:8px 8px 0 0;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-              <span>⚙️ In Progress</span><span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;padding:1px 7px;border-radius:10px;">0</span>
+          <div class="tw">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;min-width:600px;">
+              <!-- TODO column -->
+              <div style="border-right:1px solid var(--border);">
+                <div style="padding:10px 14px;background:#f3f4f6;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.5px;">📋 Todo</span>
+                  <span id="task-count-todo" style="font-size:11px;background:#e5e7eb;color:#555;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-todo" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
+              <!-- IN PROGRESS column -->
+              <div style="border-right:1px solid var(--border);">
+                <div style="padding:10px 14px;background:#eef5fb;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#1e4d6b;text-transform:uppercase;letter-spacing:.5px;">⚙️ In Progress</span>
+                  <span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;color:#1e4d6b;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-inprogress" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
+              <!-- DONE column -->
+              <div>
+                <div style="padding:10px 14px;background:#eaf4ef;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#1e7e34;text-transform:uppercase;letter-spacing:.5px;">✅ Done</span>
+                  <span id="task-count-done" style="font-size:11px;background:#c6e6d0;color:#1e7e34;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-done" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
             </div>
-            <div id="task-col-inprogress" style="overflow-y:auto;padding:8px;background:#f0f6fb;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;">
-            <div style="font-weight:700;font-size:13px;color:#1e7e34;padding:8px 12px;background:#eaf4ef;border-radius:8px 8px 0 0;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-              <span>✅ Done</span><span id="task-count-done" style="font-size:11px;background:#c6e6d0;padding:1px 7px;border-radius:10px;">0</span>
-            </div>
-            <div id="task-col-done" style="overflow-y:auto;padding:8px;background:#f2fbf5;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:8px;"></div>
           </div>
         </div>
       </div>
 
       <div id="page-activity" class="page">
         <div class="card">
-          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="card-head">
             <span class="card-title">📋 Activity Log</span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <input type="text" id="act-search" placeholder="Cari nama / aktivitas..." style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);width:200px;" oninput="renderActivity()">
+              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="act-search" placeholder="Cari aktivitas..." oninput="renderActivity()"></div>
               <select id="act-f-user" class="sel" style="font-size:12px;" onchange="renderActivity()"><option value="">Semua User</option></select>
               <select id="act-f-type" class="sel" style="font-size:12px;" onchange="renderActivity()">
-                <option value="">Semua Aktivitas</option>
+                <option value="">Semua Tipe</option>
                 <option value="login">Login</option>
                 <option value="logout">Logout</option>
                 <option value="order">Order</option>
@@ -785,24 +798,24 @@ tr:hover td{background:var(--bg);}
                 <option value="system">System</option>
               </select>
               <button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">✕ Reset</button>
-              <button class="btn btn-danger btn-sm" onclick="clearAllActivity()" style="margin-left:8px;">🗑 Hapus Semua</button>
+              <button class="btn btn-danger btn-sm" onclick="clearAllActivity()">🗑 Hapus</button>
             </div>
           </div>
-          <div class="card-body" style="padding:0;">
-            <div style="overflow-x:auto;"><table id="act-table" style="width:100%;">
-              <thead style="position:sticky;top:0;z-index:2;background:var(--surface2);"><tr>
+          <div class="tw">
+            <table id="act-table">
+              <thead><tr>
                 <th style="width:40px;">#</th>
                 <th style="min-width:120px;">User</th>
                 <th style="min-width:80px;">Role</th>
-                <th style="min-width:160px;">Waktu</th>
+                <th style="min-width:150px;">Waktu</th>
                 <th style="min-width:90px;">Tipe</th>
-                <th>Aktivitas</th>
+                <th style="min-width:240px;">Aktivitas</th>
                 <th style="min-width:100px;">Halaman</th>
               </tr></thead>
               <tbody id="act-body"></tbody>
-            </table></div>
-            <div id="act-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px;"></div>
+            </table>
           </div>
+          <div id="act-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px;"></div>
         </div>
       </div>
 
@@ -3512,7 +3525,7 @@ function renderTasks(){
       // Status move buttons
       const prevStatus=col==='inprogress'?'todo':col==='done'?'inprogress':null;
       const nextStatus=col==='todo'?'inprogress':col==='inprogress'?'done':null;
-      return`<div style="background:#fff;border:1px solid ${isOverdue?'#dbb0ab':isAssignedToMe?'#b8d4e8':'var(--border)'};border-radius:8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);${isAssignedToMe?'border-left:3px solid #1e4d6b;':''}">
+      return`<div class="task-card" style="border-color:${isOverdue?'#dbb0ab':isAssignedToMe?'#b8d4e8':'var(--border)'};${isAssignedToMe?'border-left:3px solid #1e4d6b;':''}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
           <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;flex:1;">${t.title}</div>
           <span style="font-size:10px;font-weight:700;color:${pc.color};background:${pc.bg};padding:2px 7px;border-radius:10px;white-space:nowrap;">${pc.label}</span>
@@ -3537,43 +3550,11 @@ function renderTasks(){
       </div>`;
     }).join('');
   });
-  // Responsive grid
+  // Responsive: stack on mobile
   const board=document.getElementById('task-board');
-  if(!board)return;
-  board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
-  // Size columns to fill remaining viewport height
-  sizeTaskBoard();
+  if(board)board.style.gridTemplateColumns=window.innerWidth<640?'1fr':'repeat(3,1fr)';
 }
-function sizeTaskBoard(){
-  const board=document.getElementById('task-board');
-  const content=document.querySelector('.content');
-  const filterbar=document.getElementById('task-filterbar');
-  if(!board||!content)return;
-  const topbarH=document.querySelector('.topbar')?.offsetHeight||53;
-  const filterH=filterbar?.offsetHeight||60;
-  const pad=44; // content padding top+bottom
-  const available=window.innerHeight-topbarH-filterH-pad-16;
-  const colBodies=['task-col-todo','task-col-inprogress','task-col-done'];
-  colBodies.forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.style.height=Math.max(200,available)+'px';
-  });
-}
-// Resize observer for task board
-if(typeof ResizeObserver!=='undefined'){
-  const _taskRO=new ResizeObserver(()=>{
-    if(document.getElementById('page-tasks')?.classList.contains('active'))sizeTaskBoard();
-  });
-  document.addEventListener('DOMContentLoaded',()=>{
-    const c=document.querySelector('.content');
-    if(c)_taskRO.observe(c);
-  });
-}
-window.addEventListener('resize',()=>{
-  if(document.getElementById('page-tasks')?.classList.contains('active')){
-    renderTasks();
-  }
-});
+// task board uses natural card layout — no JS sizing needed
 // ═══════════════════════════════════════════════════
 
 // ══ NOTIFICATIONS ══════════════════════════════════
