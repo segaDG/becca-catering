@@ -519,6 +519,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">👷 Data Karyawan BPS</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;">➕ Karyawan Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
                 <select class="sel" id="k-divisi" onchange="filterKaryawan()">
                   <option value="">Semua Divisi</option>
@@ -546,7 +547,7 @@ tr:hover td{background:var(--bg);}
                   <th>#</th><th>Foto</th><th>Nama</th><th>Status</th><th>Divisi</th>
                   <th>Jabatan</th><th>Gaji</th><th>Sisa Hutang</th>
                   <th>NIK</th><th>No KTP</th><th>Tgl Lahir</th><th>Tempat</th>
-                  <th>Tgl Join</th><th>Lama</th><th>Pendidikan</th><th>Card</th>
+                  <th>Tgl Join</th><th>Lama</th><th>Pendidikan</th><th>Card</th><th>Aksi</th>
                 </tr></thead>
                 <tbody id="k-tbody"></tbody>
               </table>
@@ -1074,6 +1075,64 @@ tr:hover td{background:var(--bg);}
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()" style="flex:1;">💾 Simpan</button>
       <button class="btn btn-secondary" onclick="closeM('m-user')" style="flex:1;">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KARYAWAN -->
+<div class="overlay" id="m-karyawan">
+  <div class="modal" style="max-width:640px;">
+    <div class="mhead">
+      <div><div class="mtitle" id="km-title">➕ Karyawan Baru</div><div class="msub" id="km-sub"></div></div>
+      <button class="mclose" onclick="closeM('m-karyawan')">✕</button>
+    </div>
+    <input type="hidden" id="km-idx">
+    <div class="fg" style="grid-template-columns:1fr 1fr;gap:12px 16px;">
+      <div class="form-group span2"><label>Nama Lengkap *</label><input type="text" id="km-nama" placeholder="Nama lengkap..."></div>
+      <div class="form-group"><label>Nama Panggilan</label><input type="text" id="km-panggilan" placeholder="Panggilan..."></div>
+      <div class="form-group"><label>NIK Internal</label><input type="text" id="km-nik" placeholder="No urut..."></div>
+      <div class="form-group"><label>Divisi *</label>
+        <select id="km-divisi" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">— Pilih Divisi —</option>
+          <option>Management</option><option>Service</option><option>Kitchen</option>
+          <option>Warehouse</option><option>Driver</option><option>Cleaning Service</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Jabatan</label><input type="text" id="km-jabatan" placeholder="Leader / OB / ..."></div>
+      <div class="form-group"><label>Status *</label>
+        <select id="km-status" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="RESIGN">RESIGN</option>
+          <option value="FIRED">FIRED</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Gaji (Rp)</label><input type="number" id="km-gaji" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Gaji Awal (Rp)</label><input type="number" id="km-gaji-awal" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Sisa Hutang (Rp)</label><input type="number" id="km-hutang" placeholder="0" min="0"></div>
+      <div class="form-group"><label>No KTP</label><input type="text" id="km-ktp" placeholder="16 digit NIK..."></div>
+      <div class="form-group"><label>Tgl Lahir</label><input type="date" id="km-tgl-lahir"></div>
+      <div class="form-group"><label>Tempat Lahir</label><input type="text" id="km-tempat-lahir" placeholder="Karawang..."></div>
+      <div class="form-group"><label>Agama</label>
+        <select id="km-agama" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">—</option>
+          <option>Islam</option><option>Kristen</option><option>Katolik</option>
+          <option>Hindu</option><option>Buddha</option><option>Konghucu</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Pendidikan</label>
+        <select id="km-pendidikan" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">—</option>
+          <option>SD</option><option>SMP</option><option>SMA</option>
+          <option>SMK</option><option>SLTA</option><option>D3</option><option>S1</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tgl Bergabung</label><input type="date" id="km-tgl-join"></div>
+      <div class="form-group"><label>Lama Kerja (th)</label><input type="text" id="km-lama" placeholder="3.5"></div>
+      <div class="form-group span2"><label>URL Foto (Google Drive thumbnail)</label><input type="text" id="km-thumb" placeholder="https://drive.google.com/thumbnail?id=..."></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveKaryawan()" style="flex:1;">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-karyawan')" style="flex:1;">Batal</button>
     </div>
   </div>
 </div>
@@ -4458,6 +4517,109 @@ function filterKaryawan(){
   }
 }
 
+// ─── KARYAWAN CRUD ────────────────────────────────────
+function _kmReset(){
+  ['km-nama','km-panggilan','km-nik','km-jabatan','km-ktp','km-tempat-lahir','km-lama','km-thumb'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['km-gaji','km-gaji-awal','km-hutang'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='0';
+  });
+  document.getElementById('km-divisi').value='';
+  document.getElementById('km-status').value='ACTIVE';
+  document.getElementById('km-agama').value='Islam';
+  document.getElementById('km-pendidikan').value='';
+  document.getElementById('km-tgl-lahir').value='';
+  document.getElementById('km-tgl-join').value='';
+}
+function openAddKaryawan(){
+  document.getElementById('km-idx').value='';
+  document.getElementById('km-title').textContent='➕ Karyawan Baru';
+  document.getElementById('km-sub').textContent='';
+  _kmReset();
+  openM('m-karyawan');
+}
+function openEditKaryawan(idx){
+  const e=EMP_DATA[idx]; if(!e) return;
+  document.getElementById('km-idx').value=idx;
+  document.getElementById('km-title').textContent='✏️ Edit Karyawan';
+  document.getElementById('km-sub').textContent=e.nama+' · '+e.divisi;
+  _kmReset();
+  document.getElementById('km-nama').value=e.nama||'';
+  document.getElementById('km-panggilan').value=e.panggilan||'';
+  document.getElementById('km-nik').value=e.nik||'';
+  document.getElementById('km-divisi').value=e.divisi||'';
+  document.getElementById('km-jabatan').value=e.jabatan||'';
+  document.getElementById('km-status').value=e.status||'ACTIVE';
+  document.getElementById('km-gaji').value=e.gaji||0;
+  document.getElementById('km-gaji-awal').value=e.gaji_awal||0;
+  document.getElementById('km-hutang').value=e.sisa_hutang||0;
+  document.getElementById('km-ktp').value=e.ktp||'';
+  // Handle date or free-text tgl_lahir
+  if(e.tgl_lahir && /^\d{4}-\d{2}-\d{2}$/.test(e.tgl_lahir)){
+    document.getElementById('km-tgl-lahir').value=e.tgl_lahir;
+  } else {
+    document.getElementById('km-tgl-lahir').value='';
+  }
+  document.getElementById('km-tempat-lahir').value=e.tempat_lahir||'';
+  document.getElementById('km-agama').value=e.agama||'';
+  document.getElementById('km-pendidikan').value=e.pendidikan||'';
+  if(e.tgl_join && /^\d{4}-\d{2}-\d{2}$/.test(e.tgl_join)){
+    document.getElementById('km-tgl-join').value=e.tgl_join;
+  } else {
+    document.getElementById('km-tgl-join').value='';
+  }
+  document.getElementById('km-lama').value=e.lama||'';
+  document.getElementById('km-thumb').value=e.thumb||'';
+  openM('m-karyawan');
+}
+function saveKaryawan(){
+  const nama=(document.getElementById('km-nama').value||'').trim();
+  const divisi=document.getElementById('km-divisi').value;
+  if(!nama){toast('Nama wajib diisi','error');return;}
+  if(!divisi){toast('Pilih divisi','error');return;}
+  const entry={
+    nama,
+    panggilan:document.getElementById('km-panggilan').value.trim(),
+    nik:document.getElementById('km-nik').value.trim(),
+    divisi,
+    jabatan:document.getElementById('km-jabatan').value.trim(),
+    status:document.getElementById('km-status').value,
+    gaji:+document.getElementById('km-gaji').value||0,
+    gaji_awal:+document.getElementById('km-gaji-awal').value||0,
+    sisa_hutang:+document.getElementById('km-hutang').value||0,
+    ktp:document.getElementById('km-ktp').value.trim(),
+    tgl_lahir:document.getElementById('km-tgl-lahir').value||'',
+    tempat_lahir:document.getElementById('km-tempat-lahir').value.trim(),
+    agama:document.getElementById('km-agama').value,
+    pendidikan:document.getElementById('km-pendidikan').value,
+    tgl_join:document.getElementById('km-tgl-join').value||'',
+    lama:document.getElementById('km-lama').value.trim(),
+    thumb:document.getElementById('km-thumb').value.trim(),
+  };
+  const idx=document.getElementById('km-idx').value;
+  if(idx!==''){
+    EMP_DATA[+idx]=entry;
+    toast('Data karyawan diperbarui','success');
+    logActivity('karyawan',`Edit karyawan: ${nama}`,'Data Karyawan');
+  } else {
+    EMP_DATA.push(entry);
+    toast('Karyawan baru ditambahkan','success');
+    logActivity('karyawan',`Tambah karyawan: ${nama} (${divisi})`,'Data Karyawan');
+  }
+  closeM('m-karyawan');
+  filterKaryawan();
+}
+function deleteKaryawan(idx){
+  const e=EMP_DATA[idx];
+  if(!e)return;
+  if(!confirm(`Hapus data "${e.nama}"? Tindakan ini tidak bisa dibatalkan.`))return;
+  EMP_DATA.splice(idx,1);
+  toast('Karyawan dihapus','info');
+  logActivity('karyawan',`Hapus karyawan: ${e.nama}`,'Data Karyawan');
+  filterKaryawan();
+}
+
 function avatarHTML(e,size=36){
   const dc=DC[e.divisi]||'#888';
   const ini=e.nama.trim()[0].toUpperCase();
@@ -4467,12 +4629,15 @@ function avatarHTML(e,size=36){
 }
 
 function renderKTable(list){
+  const canEdit=CU.role==='superadmin'||CU.role==='admin';
   const tbody=document.getElementById('k-tbody');
-  if(!list.length){tbody.innerHTML='<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>';return;}
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="${canEdit?17:16}" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>`;return;}
   tbody.innerHTML=list.map((e,i)=>{
+    const origIdx=EMP_DATA.indexOf(e);
     const sc=SC[e.status]||SC.RESIGN;
     const dc=DC[e.divisi]||'#888';
-    return`<tr style="cursor:pointer;" onclick="showEmpCard('${e.nama.replace(/'/g,"\\'")}')">
+    const safeName=e.nama.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return`<tr style="cursor:pointer;" onclick="showEmpCard('${safeName}')">
       <td class="mono tmuted" style="font-size:11px;">${i+1}</td>
       <td style="padding:5px 8px;">${avatarHTML(e,34)}</td>
       <td><strong style="font-size:12px;">${e.nama}</strong>${e.panggilan?`<br><span style="font-size:10px;color:var(--muted);">"${e.panggilan}"</span>`:''}</td>
@@ -4488,18 +4653,25 @@ function renderKTable(list){
       <td class="mono" style="font-size:11px;">${fmtD(e.tgl_join)}</td>
       <td style="font-size:10px;">${e.lama?e.lama+' th':'—'}</td>
       <td><span style="font-size:10px;background:var(--bg2);padding:2px 6px;border-radius:6px;">${e.pendidikan||'—'}</span></td>
-      <td><button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();showEmpCard('${e.nama.replace(/'/g,"\\'")}')">🪪</button></td>
+      <td><button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();showEmpCard('${safeName}')">🪪</button></td>
+      ${canEdit?`<td onclick="event.stopPropagation()"><div style="display:flex;gap:3px;">
+        <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="openEditKaryawan(${origIdx})" title="Edit">✏️</button>
+        <button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteKaryawan(${origIdx})" title="Hapus">🗑</button>
+      </div></td>`:''}
     </tr>`;
   }).join('');
 }
 
 function renderKGrid(list){
+  const canEdit=CU.role==='superadmin'||CU.role==='admin';
   const grid=document.getElementById('k-grid');
   if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);">Tidak ada data</div>';return;}
   grid.innerHTML=list.map(e=>{
+    const origIdx=EMP_DATA.indexOf(e);
     const sc=SC[e.status]||SC.RESIGN;
     const dc=DC[e.divisi]||'#888';
-    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;" onclick="showEmpCard('${e.nama.replace(/'/g,"\\'")}');" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--sh)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    const safeName=e.nama.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;" onclick="showEmpCard('${safeName}');" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--sh)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
       <div style="display:flex;justify-content:center;margin-bottom:10px;">${avatarHTML(e,68)}</div>
       <div style="font-weight:700;font-size:13px;line-height:1.3;">${e.nama}</div>
       ${e.panggilan?`<div style="font-size:10px;color:var(--muted);">"${e.panggilan}"</div>`:''}
@@ -4507,6 +4679,10 @@ function renderKGrid(list){
       <div><span style="font-size:10px;font-weight:700;color:${sc.c};background:${sc.bg};border:1px solid ${sc.bc};padding:2px 8px;border-radius:99px;">${e.status}</span></div>
       <div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:7px;">${fmtRpK(e.gaji)}</div>
       ${e.sisa_hutang>0?`<div style="font-size:10px;color:var(--red);margin-top:2px;">Hutang: ${fmtRpK(e.sisa_hutang)}</div>`:''}
+      ${canEdit?`<div style="display:flex;gap:5px;justify-content:center;margin-top:10px;" onclick="event.stopPropagation()">
+        <button class="btn btn-secondary btn-sm" style="font-size:10px;flex:1;" onclick="openEditKaryawan(${origIdx})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" style="font-size:10px;" onclick="deleteKaryawan(${origIdx})">🗑</button>
+      </div>`:''}
     </div>`;
   }).join('');
 }
