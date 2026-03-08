@@ -647,7 +647,7 @@ tr:hover td{background:var(--bg);}
           <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <span class="card-title">🔑 Privilege Matrix</span>
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" onclick="openAddRole()" style="border-color:var(--accent);color:var(--accent);font-weight:600;"><span class="btn-plus">+</span>Role</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddRole()"><span class="btn-plus">+</span>Role</button>
               <button class="btn btn-primary btn-sm" onclick="openAddPriv()"><span class="btn-plus">+</span>Tambah Fitur</button>
             </div>
           </div>
@@ -931,9 +931,9 @@ tr:hover td{background:var(--bg);}
       <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="um-pw-hint"></div></div>
     <div class="form-group"><label>Role</label>
       <select id="um-rl" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
-        <option value="admin">👔 Admin</option>
-        <option value="operator">🛠 Operator</option>
-        <option value="viewer">👁 Viewer</option>
+        <option value="admin">Admin</option>
+        <option value="operator">Operator</option>
+        <option value="viewer">Viewer</option>
       </select>
       <div id="um-rl-custom"></div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="um-role-badges">
@@ -2000,10 +2000,10 @@ function updateRoleDropdowns(){
 function buildRoleOptions(){
   rebuildRCMeta();
   const custom=getCustomRolesList();
-  return `<option value="admin">👔 Admin</option>
-    <option value="operator">🛠 Operator</option>
-    <option value="viewer">👁 Viewer</option>
-    ${custom.map(r=>`<option value="${r.key}" style="color:${r.color};">🎭 ${r.label}</option>`).join('')}`;
+  return `<option value="admin">Admin</option>
+    <option value="operator">Operator</option>
+    <option value="viewer">Viewer</option>
+    ${custom.map(r=>`<option value="${r.key}" style="color:${r.color};">${r.label}</option>`).join('')}`;
 }
 
 // ══ CUSTOMERS ══════════════════════════════════════
