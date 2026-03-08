@@ -125,8 +125,8 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .db-chip.connected{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
 .db-chip.disconnected{background:#ef4444;box-shadow:0 0 6px #ef444488;}
 .db-chip.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b88;}
-.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;}
-.page{display:none;width:100%;}
+.content{padding:22px;flex:1;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;}
+.page{display:none;width:100%;max-width:100%;overflow-x:hidden;}
 .page.active{display:block;animation:fadeUp .2s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
 
@@ -1592,6 +1592,11 @@ function renderDash(){
     base.setDate(base.getDate()+(+(cust?.tempo||30)));
     return base<todayD;
   });
+  const outstandingInvs=INVOICES.filter(i=>i.status!=='paid');
+  const outstandingVal=outstandingInvs.reduce((s,i)=>s+(+i.grand_total||0),0);
+  const outFmt=outstandingVal>=1e9?'Rp '+(outstandingVal/1e9).toFixed(1)+'M'
+    :outstandingVal>=1e6?'Rp '+(outstandingVal/1e6).toFixed(1)+'jt'
+    :outstandingVal>0?'Rp '+outstandingVal.toLocaleString('id-ID'):'Rp 0';
   document.getElementById('stat-grid').innerHTML=`
     <div class="stat-card sc-blue" style="cursor:pointer;" onclick="navigateTo('orders')" title="Lihat semua order">
       <div class="sic">📦</div><div class="sv">${tot}</div><div class="sl">Total Order</div>
@@ -1599,10 +1604,6 @@ function renderDash(){
     </div>
     <div class="stat-card sc-green" style="cursor:pointer;" onclick="navigateTo('orders');setTimeout(()=>{const f=document.getElementById('st');if(f){f.value='real orderan';filterOrders();}},100)" title="Filter order real">
       <div class="sic">✅</div><div class="sv">${real}</div><div class="sl">Real Order</div>
-      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk filter →</div>
-    </div>
-    <div class="stat-card sc-amber" style="cursor:pointer;" onclick="navigateTo('orders');setTimeout(()=>{const f=document.getElementById('st');if(f){f.value='estimasi orderan';filterOrders();}},100)" title="Filter estimasi">
-      <div class="sic">📋</div><div class="sv">${tot-real}</div><div class="sl">Estimasi</div>
       <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk filter →</div>
     </div>
     <div class="stat-card sc-blue" style="cursor:pointer;" onclick="navigateTo('reports')" title="Lihat laporan">
@@ -1616,6 +1617,12 @@ function renderDash(){
     <div class="stat-card ${overdueInvs.length>0?'sc-red':'sc-purple'}" style="cursor:pointer;" onclick="navigateTo('invoice')" title="Halaman invoice">
       <div class="sic">${overdueInvs.length>0?'⚠️':'🧾'}</div><div class="sv">${invTotal}</div><div class="sl">Invoice${overdueInvs.length>0?` · ${overdueInvs.length} overdue`:''}</div>
       <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk invoice →</div>
+    </div>
+    <div class="stat-card ${outstandingVal>0?'sc-red':'sc-green'}" style="cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{const f=document.getElementById('inv-f-status');if(f){f.value='sent';renderInvoices();}},100)" title="Total invoice belum lunas">
+      <div class="sic">💸</div>
+      <div class="sv" style="font-size:${outstandingVal>=1e9?'15px':outstandingVal>=1e6?'17px':'20px'};line-height:1.2;">${outFmt}</div>
+      <div class="sl">Outstanding · ${outstandingInvs.length} inv</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono);">Klik untuk filter →</div>
     </div>`;
   renderDashInvoicePanel();
   document.getElementById('dash-ts').textContent='Update: '+nowTs();
