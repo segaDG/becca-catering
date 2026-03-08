@@ -125,7 +125,7 @@ nav.nav{flex:1;padding:5px;overflow-y:auto;}
 .db-chip.connected{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
 .db-chip.disconnected{background:#ef4444;box-shadow:0 0 6px #ef444488;}
 .db-chip.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b88;}
-.content{padding:22px;padding-top:70px;flex:1;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;}
+.content{padding:22px;padding-top:56px;flex:1;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;}
 .page{display:none;width:100%;max-width:100%;overflow-x:hidden;}
 .page.active{display:block;animation:fadeUp .2s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
@@ -318,7 +318,7 @@ tr:hover td{background:var(--bg);}
   .main{margin-left:0;}
   .topbar{left:0;padding:9px 14px;}
   .clock-chip{display:none;}
-  .content{padding:12px;padding-top:60px;overflow-y:auto;overflow-x:hidden;}
+  .content{padding:12px;padding-top:56px;overflow-y:auto;overflow-x:hidden;}
   .fg{grid-template-columns:1fr;}
   .span2{grid-column:span 1;}
   .grp-hdr{grid-column:span 1;}
@@ -501,6 +501,197 @@ tr:hover td{background:var(--bg);}
       </div>
 
       <!-- INPUT -->
+      <div id="page-karyawan" class="page">
+        <!-- Sub Tabs -->
+        <div class="rtabs" style="margin-bottom:14px;">
+          <button class="rtab active" id="ktab-data" onclick="setKTab('data')">👷 Data Karyawan</button>
+          <button class="rtab" id="ktab-logbook" onclick="setKTab('logbook')">📒 Log Book</button>
+          <button class="rtab" id="ktab-card" onclick="setKTab('card')">🪪 Employee Card</button>
+        </div>
+
+        <!-- ── DATA KARYAWAN ── -->
+        <div id="kpanel-data">
+          <div class="card">
+            <div class="card-head" style="flex-wrap:wrap;gap:8px;">
+              <span class="card-title">👷 Data Karyawan BPS</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+                <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
+                <select class="sel" id="k-divisi" onchange="filterKaryawan()">
+                  <option value="">Semua Divisi</option>
+                  <option>Management</option><option>Service</option><option>Kitchen</option>
+                  <option>Warehouse</option><option>Driver</option><option>Cleaning Service</option>
+                </select>
+                <select class="sel" id="k-status" onchange="filterKaryawan()">
+                  <option value="">Semua Status</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="RESIGN">RESIGN</option>
+                  <option value="FIRED">FIRED</option>
+                </select>
+                <select class="sel" id="k-view" onchange="filterKaryawan()">
+                  <option value="table">📋 Tabel</option>
+                  <option value="grid">🪟 Grid</option>
+                </select>
+              </div>
+            </div>
+            <!-- Stats bar -->
+            <div id="k-stats" style="display:flex;gap:10px;flex-wrap:wrap;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;"></div>
+            <!-- Table view -->
+            <div id="k-table-wrap" class="tw">
+              <table>
+                <thead><tr>
+                  <th>#</th><th>Foto</th><th>Nama</th><th>Status</th><th>Divisi</th>
+                  <th>Jabatan</th><th>Gaji</th><th>Sisa Hutang</th>
+                  <th>NIK</th><th>No KTP</th><th>Tgl Lahir</th><th>Tempat</th>
+                  <th>Tgl Join</th><th>Lama</th><th>Pendidikan</th><th>Card</th>
+                </tr></thead>
+                <tbody id="k-tbody"></tbody>
+              </table>
+            </div>
+            <!-- Grid view -->
+            <div id="k-grid-wrap" style="display:none;padding:14px;">
+              <div id="k-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LOG BOOK ── -->
+        <div id="kpanel-logbook" style="display:none;">
+          <div class="card">
+            <div class="card-head" style="flex-wrap:wrap;gap:8px;">
+              <span class="card-title">📒 Log Book Karyawan</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+                <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
+                <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
+                <select class="sel" id="lb-bulan" onchange="filterLogbook()">
+                  <option value="">Semua Bulan</option>
+                  <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                  <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                  <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                  <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                </select>
+                <select class="sel" id="lb-jenis" onchange="filterLogbook()">
+                  <option value="">Semua Jenis</option>
+                  <option value="hutang">💸 Berhutang</option>
+                  <option value="bayar">✅ Bayar Hutang</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="clearLbFilters()">✕ Reset</button>
+              </div>
+            </div>
+            <div id="lb-summary" style="display:flex;gap:10px;flex-wrap:wrap;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;"></div>
+            <div class="tw">
+              <table>
+                <thead><tr>
+                  <th>#</th><th>Tanggal</th><th>Nama Karyawan</th>
+                  <th style="color:#a8281e;text-align:right;">Berhutang</th>
+                  <th style="color:#2a6b47;text-align:right;">Bayar Hutang</th>
+                  <th>PJ</th><th>Keterangan</th><th>Konfirmasi</th>
+                </tr></thead>
+                <tbody id="lb-tbody"></tbody>
+              </table>
+            </div>
+            <div id="lb-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ── EMPLOYEE CARD ── -->
+        <div id="kpanel-card" style="display:none;">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">🪪 Employee Card</span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <select class="sel" id="ec-nama" onchange="renderEmployeeCard()" style="min-width:220px;"></select>
+                <button class="btn btn-secondary btn-sm" onclick="printEmployeeCard()">🖨️ Print</button>
+              </div>
+            </div>
+            <div id="ec-body" style="padding:16px;"></div>
+          </div>
+        </div>
+      </div>
+      <div id="page-tasks" class="page">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">✅ Task Board</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
+              <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
+                <option value="">Semua Prioritas</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
+            </div>
+          </div>
+          <div class="tw">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;min-width:600px;">
+              <!-- TODO column -->
+              <div style="border-right:1px solid var(--border);">
+                <div style="padding:10px 14px;background:#f3f4f6;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.5px;">📋 Todo</span>
+                  <span id="task-count-todo" style="font-size:11px;background:#e5e7eb;color:#555;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-todo" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
+              <!-- IN PROGRESS column -->
+              <div style="border-right:1px solid var(--border);">
+                <div style="padding:10px 14px;background:#eef5fb;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#1e4d6b;text-transform:uppercase;letter-spacing:.5px;">⚙️ In Progress</span>
+                  <span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;color:#1e4d6b;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-inprogress" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
+              <!-- DONE column -->
+              <div>
+                <div style="padding:10px 14px;background:#eaf4ef;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:700;font-size:12px;color:#1e7e34;text-transform:uppercase;letter-spacing:.5px;">✅ Done</span>
+                  <span id="task-count-done" style="font-size:11px;background:#c6e6d0;color:#1e7e34;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
+                </div>
+                <div id="task-col-done" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-activity" class="page">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📋 Activity Log</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="act-search" placeholder="Cari aktivitas..." oninput="renderActivity()"></div>
+              <select id="act-f-user" class="sel" style="font-size:12px;" onchange="renderActivity()"><option value="">Semua User</option></select>
+              <select id="act-f-type" class="sel" style="font-size:12px;" onchange="renderActivity()">
+                <option value="">Semua Tipe</option>
+                <option value="login">Login</option>
+                <option value="logout">Logout</option>
+                <option value="order">Order</option>
+                <option value="invoice">Invoice</option>
+                <option value="customer">Customer</option>
+                <option value="settings">Settings</option>
+                <option value="system">System</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">✕ Reset</button>
+              <button class="btn btn-danger btn-sm" onclick="clearAllActivity()">🗑 Hapus</button>
+            </div>
+          </div>
+          <div class="tw">
+            <table id="act-table">
+              <thead><tr>
+                <th style="width:40px;">#</th>
+                <th style="min-width:120px;">User</th>
+                <th style="min-width:80px;">Role</th>
+                <th style="min-width:150px;">Waktu</th>
+                <th style="min-width:90px;">Tipe</th>
+                <th style="min-width:240px;">Aktivitas</th>
+                <th style="min-width:100px;">Halaman</th>
+              </tr></thead>
+              <tbody id="act-body"></tbody>
+            </table>
+          </div>
+          <div id="act-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
       <div id="page-input" class="page">
         <div class="card">
           <div class="card-head"><span class="card-title">➕ Input Order Baru</span></div>
@@ -735,197 +926,6 @@ tr:hover td{background:var(--bg);}
 
 
       <!-- KARYAWAN PAGE -->
-      <div id="page-karyawan" class="page">
-        <!-- Sub Tabs -->
-        <div class="rtabs" style="margin-bottom:14px;">
-          <button class="rtab active" id="ktab-data" onclick="setKTab('data')">👷 Data Karyawan</button>
-          <button class="rtab" id="ktab-logbook" onclick="setKTab('logbook')">📒 Log Book</button>
-          <button class="rtab" id="ktab-card" onclick="setKTab('card')">🪪 Employee Card</button>
-        </div>
-
-        <!-- ── DATA KARYAWAN ── -->
-        <div id="kpanel-data">
-          <div class="card">
-            <div class="card-head" style="flex-wrap:wrap;gap:8px;">
-              <span class="card-title">👷 Data Karyawan BPS</span>
-              <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
-                <select class="sel" id="k-divisi" onchange="filterKaryawan()">
-                  <option value="">Semua Divisi</option>
-                  <option>Management</option><option>Service</option><option>Kitchen</option>
-                  <option>Warehouse</option><option>Driver</option><option>Cleaning Service</option>
-                </select>
-                <select class="sel" id="k-status" onchange="filterKaryawan()">
-                  <option value="">Semua Status</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="RESIGN">RESIGN</option>
-                  <option value="FIRED">FIRED</option>
-                </select>
-                <select class="sel" id="k-view" onchange="filterKaryawan()">
-                  <option value="table">📋 Tabel</option>
-                  <option value="grid">🪟 Grid</option>
-                </select>
-              </div>
-            </div>
-            <!-- Stats bar -->
-            <div id="k-stats" style="display:flex;gap:10px;flex-wrap:wrap;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;"></div>
-            <!-- Table view -->
-            <div id="k-table-wrap" class="tw">
-              <table>
-                <thead><tr>
-                  <th>#</th><th>Foto</th><th>Nama</th><th>Status</th><th>Divisi</th>
-                  <th>Jabatan</th><th>Gaji</th><th>Sisa Hutang</th>
-                  <th>NIK</th><th>No KTP</th><th>Tgl Lahir</th><th>Tempat</th>
-                  <th>Tgl Join</th><th>Lama</th><th>Pendidikan</th><th>Card</th>
-                </tr></thead>
-                <tbody id="k-tbody"></tbody>
-              </table>
-            </div>
-            <!-- Grid view -->
-            <div id="k-grid-wrap" style="display:none;padding:14px;">
-              <div id="k-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── LOG BOOK ── -->
-        <div id="kpanel-logbook" style="display:none;">
-          <div class="card">
-            <div class="card-head" style="flex-wrap:wrap;gap:8px;">
-              <span class="card-title">📒 Log Book Karyawan</span>
-              <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
-                <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
-                <select class="sel" id="lb-bulan" onchange="filterLogbook()">
-                  <option value="">Semua Bulan</option>
-                  <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
-                  <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-                  <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-                  <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-                </select>
-                <select class="sel" id="lb-jenis" onchange="filterLogbook()">
-                  <option value="">Semua Jenis</option>
-                  <option value="hutang">💸 Berhutang</option>
-                  <option value="bayar">✅ Bayar Hutang</option>
-                </select>
-                <button class="btn btn-secondary btn-sm" onclick="clearLbFilters()">✕ Reset</button>
-              </div>
-            </div>
-            <div id="lb-summary" style="display:flex;gap:10px;flex-wrap:wrap;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;"></div>
-            <div class="tw">
-              <table>
-                <thead><tr>
-                  <th>#</th><th>Tanggal</th><th>Nama Karyawan</th>
-                  <th style="color:#a8281e;text-align:right;">Berhutang</th>
-                  <th style="color:#2a6b47;text-align:right;">Bayar Hutang</th>
-                  <th>PJ</th><th>Keterangan</th><th>Konfirmasi</th>
-                </tr></thead>
-                <tbody id="lb-tbody"></tbody>
-              </table>
-            </div>
-            <div id="lb-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px;"></div>
-          </div>
-        </div>
-
-        <!-- ── EMPLOYEE CARD ── -->
-        <div id="kpanel-card" style="display:none;">
-          <div class="card">
-            <div class="card-head">
-              <span class="card-title">🪪 Employee Card</span>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <select class="sel" id="ec-nama" onchange="renderEmployeeCard()" style="min-width:220px;"></select>
-                <button class="btn btn-secondary btn-sm" onclick="printEmployeeCard()">🖨️ Print</button>
-              </div>
-            </div>
-            <div id="ec-body" style="padding:16px;"></div>
-          </div>
-        </div>
-      </div>
-      <div id="page-tasks" class="page">
-        <div class="card">
-          <div class="card-head">
-            <span class="card-title">✅ Task Board</span>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
-              <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
-                <option value="">Semua Prioritas</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <button class="btn btn-secondary btn-sm" onclick="clearTaskFilters()">✕ Reset</button>
-              <button class="btn btn-primary btn-sm" onclick="openAddTask()"><span class="btn-plus">+</span>Tambah Task</button>
-            </div>
-          </div>
-          <div class="tw">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;min-width:600px;">
-              <!-- TODO column -->
-              <div style="border-right:1px solid var(--border);">
-                <div style="padding:10px 14px;background:#f3f4f6;border-bottom:3px solid #9ca3af;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.5px;">📋 Todo</span>
-                  <span id="task-count-todo" style="font-size:11px;background:#e5e7eb;color:#555;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
-                </div>
-                <div id="task-col-todo" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
-              </div>
-              <!-- IN PROGRESS column -->
-              <div style="border-right:1px solid var(--border);">
-                <div style="padding:10px 14px;background:#eef5fb;border-bottom:3px solid #1e4d6b;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#1e4d6b;text-transform:uppercase;letter-spacing:.5px;">⚙️ In Progress</span>
-                  <span id="task-count-inprogress" style="font-size:11px;background:#d1e8f5;color:#1e4d6b;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
-                </div>
-                <div id="task-col-inprogress" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
-              </div>
-              <!-- DONE column -->
-              <div>
-                <div style="padding:10px 14px;background:#eaf4ef;border-bottom:3px solid #1e7e34;display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-weight:700;font-size:12px;color:#1e7e34;text-transform:uppercase;letter-spacing:.5px;">✅ Done</span>
-                  <span id="task-count-done" style="font-size:11px;background:#c6e6d0;color:#1e7e34;font-weight:700;padding:2px 8px;border-radius:10px;">0</span>
-                </div>
-                <div id="task-col-done" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="page-activity" class="page">
-        <div class="card">
-          <div class="card-head">
-            <span class="card-title">📋 Activity Log</span>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="act-search" placeholder="Cari aktivitas..." oninput="renderActivity()"></div>
-              <select id="act-f-user" class="sel" style="font-size:12px;" onchange="renderActivity()"><option value="">Semua User</option></select>
-              <select id="act-f-type" class="sel" style="font-size:12px;" onchange="renderActivity()">
-                <option value="">Semua Tipe</option>
-                <option value="login">Login</option>
-                <option value="logout">Logout</option>
-                <option value="order">Order</option>
-                <option value="invoice">Invoice</option>
-                <option value="customer">Customer</option>
-                <option value="settings">Settings</option>
-                <option value="system">System</option>
-              </select>
-              <button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">✕ Reset</button>
-              <button class="btn btn-danger btn-sm" onclick="clearAllActivity()">🗑 Hapus</button>
-            </div>
-          </div>
-          <div class="tw">
-            <table id="act-table">
-              <thead><tr>
-                <th style="width:40px;">#</th>
-                <th style="min-width:120px;">User</th>
-                <th style="min-width:80px;">Role</th>
-                <th style="min-width:150px;">Waktu</th>
-                <th style="min-width:90px;">Tipe</th>
-                <th style="min-width:240px;">Aktivitas</th>
-                <th style="min-width:100px;">Halaman</th>
-              </tr></thead>
-              <tbody id="act-body"></tbody>
-            </table>
-          </div>
-          <div id="act-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px;"></div>
-        </div>
-      </div>
 
 <!-- MODAL NOTIFIKASI -->
 <div class="overlay" id="m-notif">
@@ -1413,11 +1413,12 @@ function navigateTo(pg){
   document.getElementById('page-'+pg).classList.add('active');
   const ni=document.getElementById('ni-'+pg);if(ni)ni.classList.add('active');
   document.getElementById('pgtitle').textContent=ALL_PAGES[pg]?.label||pg;
-  // Scroll content to top on every navigation
-  const ct=document.querySelector('.content');if(ct)ct.scrollTop=0;
   // Close sidebar on mobile after nav
   if(window.innerWidth<=768){const sb=document.getElementById('sidebar');sb.classList.remove('open');const ov=document.getElementById('sb-ov');if(ov)ov.style.display='none';}
   renderPage(pg);
+  // Scroll to top after render
+  const ct=document.querySelector('.content');
+  if(ct){ct.scrollTop=0;requestAnimationFrame(()=>ct.scrollTop=0);}
 }
 function renderPage(pg){
   if(pg==='dashboard')renderDash();
