@@ -465,9 +465,19 @@ tr:hover td{background:var(--bg);}
               <button onclick="shiftDashPeriod(1)" style="padding:3px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:13px;" title="Berikutnya">›</button>
             </div>
           </div>
+          <!-- ALL TIME SUMMARY BAR -->
+          <div id="dash-inv-alltime" style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);">
+            <span>📊 Semua Invoice:</span>
+            <span style="font-weight:700;color:var(--text);" id="dash-inv-alltime-total">—</span>
+            <span style="margin-left:8px;">Lunas:</span>
+            <span style="font-weight:700;color:var(--green);" id="dash-inv-alltime-paid">—</span>
+            <span style="margin-left:8px;">Belum Lunas:</span>
+            <span style="font-weight:700;color:var(--red);" id="dash-inv-alltime-unpaid">—</span>
+            <span style="margin-left:8px;color:var(--muted);" id="dash-inv-alltime-ct"></span>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;padding:14px;">
             <div style="background:var(--accent-bg);border:1px solid var(--accent-lt);border-radius:var(--rs);padding:12px 14px;cursor:pointer;" onclick="navigateTo('invoice');setTimeout(()=>{document.getElementById('inv-f-status').value='';renderInvoices();},100)">
-              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL INVOICE</div>
+              <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">TOTAL PERIODE INI</div>
               <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent);" id="dash-inv-total">Rp 0</div>
               <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="dash-inv-count">0 invoice</div>
             </div>
@@ -1404,15 +1414,28 @@ function renderDashInvoicePanel(){
   if(invCard)invCard.style.display='block';
   const todayD=new Date(); todayD.setHours(0,0,0,0);
   // Filter invoices by selected period
+  // Pakai: periode_dari, periode_sampai, tgl_invoice, atau created_at sebagai referensi tanggal
+  function getInvDate(i){
+    return i.tgl_invoice||i.periode_dari||i.periode_sampai||i.created_at||null;
+  }
   let periodInvs;
   if(_dashMode==='month'){
     const ym=`${_dashYear}-${String(_dashMonth+1).padStart(2,'0')}`;
-    periodInvs=INVOICES.filter(i=>i.periode_dari?.slice(0,7)===ym||i.periode_sampai?.slice(0,7)===ym);
+    periodInvs=INVOICES.filter(i=>{
+      const d=getInvDate(i);
+      if(!d)return false;
+      return d.slice(0,7)===ym||i.periode_dari?.slice(0,7)===ym||i.periode_sampai?.slice(0,7)===ym;
+    });
     const label=new Date(_dashYear,_dashMonth,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
     const el=document.getElementById('dash-inv-period');
     if(el)el.textContent=label;
   } else {
-    periodInvs=INVOICES.filter(i=>(i.periode_dari?.slice(0,4)===String(_dashYear))||(i.periode_sampai?.slice(0,4)===String(_dashYear)));
+    const yr=String(_dashYear);
+    periodInvs=INVOICES.filter(i=>{
+      const d=getInvDate(i);
+      if(!d)return false;
+      return d.slice(0,4)===yr||i.periode_dari?.slice(0,4)===yr||i.periode_sampai?.slice(0,4)===yr;
+    });
     const el=document.getElementById('dash-inv-period');
     if(el)el.textContent=`Tahun ${_dashYear}`;
   }
@@ -1424,7 +1447,7 @@ function renderDashInvoicePanel(){
     base.setDate(base.getDate()+(+(cust?.tempo||30)));
     return base<todayD;
   });
-  const sumGrand=arr=>arr.reduce((s,i)=>s+(+i.grand_total||0),0);
+  const sumGrand=arr=>arr.reduce((s,i)=>s+(parseFloat(i.grand_total)||0),0);
   const sent=periodInvs.filter(i=>i.status==='sent');
   const paid=periodInvs.filter(i=>i.status==='paid');
   // Overdue within period + globally
@@ -1436,6 +1459,14 @@ function renderDashInvoicePanel(){
     return base<todayD;
   });
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  // All-time totals — semua invoice tanpa filter periode
+  const allTotal=sumGrand(INVOICES);
+  const allPaid=sumGrand(INVOICES.filter(i=>i.status==='paid'));
+  const allUnpaid=sumGrand(INVOICES.filter(i=>i.status!=='paid'));
+  sv('dash-inv-alltime-total',fmtRpNum(allTotal));
+  sv('dash-inv-alltime-paid',fmtRpNum(allPaid));
+  sv('dash-inv-alltime-unpaid',fmtRpNum(allUnpaid));
+  sv('dash-inv-alltime-ct',`${INVOICES.length} invoice total`);
   sv('dash-inv-total',fmtRpNum(sumGrand(periodInvs)));
   sv('dash-inv-count',`${periodInvs.length} invoice`);
   // Total nilai order (all orders, or filtered by period)
