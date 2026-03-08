@@ -3762,11 +3762,11 @@ function renderTasks(){
       // Card background & border based on COLUMN (not priority/state)
       let cardBg,cardBorder,cardAccent;
       if(col==='todo'){
-        cardBg='#eff6ff';cardBorder='#bfdbfe';cardAccent='#3b82f6';
+        cardBg='#dbeafe';cardBorder='#93c5fd';cardAccent='#2563eb';
       } else if(col==='inprogress'){
-        cardBg='#fffbeb';cardBorder='#fde68a';cardAccent='#f59e0b';
+        cardBg='#fef08a';cardBorder='#facc15';cardAccent='#ca8a04';
       } else {
-        cardBg='#f1f5f9';cardBorder='#cbd5e1';cardAccent='#64748b';
+        cardBg='#cbd5e1';cardBorder='#94a3b8';cardAccent='#475569';
       }
       // Overdue & due soon only affect the accent stripe, not background
       if(isOverdue){cardAccent='#dc2626';cardBorder='#fca5a5';}
