@@ -1459,11 +1459,26 @@ async function initApp(){
   logActivity('login',`Login berhasil sebagai ${CU.role} (${CU.nama})`,'Login');
   startOnlineTracker();
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
-  // Auto-refresh tasks every 30s for realtime-like sync between users
+  // Auto-refresh tasks every 30s
   setInterval(async()=>{
     await loadTasks();
     if(document.getElementById('page-tasks').classList.contains('active'))renderTasks();
   },30*1000);
+  // Auto-refresh orders every 15s — detect new orders from other devices
+  setInterval(async()=>{
+    const prevCount=ORDERS.length;
+    const prevIds=new Set(ORDERS.map(o=>o.id));
+    await loadOrders();
+    const newOrders=ORDERS.filter(o=>!prevIds.has(o.id));
+    if(newOrders.length>0){
+      const names=[...new Set(newOrders.map(o=>o.perusahaan))].slice(0,3).join(', ');
+      toast(`📦 ${newOrders.length} order baru: ${names}`,'info');
+      updateNotifBadge();
+    }
+    if(document.getElementById('page-orders').classList.contains('active'))filterOrders();
+    if(document.getElementById('page-dashboard').classList.contains('active'))renderDashboard();
+    if(document.getElementById('page-reports').classList.contains('active'))renderReports();
+  },15*1000);
   navigateTo('dashboard');
 }
 function tickClk(){const n=new Date();document.getElementById('clk').textContent=`${n.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})} ${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;}
@@ -3614,11 +3629,10 @@ function renderActivity(){
 
 
 // ══ ONLINE USERS TRACKER ════════════════════════════
-// Uses localStorage broadcasting — shows users active in this browser
-// For multi-device: would need server-side presence, this works per-browser
+// Realtime presence via Supabase online_sessions table
 const ONLINE_TTL=60000; // 60s before considered offline
 let _heartbeatInterval=null;
-let _ONLINE_CACHE={}; // local cache of active sessions
+let _ONLINE_CACHE={};
 
 async function onlineHeartbeat(){
   if(!CU)return;
@@ -3626,7 +3640,7 @@ async function onlineHeartbeat(){
     // Upsert current user session to Supabase
     await fetch(`${SB_URL}/rest/v1/online_sessions`,{
       method:'POST',
-      headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates'},
+      headers:{...SBH,'Prefer':'resolution=merge-duplicates'},
       body:JSON.stringify({
         username:CU.username,
         nama:CU.nama,
@@ -3634,17 +3648,18 @@ async function onlineHeartbeat(){
         last_seen:new Date().toISOString()
       })
     });
-    // Fetch all active sessions
+    // Fetch all active sessions within TTL window
     const cutoff=new Date(Date.now()-ONLINE_TTL).toISOString();
-    const res=await fetch(`${SB_URL}/rest/v1/online_sessions?last_seen=gte.${cutoff}&select=*`,{headers:SB_HEADERS});
+    const res=await fetch(`${SB_URL}/rest/v1/online_sessions?last_seen=gte.${encodeURIComponent(cutoff)}&select=*`,{headers:SBH});
     if(res.ok){
       const sessions=await res.json();
       _ONLINE_CACHE={};
       sessions.forEach(s=>{_ONLINE_CACHE[s.username]=s;});
     }
   }catch(e){
-    // Fallback: only show current user
+    // Fallback: at least show current user
     _ONLINE_CACHE[CU.username]={username:CU.username,nama:CU.nama,role:CU.role,last_seen:new Date().toISOString()};
+    console.warn('Online tracker error:',e);
   }
   renderOnlineUsers();
 }
@@ -3687,7 +3702,7 @@ function stopOnlineTracker(){
   if(!CU)return;
   // Delete session from Supabase
   fetch(`${SB_URL}/rest/v1/online_sessions?username=eq.${encodeURIComponent(CU.username)}`,{
-    method:'DELETE',headers:SB_HEADERS
+    method:'DELETE',headers:SBH
   }).catch(()=>{});
   delete _ONLINE_CACHE[CU.username];
 }
