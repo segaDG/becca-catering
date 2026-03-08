@@ -644,11 +644,17 @@ tr:hover td{background:var(--bg);}
       <!-- PRIVILEGE -->
       <div id="page-privilege" class="page">
         <div class="card">
-          <div class="card-head"><span class="card-title">🔑 Privilege Matrix</span><button class="btn btn-primary btn-sm" onclick="openAddPriv()"><span class="btn-plus">+</span>Tambah Fitur</button></div>
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span class="card-title">🔑 Privilege Matrix</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary btn-sm" onclick="openAddRole()" style="border-color:var(--accent);color:var(--accent);font-weight:600;"><span class="btn-plus">+</span>Role</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddPriv()"><span class="btn-plus">+</span>Tambah Fitur</button>
+            </div>
+          </div>
           <div class="card-body">
             <div class="alert alert-warn">⚠️ Perubahan berlaku langsung. Super Admin selalu memiliki akses penuh.</div>
-            <div class="tw"><table class="ptbl">
-              <thead><tr><th style="text-align:left;">Fitur</th><th>Super Admin</th><th>Admin</th><th>Operator</th><th>Viewer</th><th>Aksi</th></tr></thead>
+            <div class="tw" style="overflow-x:auto;"><table class="ptbl" id="priv-table">
+              <thead id="priv-thead"></thead>
               <tbody id="priv-body"></tbody>
             </table></div>
           </div>
@@ -874,15 +880,43 @@ tr:hover td{background:var(--bg);}
     <div class="form-group"><label>Nama Fitur *</label><input type="text" id="pm-label" placeholder="contoh: 📤 Export Data..."></div>
     <div style="margin-bottom:14px;">
       <div style="font-size:10px;font-weight:600;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Akses per Role</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="pm-sa" checked disabled style="width:16px;height:16px;"> Super Admin (selalu ✓)</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pm-ad" style="width:16px;height:16px;"> Admin</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pm-op" style="width:16px;height:16px;"> Operator</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pm-vi" style="width:16px;height:16px;"> Viewer</label>
-      </div>
+      <div id="pm-role-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
     </div>
     <input type="hidden" id="pm-id">
     <div style="display:flex;gap:8px;"><button class="btn btn-primary" id="save-priv-btn" onclick="savePriv()">💾 Simpan</button><button class="btn btn-secondary" onclick="closeM('m-priv')">Batal</button></div>
+  </div>
+</div>
+
+<!-- MODAL ADD ROLE -->
+<div class="overlay" id="m-role">
+  <div class="modal sm">
+    <div class="mhead">
+      <div><div class="mtitle" id="role-modal-title">🎭 Tambah Role Baru</div><div class="msub">Role custom untuk mengatur akses pengguna</div></div>
+      <button class="mclose" onclick="closeM('m-role')">✕</button>
+    </div>
+    <input type="hidden" id="rm-key">
+    <div class="form-group">
+      <label>Nama Role *</label>
+      <input type="text" id="rm-label" placeholder="contoh: Supervisor, Kasir, HRD..." maxlength="30">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:8px;">Warna Tampilan</label>
+      <div id="rm-color-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;"></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:8px;">Salin Privilege dari Role</label>
+      <select id="rm-copy" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+        <option value="">— Mulai kosong —</option>
+        <option value="admin">Admin</option>
+        <option value="operator">Operator</option>
+        <option value="viewer">Viewer</option>
+      </select>
+    </div>
+    <div id="rm-priv-preview" style="max-height:200px;overflow-y:auto;display:none;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--rs);"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" id="save-role-btn" onclick="saveCustomRole()" style="flex:1;">💾 Simpan Role</button>
+      <button class="btn btn-secondary" onclick="closeM('m-role')" style="flex:1;">Batal</button>
+    </div>
   </div>
 </div>
 
@@ -901,6 +935,7 @@ tr:hover td{background:var(--bg);}
         <option value="operator">🛠 Operator</option>
         <option value="viewer">👁 Viewer</option>
       </select>
+      <div id="um-rl-custom"></div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="um-role-badges">
         <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:#faeeed;color:#a8281e;font-weight:600;">Admin — Akses penuh kecuali superadmin</span>
         <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:#eef5fb;color:#1e4d6b;font-weight:600;">Operator — Input & lihat order</span>
@@ -1107,12 +1142,18 @@ async function sbPatch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq
 async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:SBH});if(!r.ok)throw new Error(await r.text());}
 
 // ══ STATE ═════════════════════════════════════════
-const RC_META={
-  superadmin:{label:'Super Admin',color:'#a8281e',bg:'#faeeed',chip:'rc-sa'},
-  admin:     {label:'Admin',      color:'#1e4d6b',bg:'#edf3f8',chip:'rc-ad'},
-  operator:  {label:'Operator',   color:'#2a6b47',bg:'#eaf4ef',chip:'rc-op'},
-  viewer:    {label:'Viewer',     color:'#857e74',bg:'#f4f2ed',chip:'rc-vi'},
+const RC_META_BASE={
+  superadmin:{label:'Super Admin',color:'#a8281e',bg:'#faeeed',chip:'rc-sa',builtin:true},
+  admin:     {label:'Admin',      color:'#1e4d6b',bg:'#edf3f8',chip:'rc-ad',builtin:true},
+  operator:  {label:'Operator',   color:'#2a6b47',bg:'#eaf4ef',chip:'rc-op',builtin:true},
+  viewer:    {label:'Viewer',     color:'#857e74',bg:'#f4f2ed',chip:'rc-vi',builtin:true},
 };
+const CUSTOM_ROLES_KEY='becca_custom_roles';
+function loadCustomRoles(){try{return JSON.parse(localStorage.getItem(CUSTOM_ROLES_KEY)||'{}');}catch{return{};}}
+function saveCustomRoles(r){localStorage.setItem(CUSTOM_ROLES_KEY,JSON.stringify(r));}
+// RC_META = base + custom, rebuilt each time
+let RC_META={...RC_META_BASE,...loadCustomRoles()};
+function rebuildRCMeta(){RC_META={...RC_META_BASE,...loadCustomRoles()};}
 const ALL_PAGES={
   dashboard:{icon:'🏠',label:'Dashboard',        priv_key:'view_dashboard'},
   input:    {icon:'➕',label:'Input Order',       priv_key:'input_order'},
@@ -1144,7 +1185,16 @@ function ledit(o){const e=(o.history||[]).filter(h=>h.action==='edit');return e.
 function loading(show,txt=''){document.getElementById('ldo').classList.toggle('show',show);if(txt)document.getElementById('ltxt').textContent=txt;}
 function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.title=s==='connected'?'Database: Terhubung ✓':s==='disconnected'?'Database: Terputus ✗':'Database: Menghubungkan...';}
 function getRK(nama){const u=USERS_DATA.find(x=>x.nama===nama);return u?u.role:'viewer';}
-function canDo(key){if(CU.role==='superadmin')return true;const p=PRIVS.find(x=>x.feature_key===key);return p?p[`role_${CU.role}`]===true:false;}
+function canDo(key){
+  if(!CU)return false;
+  if(CU.role==='superadmin')return true;
+  const p=PRIVS.find(x=>x.feature_key===key);
+  if(!p)return false;
+  // built-in roles use DB columns
+  if(['admin','operator','viewer'].includes(CU.role))return p[`role_${CU.role}`]===true;
+  // custom roles: stored in p.custom_roles JSON field
+  try{const cr=JSON.parse(p.custom_roles||'{}');return cr[CU.role]===true;}catch{return false;}
+}
 function allowedPages(){return Object.entries(ALL_PAGES).filter(([,v])=>canDo(v.priv_key)).map(([k])=>k);}
 // Column groups
 const G1=['bf','s1','sp1','ot1','sn1'],G2=['s2','sp2','ot2','sn2'],G3=['s3','sp3','ot3','sn3','snb'];
@@ -1252,7 +1302,7 @@ function renderPage(pg){
   if(pg==='invoice')renderInvoices();
   if(pg==='columns')renderCols();
   if(pg==='customers')renderCustomers();
-  if(pg==='privilege')renderPrivs();
+  if(pg==='privilege'){rebuildRCMeta();renderPrivs();}
   if(pg==='users')renderUsers();
   if(pg==='settings')renderSettings();
   if(pg==='activity'){_actPage=1;renderActivity();}
@@ -1731,39 +1781,230 @@ async function deleteCol(id){
 }
 
 // ══ PRIVILEGE ══════════════════════════════════════
+const ROLE_COLORS=[
+  {color:'#1e4d6b',bg:'#edf3f8'},{color:'#2a6b47',bg:'#eaf4ef'},
+  {color:'#7c3aed',bg:'#f3eeff'},{color:'#b45309',bg:'#fef3c7'},
+  {color:'#0369a1',bg:'#e0f2fe'},{color:'#be185d',bg:'#fce7f3'},
+  {color:'#047857',bg:'#d1fae5'},{color:'#b91c1c',bg:'#fee2e2'},
+  {color:'#6b7280',bg:'#f3f4f6'},{color:'#92400e',bg:'#fef9c3'},
+];
+let _rmSelColor=0;
+
+function getCustomRolesList(){return Object.entries(loadCustomRoles()).map(([k,v])=>({key:k,...v}));}
+
 function renderPrivs(){
-  document.getElementById('priv-body').innerHTML=PRIVS.map(p=>`<tr>
-    <td>${p.feature_label}</td>
-    <td><div style="display:flex;justify-content:center;align-items:center;width:32px;height:32px;border-radius:7px;background:var(--green-bg);border:2px solid var(--green);color:var(--green);font-weight:700;margin:0 auto;">✓</div></td>
-    <td><button class="priv-btn ${p.role_admin?'on':'off'}" onclick="togglePriv(${p.id},'role_admin',${!p.role_admin})"></button></td>
-    <td><button class="priv-btn ${p.role_operator?'on':'off'}" onclick="togglePriv(${p.id},'role_operator',${!p.role_operator})"></button></td>
-    <td><button class="priv-btn ${p.role_viewer?'on':'off'}" onclick="togglePriv(${p.id},'role_viewer',${!p.role_viewer})"></button></td>
-    <td><div style="display:flex;gap:5px;justify-content:center;">
-      <button class="btn btn-secondary btn-sm" onclick="openEditPriv(${p.id})">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="deletePriv(${p.id})">🗑</button>
-    </div></td>
-  </tr>`).join('');
+  rebuildRCMeta();
+  const customRoles=getCustomRolesList();
+  // Build thead
+  const builtinCols=[
+    {key:'superadmin',label:'Super Admin',color:'#a8281e'},
+    {key:'admin',label:'Admin',color:'#1e4d6b'},
+    {key:'operator',label:'Operator',color:'#2a6b47'},
+    {key:'viewer',label:'Viewer',color:'#857e74'},
+  ];
+  const customCols=customRoles.map(r=>({key:r.key,label:r.label,color:r.color,custom:true}));
+  const allCols=[...builtinCols,...customCols];
+  document.getElementById('priv-thead').innerHTML=`<tr>
+    <th style="text-align:left;min-width:160px;">Fitur</th>
+    ${allCols.map((c,i)=>`<th style="min-width:90px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <span style="font-size:11px;font-weight:700;color:${c.color};">${c.label}</span>
+        ${c.custom?`<button onclick="deleteCustomRole('${c.key}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:var(--muted);padding:0;" title="Hapus role">✕</button>`:''}
+      </div>
+    </th>`).join('')}
+    <th>Aksi</th>
+  </tr>`;
+  // Build tbody
+  document.getElementById('priv-body').innerHTML=PRIVS.map(p=>{
+    let customRolesJson={};try{customRolesJson=JSON.parse(p.custom_roles||'{}');}catch{}
+    return`<tr>
+      <td style="font-size:12px;">${p.feature_label}</td>
+      <td><div style="display:flex;justify-content:center;"><div style="width:28px;height:28px;border-radius:6px;background:var(--green-bg);border:2px solid var(--green);color:var(--green);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</div></div></td>
+      <td><button class="priv-btn ${p.role_admin?'on':'off'}" onclick="togglePriv(${p.id},'role_admin',${!p.role_admin})"></button></td>
+      <td><button class="priv-btn ${p.role_operator?'on':'off'}" onclick="togglePriv(${p.id},'role_operator',${!p.role_operator})"></button></td>
+      <td><button class="priv-btn ${p.role_viewer?'on':'off'}" onclick="togglePriv(${p.id},'role_viewer',${!p.role_viewer})"></button></td>
+      ${customCols.map(c=>`<td><button class="priv-btn ${customRolesJson[c.key]?'on':'off'}" onclick="toggleCustomPriv(${p.id},'${c.key}',${!customRolesJson[c.key]})"></button></td>`).join('')}
+      <td><div style="display:flex;gap:5px;justify-content:center;">
+        <button class="btn btn-secondary btn-sm" onclick="openEditPriv(${p.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePriv(${p.id})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
+
 async function togglePriv(id,col,val){
   const p=PRIVS.find(x=>x.id==id);if(p)p[col]=val;renderPrivs();
   try{await sbPatch('privilege_config',id,{[col]:val});await loadPrivs();renderPrivs();buildNav();}
   catch(e){if(p)p[col]=!val;renderPrivs();toast('Gagal','error');}
 }
-function openAddPriv(){document.getElementById('priv-modal-title').textContent='➕ Tambah Fitur';['pm-label'].forEach(id=>document.getElementById(id).value='');['pm-ad','pm-op','pm-vi'].forEach(id=>document.getElementById(id).checked=false);document.getElementById('pm-id').value='';openM('m-priv');}
-function openEditPriv(id){const p=PRIVS.find(x=>x.id==id);if(!p)return;document.getElementById('priv-modal-title').textContent='✏️ Edit';document.getElementById('pm-label').value=p.feature_label;document.getElementById('pm-ad').checked=p.role_admin;document.getElementById('pm-op').checked=p.role_operator;document.getElementById('pm-vi').checked=p.role_viewer;document.getElementById('pm-id').value=id;openM('m-priv');}
+async function toggleCustomPriv(id,roleKey,val){
+  const p=PRIVS.find(x=>x.id==id);if(!p)return;
+  let cr={};try{cr=JSON.parse(p.custom_roles||'{}');}catch{}
+  cr[roleKey]=val;
+  p.custom_roles=JSON.stringify(cr);renderPrivs();
+  try{await sbPatch('privilege_config',id,{custom_roles:JSON.stringify(cr)});await loadPrivs();renderPrivs();buildNav();}
+  catch(e){cr[roleKey]=!val;p.custom_roles=JSON.stringify(cr);renderPrivs();toast('Gagal','error');}
+}
+
+function _buildPrivModalChecks(editPrivData){
+  rebuildRCMeta();
+  const customRoles=getCustomRolesList();
+  let cr={};if(editPrivData)try{cr=JSON.parse(editPrivData.custom_roles||'{}');}catch{}
+  document.getElementById('pm-role-checks').innerHTML=
+    `<label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" checked disabled style="width:15px;height:15px;opacity:.6;"> <span style="color:#a8281e;font-weight:600;">Super Admin ✓</span></label>`+
+    [
+      {id:'pm-ad',label:'Admin',val:editPrivData?editPrivData.role_admin:false},
+      {id:'pm-op',label:'Operator',val:editPrivData?editPrivData.role_operator:false},
+      {id:'pm-vi',label:'Viewer',val:editPrivData?editPrivData.role_viewer:false},
+    ].map(x=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="${x.id}" ${x.val?'checked':''} style="width:15px;height:15px;"> ${x.label}</label>`).join('')+
+    customRoles.map(r=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pm-cr-${r.key}" ${cr[r.key]?'checked':''} style="width:15px;height:15px;"> <span style="color:${r.color};font-weight:600;">${r.label}</span></label>`).join('');
+}
+
+function openAddPriv(){
+  document.getElementById('priv-modal-title').textContent='➕ Tambah Fitur';
+  document.getElementById('pm-label').value='';
+  document.getElementById('pm-id').value='';
+  _buildPrivModalChecks(null);
+  openM('m-priv');
+}
+function openEditPriv(id){
+  const p=PRIVS.find(x=>x.id==id);if(!p)return;
+  document.getElementById('priv-modal-title').textContent='✏️ Edit Fitur';
+  document.getElementById('pm-label').value=p.feature_label;
+  document.getElementById('pm-id').value=id;
+  _buildPrivModalChecks(p);
+  openM('m-priv');
+}
 async function savePriv(){
   const label=document.getElementById('pm-label').value.trim();if(!label){toast('Nama wajib diisi','error');return;}
   const id=document.getElementById('pm-id').value;
   const btn=document.getElementById('save-priv-btn');btn.disabled=true;
-  const data={feature_label:label,role_superadmin:true,role_admin:document.getElementById('pm-ad').checked,role_operator:document.getElementById('pm-op').checked,role_viewer:document.getElementById('pm-vi').checked};
+  // Collect custom roles
+  const cr={};getCustomRolesList().forEach(r=>{const el=document.getElementById('pm-cr-'+r.key);if(el)cr[r.key]=el.checked;});
+  const data={
+    feature_label:label,role_superadmin:true,
+    role_admin:!!(document.getElementById('pm-ad')?.checked),
+    role_operator:!!(document.getElementById('pm-op')?.checked),
+    role_viewer:!!(document.getElementById('pm-vi')?.checked),
+    custom_roles:JSON.stringify(cr)
+  };
   try{
     if(id)await sbPatch('privilege_config',id,data);
     else{const key='feat_'+Date.now().toString(36).slice(-4);await sbPost('privilege_config',{...data,feature_key:key,position:PRIVS.length?Math.max(...PRIVS.map(p=>p.position))+1:1});}
     await loadPrivs();renderPrivs();buildNav();closeM('m-priv');toast('Disimpan!','success');
   }catch(e){toast('Gagal','error');}
-  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+  finally{btn.disabled=false;}
 }
 async function deletePriv(id){if(!confirm('Hapus fitur ini?'))return;try{await sbDelete('privilege_config',id);await loadPrivs();renderPrivs();toast('Dihapus','info');}catch(e){toast('Gagal','error');}}
+
+// ── CUSTOM ROLE MANAGEMENT ──────────────────────────
+function openAddRole(){
+  _rmSelColor=0;
+  document.getElementById('rm-key').value='';
+  document.getElementById('rm-label').value='';
+  document.getElementById('rm-copy').value='';
+  document.getElementById('role-modal-title').textContent='🎭 Tambah Role Baru';
+  document.getElementById('rm-priv-preview').style.display='none';
+  // Populate copy-from with custom roles too
+  const cr=getCustomRolesList();
+  document.getElementById('rm-copy').innerHTML=
+    '<option value="">— Mulai kosong —</option>'+
+    '<option value="admin">Admin</option>'+
+    '<option value="operator">Operator</option>'+
+    '<option value="viewer">Viewer</option>'+
+    cr.map(r=>`<option value="${r.key}">${r.label}</option>`).join('');
+  // Color picker
+  document.getElementById('rm-color-grid').innerHTML=ROLE_COLORS.map((c,i)=>
+    `<div onclick="rmSelectColor(${i})" id="rm-c-${i}" style="width:100%;padding:8px 4px;border-radius:8px;border:2px solid ${i===0?c.color:'var(--border)'};background:${c.bg};cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <div style="width:16px;height:16px;border-radius:50%;background:${c.color};"></div>
+    </div>`
+  ).join('');
+  openM('m-role');
+}
+function openEditRole(key){
+  const cr=loadCustomRoles();
+  const r=cr[key];if(!r)return;
+  _rmSelColor=ROLE_COLORS.findIndex(c=>c.color===r.color);
+  if(_rmSelColor<0)_rmSelColor=0;
+  document.getElementById('rm-key').value=key;
+  document.getElementById('rm-label').value=r.label;
+  document.getElementById('role-modal-title').textContent='✏️ Edit Role';
+  // Same init as add
+  openAddRole();
+  // Override after openAddRole resets
+  document.getElementById('rm-key').value=key;
+  document.getElementById('rm-label').value=r.label;
+  rmSelectColor(_rmSelColor);
+}
+function rmSelectColor(i){
+  _rmSelColor=i;
+  ROLE_COLORS.forEach((_,idx)=>{
+    const el=document.getElementById('rm-c-'+idx);
+    if(el)el.style.borderColor=idx===i?ROLE_COLORS[i].color:'var(--border)';
+  });
+}
+async function saveCustomRole(){
+  const label=document.getElementById('rm-label').value.trim();
+  if(!label){toast('Nama role wajib diisi','error');return;}
+  const existingKey=document.getElementById('rm-key').value;
+  const key=existingKey||(label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').slice(0,20)+'_'+Date.now().toString(36).slice(-3));
+  const c=ROLE_COLORS[_rmSelColor]||ROLE_COLORS[0];
+  const cr=loadCustomRoles();
+  cr[key]={label,color:c.color,bg:c.bg,chip:'rc-custom',builtin:false};
+  saveCustomRoles(cr);
+  rebuildRCMeta();
+  // Copy privileges from another role if selected
+  const copyFrom=document.getElementById('rm-copy').value;
+  if(copyFrom&&!existingKey){
+    // For each priv, set custom_roles[key] = copyFrom value
+    for(const p of PRIVS){
+      let crj={};try{crj=JSON.parse(p.custom_roles||'{}');}catch{}
+      let val=false;
+      if(['admin','operator','viewer'].includes(copyFrom))val=p[`role_${copyFrom}`]===true;
+      else{try{val=JSON.parse(p.custom_roles||'{}')[copyFrom]===true;}catch{}}
+      crj[key]=val;
+      await sbPatch('privilege_config',p.id,{custom_roles:JSON.stringify(crj)}).catch(()=>{});
+    }
+    await loadPrivs();
+  }
+  renderPrivs();
+  // Update user role dropdowns
+  updateRoleDropdowns();
+  closeM('m-role');
+  toast(`Role "${label}" ${existingKey?'diperbarui':'ditambahkan'}!`,'success');
+  logActivity('settings',`${existingKey?'Edit':'Tambah'} custom role: ${label}`,'Privilege Matrix');
+}
+function deleteCustomRole(key){
+  const cr=loadCustomRoles();
+  const label=cr[key]?.label||key;
+  if(!confirm(`Hapus role "${label}"?
+
+User dengan role ini akan tetap ada tapi tidak dapat login dengan benar.`))return;
+  delete cr[key];
+  saveCustomRoles(cr);
+  rebuildRCMeta();
+  renderPrivs();
+  updateRoleDropdowns();
+  toast(`Role "${label}" dihapus`,'info');
+  logActivity('settings',`Hapus custom role: ${label}`,'Privilege Matrix');
+}
+function updateRoleDropdowns(){
+  // Update user modal role select
+  const sel=document.getElementById('um-rl');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML=buildRoleOptions();
+    if([...sel.options].find(o=>o.value===cur))sel.value=cur;
+  }
+}
+function buildRoleOptions(){
+  rebuildRCMeta();
+  const custom=getCustomRolesList();
+  return `<option value="admin">👔 Admin</option>
+    <option value="operator">🛠 Operator</option>
+    <option value="viewer">👁 Viewer</option>
+    ${custom.map(r=>`<option value="${r.key}" style="color:${r.color};">🎭 ${r.label}</option>`).join('')}`;
+}
 
 // ══ CUSTOMERS ══════════════════════════════════════
 function filterCustomers(){
@@ -3545,16 +3786,22 @@ function renderRYearly(orders,year){
 
 // ══ USERS ══════════════════════════════════════════
 function renderUsers(){
+  rebuildRCMeta();
   document.getElementById('users-list').innerHTML=USERS_DATA.map(u=>{
-    const r=RC_META[u.role]||RC_META.viewer,ini=u.nama.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const r=RC_META[u.role]||{label:u.role,color:'#555',bg:'#eee'},ini=u.nama.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     const isMe=u.id===CU.id,isRoot=u.username==='superadmin';
     return`<div class="ucard">
       <div class="avatar" style="background:${r.bg};color:${r.color};border:2px solid ${r.color}40;font-size:11px;">${ini}</div>
-      <div class="ui"><div class="un">${u.nama}${isMe?' <span style="font-size:10px;color:var(--muted);">(Anda)</span>':''}</div><div class="um">${u.username} · ${isRoot?'🔒 Protected':u.role}</div></div>
+      <div class="ui">
+        <div class="un">${u.nama}${isMe?' <span style="font-size:10px;color:var(--muted);">(Anda)</span>':''}</div>
+        <div class="um">${u.username}</div>
+      </div>
       <div style="display:flex;gap:5px;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:${r.color};background:${r.bg};padding:3px 10px;border-radius:10px;">${r.label}</span>
-        ${!isRoot&&canDo('manage_users')?`<button class="btn btn-secondary btn-sm" onclick="openEditUser('${u.id}')" title="Edit user">✏️</button>`:''}
-        ${!isRoot&&!isMe&&canDo('manage_users')?`<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')" title="Hapus user">🗑</button>`:''}
+        <span style="font-size:11px;font-weight:700;color:${r.color};background:${r.bg};padding:3px 10px;border-radius:10px;white-space:nowrap;">${r.label||u.role}</span>
+        ${!isRoot&&canDo('manage_users')?`<select class="sel" style="padding:4px 8px;font-size:11px;" onchange="changeRole('${u.id}',this.value)" ${isMe?'disabled':''}>
+          ${Object.entries(RC_META).filter(([k])=>k!=='superadmin').map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v.label}</option>`).join('')}
+        </select>`:''}
+        ${!isRoot&&!isMe&&canDo('manage_users')?`<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')">🗑</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -3567,6 +3814,7 @@ function openUserModal(){
   document.getElementById('um-pw-label').textContent='Password *';
   document.getElementById('um-pw-hint').textContent='';
   ['um-nm','um-un','um-pw'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('um-rl').innerHTML=buildRoleOptions();
   document.getElementById('um-rl').value='operator';
   document.getElementById('save-user-btn').textContent='💾 Simpan';
   openM('m-user');
@@ -3576,11 +3824,12 @@ function openEditUser(id){
   document.getElementById('um-id').value=u.id;
   document.getElementById('um-title').textContent='✏️ Edit User';
   document.getElementById('um-sub').textContent=u.username;
-  document.getElementById('um-un-group').style.display='none'; // can't change username
+  document.getElementById('um-un-group').style.display='none';
   document.getElementById('um-pw-label').textContent='Password Baru';
   document.getElementById('um-pw-hint').textContent='Kosongkan jika tidak ingin mengganti password';
   document.getElementById('um-nm').value=u.nama;
   document.getElementById('um-pw').value='';
+  document.getElementById('um-rl').innerHTML=buildRoleOptions();
   document.getElementById('um-rl').value=u.role;
   document.getElementById('save-user-btn').textContent='💾 Simpan Perubahan';
   openM('m-user');
