@@ -519,7 +519,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">👷 Data Karyawan BPS</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;">➕ Karyawan Baru</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Karyawan Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
                 <select class="sel" id="k-divisi" onchange="filterKaryawan()">
                   <option value="">Semua Divisi</option>
@@ -565,7 +565,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">📒 Log Book Karyawan</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;">➕ Log Baru</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Log Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
                 <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
                 <select class="sel" id="lb-bulan" onchange="filterLogbook()">
@@ -4653,7 +4653,7 @@ function renderKTable(list){
       <td class="mono" style="font-size:11px;">${fmtD(e.tgl_join)}</td>
       <td style="font-size:10px;">${e.lama?e.lama+' th':'—'}</td>
       <td><span style="font-size:10px;background:var(--bg2);padding:2px 6px;border-radius:6px;">${e.pendidikan||'—'}</span></td>
-      <td><button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();showEmpCard('${safeName}')">🪪</button></td>
+      <td><button class="btn btn-sm" style="font-size:10px;padding:3px 7px;background:#1e4d6b;color:#fff;border:none;" onclick="event.stopPropagation();showEmpCard('${safeName}')">🪪</button></td>
       ${canEdit?`<td onclick="event.stopPropagation()"><div style="display:flex;gap:3px;">
         <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="openEditKaryawan(${origIdx})" title="Edit">✏️</button>
         <button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteKaryawan(${origIdx})" title="Hapus">🗑</button>
