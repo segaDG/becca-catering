@@ -382,8 +382,12 @@ tr:hover td{background:var(--bg);}
       <h2>Masuk ke Sistem</h2>
       <p class="sub">Gunakan kredensial akun Anda</p>
       <div id="lerr" class="alert alert-err" style="display:none;"></div>
-      <div class="form-group"><label>Username</label><input type="text" id="liu" placeholder="username..."></div>
-      <div class="form-group"><label>Password</label><input type="password" id="lip" placeholder="password..."></div>
+      <div class="form-group"><label>Username</label><input type="text" id="liu" placeholder="username..." autocomplete="username"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="lip" placeholder="password..." autocomplete="current-password"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <label class="tog" style="flex-shrink:0;"><input type="checkbox" id="l-remember"><span class="tog-track"></span><span class="tog-knob"></span></label>
+        <span style="font-size:12px;color:var(--text2);">Ingat saya di perangkat ini</span>
+      </div>
       <button class="btn btn-primary btn-full" id="lbtn" onclick="doLogin()">Masuk ke BECCA →</button>
       <div class="demo-box">
         <div class="dlbl">⚡ Demo Accounts</div>
@@ -560,6 +564,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">📒 Log Book Karyawan</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;">➕ Log Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
                 <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
                 <select class="sel" id="lb-bulan" onchange="filterLogbook()">
@@ -584,7 +589,7 @@ tr:hover td{background:var(--bg);}
                   <th>#</th><th>Tanggal</th><th>Nama Karyawan</th>
                   <th style="color:#a8281e;text-align:right;">Berhutang</th>
                   <th style="color:#2a6b47;text-align:right;">Bayar Hutang</th>
-                  <th>PJ</th><th>Keterangan</th><th>Konfirmasi</th>
+                  <th>PJ</th><th>Keterangan</th><th>Konfirmasi</th><th>Aksi</th>
                 </tr></thead>
                 <tbody id="lb-tbody"></tbody>
               </table>
@@ -1073,6 +1078,39 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
+<!-- MODAL LOGBOOK -->
+<div class="overlay" id="m-logbook">
+  <div class="modal sm">
+    <div class="mhead">
+      <div><div class="mtitle" id="lb-modal-title">➕ Tambah Log Baru</div><div class="msub" id="lb-modal-sub"></div></div>
+      <button class="mclose" onclick="closeM('m-logbook')">✕</button>
+    </div>
+    <input type="hidden" id="lb-edit-idx">
+    <div class="fg">
+      <div class="form-group"><label>Nama Karyawan *</label>
+        <select id="lb-m-nama" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">— Pilih Karyawan —</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tanggal *</label><input type="date" id="lb-m-tgl"></div>
+      <div class="form-group"><label>💸 Berhutang (Rp)</label><input type="number" id="lb-m-hutang" placeholder="0" min="0" value="0"></div>
+      <div class="form-group"><label>✅ Bayar Hutang (Rp)</label><input type="number" id="lb-m-bayar" placeholder="0" min="0" value="0"></div>
+      <div class="form-group span2"><label>Keterangan</label><input type="text" id="lb-m-ket" placeholder="Contoh: Kasbon kebutuhan keluarga..."></div>
+      <div class="form-group"><label>PJ</label><input type="text" id="lb-m-pj" placeholder="Mr. Denny" value="Mr. Denny"></div>
+      <div class="form-group"><label>Konfirmasi</label>
+        <select id="lb-m-konfirmasi" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="">— Belum Konfirmasi —</option>
+          <option value="CONFIRMED">✓ CONFIRMED</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="lb-save-btn" onclick="saveLogbook()" style="flex:1;">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-logbook')" style="flex:1;">Batal</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TASK -->
 <div class="overlay" id="m-task">
   <div class="modal" style="max-width:480px;">
@@ -1354,18 +1392,40 @@ function colPrice(cust,key){
 function fill(u,p){document.getElementById('liu').value=u;document.getElementById('lip').value=p;}
 async function doLogin(){
   const u=document.getElementById('liu').value.trim(),p=document.getElementById('lip').value;
+  const remember=document.getElementById('l-remember').checked;
   if(!u||!p){showErr('Username dan password wajib diisi');return;}
   const btn=document.getElementById('lbtn');btn.textContent='Memverifikasi...';btn.disabled=true;
   try{
     const users=await sbGet('users',`username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`);
     if(!users||!users.length){showErr('Username atau password salah');return;}
     CU=users[0];
+    if(remember){
+      localStorage.setItem('becca_remember',JSON.stringify({u,p}));
+    } else {
+      localStorage.removeItem('becca_remember');
+    }
     document.getElementById('ls').style.display='none';
     document.getElementById('app').style.display='block';
     document.getElementById('lerr').style.display='none';
     await initApp();
   }catch(e){showErr('Tidak dapat terhubung ke database.');}
   finally{btn.textContent='Masuk ke BECCA →';btn.disabled=false;}
+}
+async function tryAutoLogin(){
+  const saved=localStorage.getItem('becca_remember');
+  if(!saved)return false;
+  try{
+    const {u,p}=JSON.parse(saved);
+    const users=await sbGet('users',`username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`);
+    if(!users||!users.length){localStorage.removeItem('becca_remember');return false;}
+    CU=users[0];
+    document.getElementById('ls').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('liu').value=u;
+    document.getElementById('l-remember').checked=true;
+    await initApp();
+    return true;
+  }catch(e){return false;}
 }
 function showErr(m){const el=document.getElementById('lerr');el.style.display='flex';el.textContent='❌ '+m;}
 function doLogout(){
@@ -1374,6 +1434,9 @@ function doLogout(){
   CU=null;ORDERS=[];USERS_DATA=[];COLS=[];PRIVS=[];CUSTOMERS=[];INVOICES=[];
   document.getElementById('app').style.display='none';document.getElementById('ls').style.display='flex';
   document.getElementById('online-users').innerHTML='';
+  // Prefill username if remembered
+  const saved=localStorage.getItem('becca_remember');
+  if(saved){try{const {u}=JSON.parse(saved);document.getElementById('liu').value=u;document.getElementById('l-remember').checked=true;}catch(e){}}
 }
 
 // ══ INIT ══════════════════════════════════════════
@@ -1748,7 +1811,7 @@ function filterOrders(){
   const t=document.getElementById('st')?.value||'';
   const c=document.getElementById('sc')?.value||'';
   const canEdit=canDo('edit_order');
-  const canDel=CU.role==='superadmin';
+  const canDel=CU.role==='superadmin'||CU.role==='admin';
   const cols=aCols();
   const invoicedIds=getInvoicedOrderIds(); // for badge display
   const filtered=ORDERS.filter(o=>
@@ -3553,28 +3616,43 @@ function renderActivity(){
 // ══ ONLINE USERS TRACKER ════════════════════════════
 // Uses localStorage broadcasting — shows users active in this browser
 // For multi-device: would need server-side presence, this works per-browser
-const ONLINE_KEY='becca_online_sessions';
 const ONLINE_TTL=60000; // 60s before considered offline
 let _heartbeatInterval=null;
+let _ONLINE_CACHE={}; // local cache of active sessions
 
-function onlineHeartbeat(){
+async function onlineHeartbeat(){
   if(!CU)return;
-  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
-  sessions[CU.username]={
-    nama:CU.nama,username:CU.username,role:CU.role,
-    ts:Date.now(),tab:document.title
-  };
-  // Clean stale sessions
-  Object.keys(sessions).forEach(k=>{if(Date.now()-sessions[k].ts>ONLINE_TTL)delete sessions[k];});
-  localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
+  try{
+    // Upsert current user session to Supabase
+    await fetch(`${SB_URL}/rest/v1/online_sessions`,{
+      method:'POST',
+      headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({
+        username:CU.username,
+        nama:CU.nama,
+        role:CU.role,
+        last_seen:new Date().toISOString()
+      })
+    });
+    // Fetch all active sessions
+    const cutoff=new Date(Date.now()-ONLINE_TTL).toISOString();
+    const res=await fetch(`${SB_URL}/rest/v1/online_sessions?last_seen=gte.${cutoff}&select=*`,{headers:SB_HEADERS});
+    if(res.ok){
+      const sessions=await res.json();
+      _ONLINE_CACHE={};
+      sessions.forEach(s=>{_ONLINE_CACHE[s.username]=s;});
+    }
+  }catch(e){
+    // Fallback: only show current user
+    _ONLINE_CACHE[CU.username]={username:CU.username,nama:CU.nama,role:CU.role,last_seen:new Date().toISOString()};
+  }
   renderOnlineUsers();
 }
 
 function renderOnlineUsers(){
   const wrap=document.getElementById('online-users');
   if(!wrap)return;
-  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
-  const active=Object.values(sessions).filter(s=>Date.now()-s.ts<=ONLINE_TTL);
+  const active=Object.values(_ONLINE_CACHE);
   const colors={'superadmin':'#a8281e','admin':'#1e4d6b','operator':'#1e7e34','viewer':'#6c757d'};
   const MAX_SHOW=5;
   const shown=active.slice(0,MAX_SHOW);
@@ -3589,7 +3667,7 @@ function renderOnlineUsers(){
       border:2px solid ${isMe?'#fff':'rgba(255,255,255,.6)'};
       margin-left:${i===0?'0':'-8px'};position:relative;z-index:${10-i};
       box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default;
-      ${isMe?'ring:2px solid white;outline:2px solid '+c+';outline-offset:1px;':''}
+      ${isMe?'outline:2px solid '+c+';outline-offset:1px;':''}
     ">${initials}</div>`;
   }).join('')+(extra>0?`<div style="width:28px;height:28px;border-radius:50%;background:#888;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.6);margin-left:-8px;z-index:5;">+${extra}</div>`:'');
 }
@@ -3597,20 +3675,21 @@ function renderOnlineUsers(){
 function startOnlineTracker(){
   onlineHeartbeat();
   _heartbeatInterval=setInterval(onlineHeartbeat,15000);
-  window.addEventListener('storage',()=>renderOnlineUsers()); // Cross-tab sync
   window.addEventListener('beforeunload',()=>{
     if(!CU)return;
-    const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
-    delete sessions[CU.username];
-    localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
+    // Best-effort DELETE on tab close
+    navigator.sendBeacon(`${SB_URL}/rest/v1/online_sessions?username=eq.${encodeURIComponent(CU.username)}`,
+      JSON.stringify({}));
   });
 }
 function stopOnlineTracker(){
   if(_heartbeatInterval)clearInterval(_heartbeatInterval);
   if(!CU)return;
-  const sessions=JSON.parse(localStorage.getItem(ONLINE_KEY)||'{}');
-  delete sessions[CU.username];
-  localStorage.setItem(ONLINE_KEY,JSON.stringify(sessions));
+  // Delete session from Supabase
+  fetch(`${SB_URL}/rest/v1/online_sessions?username=eq.${encodeURIComponent(CU.username)}`,{
+    method:'DELETE',headers:SB_HEADERS
+  }).catch(()=>{});
+  delete _ONLINE_CACHE[CU.username];
 }
 // ═══════════════════════════════════════════════════
 
@@ -4434,7 +4513,10 @@ function filterLogbook(){
   const nama=document.getElementById('lb-nama')?.value||'';
   const bulan=document.getElementById('lb-bulan')?.value||'';
   const jenis=document.getElementById('lb-jenis')?.value||'';
-  const list=LOG_DATA.filter(l=>{
+  const canEdit=CU.role==='superadmin'||CU.role==='admin';
+  // Sort newest first
+  const sorted=[...LOG_DATA].sort((a,b)=>b.tgl.localeCompare(a.tgl));
+  const list=sorted.filter(l=>{
     if(nama&&l.nama!==nama)return false;
     if(bulan&&String(l.bulan)!==bulan)return false;
     if(jenis==='hutang'&&!l.hutang)return false;
@@ -4456,7 +4538,10 @@ function filterLogbook(){
   const slice=list.slice((_lbPage-1)*LB_PER, _lbPage*LB_PER);
   const off=(_lbPage-1)*LB_PER;
   const tb=document.getElementById('lb-tbody');
-  if(tb) tb.innerHTML=slice.length?slice.map((l,i)=>`<tr style="${l.hutang>0?'background:#fff8f8;':l.bayar>0?'background:#f8fff8;':''}">
+  if(tb) tb.innerHTML=slice.length?slice.map((l,i)=>{
+    // Find original index in LOG_DATA for edit
+    const origIdx=LOG_DATA.indexOf(l);
+    return`<tr style="${l.hutang>0?'background:#fff8f8;':l.bayar>0?'background:#f8fff8;':''}">
     <td class="mono tmuted" style="font-size:11px;">${off+i+1}</td>
     <td class="mono" style="font-size:11px;">${fmtD(l.tgl)}</td>
     <td style="font-weight:600;">${l.nama}</td>
@@ -4465,13 +4550,87 @@ function filterLogbook(){
     <td style="font-size:11px;">${l.pj||'—'}</td>
     <td style="font-size:11px;font-style:italic;color:var(--muted);max-width:200px;">${l.ket||'—'}</td>
     <td>${l.konfirmasi?`<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-bg);padding:2px 7px;border-radius:99px;">✓ ${l.konfirmasi}</span>`:'<span style="font-size:10px;color:var(--muted);">—</span>'}</td>
-  </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);">Tidak ada data</td></tr>';
+    <td>${canEdit?`<div style="display:flex;gap:3px;"><button class="btn btn-secondary btn-sm" onclick="openEditLogbook(${origIdx})" style="font-size:10px;padding:2px 7px;" title="Edit">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteLogbook(${origIdx})" style="font-size:10px;padding:2px 6px;" title="Hapus">🗑</button></div>`:'—'}</td>
+  </tr>`;
+  }).join(''):'<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--muted);">Tidak ada data</td></tr>';
   const pg=document.getElementById('lb-pagination');
   if(pg) pg.innerHTML=`<span style="color:var(--muted);font-size:12px;">${list.length} transaksi · Hal ${_lbPage}/${pages}</span>
     <div style="display:flex;gap:4px;">
       <button class="btn btn-secondary btn-sm" onclick="_lbPage=Math.max(1,_lbPage-1);filterLogbook();" ${_lbPage<=1?'disabled':''}>◀</button>
       <button class="btn btn-secondary btn-sm" onclick="_lbPage=Math.min(${pages},_lbPage+1);filterLogbook();" ${_lbPage>=pages?'disabled':''}>▶</button>
     </div>`;
+}
+
+
+// ─── LOGBOOK CRUD ─────────────────────────────────────
+function _lbPopulateNamaSelect(){
+  const sel=document.getElementById('lb-m-nama');
+  if(!sel)return;
+  const names=[...new Set([...EMP_DATA.map(e=>e.nama),...LOG_DATA.map(l=>l.nama)])].sort();
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Pilih Karyawan —</option>'+names.map(n=>`<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+}
+function openAddLogbook(){
+  document.getElementById('lb-edit-idx').value='';
+  document.getElementById('lb-modal-title').textContent='➕ Tambah Log Baru';
+  document.getElementById('lb-modal-sub').textContent='';
+  _lbPopulateNamaSelect();
+  document.getElementById('lb-m-nama').value='';
+  document.getElementById('lb-m-tgl').value=new Date().toISOString().slice(0,10);
+  document.getElementById('lb-m-hutang').value='0';
+  document.getElementById('lb-m-bayar').value='0';
+  document.getElementById('lb-m-ket').value='';
+  document.getElementById('lb-m-pj').value='Mr. Denny';
+  document.getElementById('lb-m-konfirmasi').value='';
+  openM('m-logbook');
+}
+function openEditLogbook(idx){
+  const l=LOG_DATA[idx];if(!l)return;
+  document.getElementById('lb-edit-idx').value=idx;
+  document.getElementById('lb-modal-title').textContent='✏️ Edit Log';
+  document.getElementById('lb-modal-sub').textContent=l.nama+' · '+fmtD(l.tgl);
+  _lbPopulateNamaSelect();
+  document.getElementById('lb-m-nama').value=l.nama;
+  document.getElementById('lb-m-tgl').value=l.tgl;
+  document.getElementById('lb-m-hutang').value=l.hutang||0;
+  document.getElementById('lb-m-bayar').value=l.bayar||0;
+  document.getElementById('lb-m-ket').value=l.ket||'';
+  document.getElementById('lb-m-pj').value=l.pj||'';
+  document.getElementById('lb-m-konfirmasi').value=l.konfirmasi||'';
+  openM('m-logbook');
+}
+function saveLogbook(){
+  const nama=document.getElementById('lb-m-nama').value;
+  const tgl=document.getElementById('lb-m-tgl').value;
+  if(!nama){toast('Pilih karyawan dulu','error');return;}
+  if(!tgl){toast('Tanggal wajib diisi','error');return;}
+  const hutang=+document.getElementById('lb-m-hutang').value||0;
+  const bayar=+document.getElementById('lb-m-bayar').value||0;
+  const ket=document.getElementById('lb-m-ket').value.trim();
+  const pj=document.getElementById('lb-m-pj').value.trim();
+  const konfirmasi=document.getElementById('lb-m-konfirmasi').value;
+  const bulan=new Date(tgl).getMonth()+1;
+  const entry={bulan,tgl,nama,bayar,hutang,pj,ket,konfirmasi};
+  const idx=document.getElementById('lb-edit-idx').value;
+  if(idx!==''){
+    LOG_DATA[+idx]=entry;
+    toast('Log diperbarui','success');
+    logActivity('karyawan',`Edit log: ${nama} ${tgl}`,'Log Book');
+  } else {
+    LOG_DATA.unshift(entry); // Add to front (newest first in source)
+    toast('Log ditambahkan','success');
+    logActivity('karyawan',`Tambah log: ${nama} ${tgl} hutang:${hutang} bayar:${bayar}`,'Log Book');
+  }
+  closeM('m-logbook');
+  _lbPage=1;initLbFilters();filterLogbook();
+}
+function deleteLogbook(idx){
+  const l=LOG_DATA[idx];
+  if(!confirm(`Hapus log "${l?.nama} – ${fmtD(l?.tgl)}"?`))return;
+  LOG_DATA.splice(idx,1);
+  toast('Log dihapus','info');
+  logActivity('karyawan',`Hapus log: ${l?.nama} ${l?.tgl}`,'Log Book');
+  filterLogbook();
 }
 
 // ─── TAB EMPLOYEE CARD ────────────────────────────────
@@ -4597,6 +4756,19 @@ function printEmployeeCard(){
 
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show');}));
 document.getElementById('lip').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Auto-login if remember me was set
+(async()=>{
+  const saved=localStorage.getItem('becca_remember');
+  if(saved){
+    try{
+      const {u}=JSON.parse(saved);
+      document.getElementById('liu').value=u;
+      document.getElementById('l-remember').checked=true;
+      await tryAutoLogin();
+    }catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
