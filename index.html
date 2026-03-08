@@ -511,6 +511,7 @@ tr:hover td{background:var(--bg);}
           <button class="rtab active" id="ktab-data" onclick="setKTab('data')">👷 Data Karyawan</button>
           <button class="rtab" id="ktab-logbook" onclick="setKTab('logbook')">📒 Log Book</button>
           <button class="rtab" id="ktab-card" onclick="setKTab('card')">🪪 Employee Card</button>
+          <button class="rtab" id="ktab-arsip" onclick="setKTab('arsip')">📦 Arsip</button>
         </div>
 
         <!-- ── DATA KARYAWAN ── -->
@@ -525,12 +526,6 @@ tr:hover td{background:var(--bg);}
                   <option value="">Semua Divisi</option>
                   <option>Management</option><option>Service</option><option>Kitchen</option>
                   <option>Warehouse</option><option>Driver</option><option>Cleaning Service</option>
-                </select>
-                <select class="sel" id="k-status" onchange="filterKaryawan()">
-                  <option value="">Semua Status</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="RESIGN">RESIGN</option>
-                  <option value="FIRED">FIRED</option>
                 </select>
                 <select class="sel" id="k-view" onchange="filterKaryawan()">
                   <option value="table">📋 Tabel</option>
@@ -612,8 +607,36 @@ tr:hover td{background:var(--bg);}
             <div id="ec-body" style="padding:16px;"></div>
           </div>
         </div>
+        <!-- ── ARSIP KARYAWAN ── -->
+        <div id="kpanel-arsip" style="display:none;">
+          <div class="card">
+            <div class="card-head" style="flex-wrap:wrap;gap:8px;">
+              <span class="card-title">📦 Arsip Karyawan</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+                <div class="sbox"><span>🔍</span><input type="text" id="arsip-search" placeholder="Cari nama / divisi..." oninput="renderArsipKaryawan()"></div>
+                <select class="sel" id="arsip-status-f" onchange="renderArsipKaryawan()">
+                  <option value="">RESIGN & FIRED</option>
+                  <option value="RESIGN">RESIGN</option>
+                  <option value="FIRED">FIRED</option>
+                </select>
+                <span id="arsip-count" style="font-size:12px;color:var(--muted);"></span>
+              </div>
+            </div>
+            <div style="padding:10px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;font-size:12px;color:#92400e;">
+              📦 Karyawan dengan status <strong>RESIGN</strong> atau <strong>FIRED</strong> otomatis tersimpan di sini. Ubah status ke ACTIVE untuk memindahkan kembali ke Data Karyawan.
+            </div>
+            <div class="tw">
+              <table>
+                <thead><tr>
+                  <th>#</th><th>Foto</th><th>Nama</th><th>Status</th><th>Divisi</th>
+                  <th>Gaji Terakhir</th><th>Tgl Join</th><th>Aksi</th>
+                </tr></thead>
+                <tbody id="arsip-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="page-tasks" class="page">
         <div class="card">
           <div class="card-head">
             <span class="card-title">✅ Task Board</span>
@@ -1517,6 +1540,7 @@ async function initApp(){
   updateNotifBadge();
   logActivity('login',`Login berhasil sebagai ${CU.role} (${CU.nama})`,'Login');
   startOnlineTracker();
+  setTimeout(_updateArsipBadge, 500);
   setInterval(()=>{loadInvoices().then(()=>{updateNotifBadge();if(document.getElementById('page-invoice').classList.contains('active'))renderInvoices();});},5*60*1000);
   // Auto-refresh tasks every 30s
   setInterval(async()=>{
@@ -4469,7 +4493,7 @@ function renderKaryawanPage(){setKTab('data');}
 
 function setKTab(tab){
   _kTab=tab;
-  ['data','logbook','card'].forEach(t=>{
+  ['data','logbook','card','arsip'].forEach(t=>{
     const btn=document.getElementById('ktab-'+t);
     const pnl=document.getElementById('kpanel-'+t);
     if(btn)btn.classList.toggle('active',t===tab);
@@ -4478,6 +4502,7 @@ function setKTab(tab){
   if(tab==='data')filterKaryawan();
   if(tab==='logbook'){_lbPage=1;initLbFilters();filterLogbook();}
   if(tab==='card'){initEcSelect();}
+  if(tab==='arsip'){renderArsipKaryawan();}
 }
 
 function fmtRpK(v){return v&&v!==0?'Rp '+Number(v).toLocaleString('id-ID'):'—';}
@@ -4487,22 +4512,20 @@ function fmtD(iso){if(!iso||iso==='—')return'—';const p=iso.split('-');retur
 function filterKaryawan(){
   const q=(document.getElementById('k-search')?.value||'').toLowerCase();
   const divisi=document.getElementById('k-divisi')?.value||'';
-  const status=document.getElementById('k-status')?.value||'';
   const view=document.getElementById('k-view')?.value||'table';
+  // Tab utama HANYA tampilkan ACTIVE — RESIGN/FIRED otomatis di tab Arsip
   const filtered=EMP_DATA.filter(e=>{
-    if(status&&e.status!==status)return false;
+    if(e.status!=='ACTIVE')return false;
     if(divisi&&e.divisi!==divisi)return false;
     if(q&&!(e.nama.toLowerCase().includes(q)||(e.panggilan||'').toLowerCase().includes(q)||(e.divisi||'').toLowerCase().includes(q)))return false;
     return true;
   });
-  const active=filtered.filter(e=>e.status==='ACTIVE');
-  const totGaji=active.reduce((s,e)=>s+(e.gaji||0),0);
-  const totHutang=active.reduce((s,e)=>s+(e.sisa_hutang||0),0);
-  const divC={};active.forEach(e=>{divC[e.divisi]=(divC[e.divisi]||0)+1;});
+  const totGaji=filtered.reduce((s,e)=>s+(e.gaji||0),0);
+  const totHutang=filtered.reduce((s,e)=>s+(e.sisa_hutang||0),0);
+  const divC={};filtered.forEach(e=>{divC[e.divisi]=(divC[e.divisi]||0)+1;});
   const st=document.getElementById('k-stats');
   if(st) st.innerHTML=
-    `<span style="font-weight:700;">${filtered.length} karyawan</span>`+
-    `<span style="color:var(--green);font-weight:600;">✅ Aktif: ${active.length}</span>`+
+    `<span style="font-weight:700;">${filtered.length} karyawan aktif</span>`+
     `<span style="color:var(--accent);font-weight:600;">Total Gaji: ${fmtRpK(totGaji)}</span>`+
     `<span style="color:var(--amber);font-weight:600;">Total Hutang: ${fmtRpK(totHutang)}</span>`+
     Object.entries(divC).map(([d,c])=>`<span style="color:${DC[d]||'#555'};font-size:10px;font-weight:600;">${d}: ${c}</span>`).join('');
@@ -4515,6 +4538,7 @@ function filterKaryawan(){
     if(tw){tw.style.display='';renderKTable(filtered);}
     if(gw)gw.style.display='none';
   }
+  _updateArsipBadge();
 }
 
 // ─── KARYAWAN CRUD ────────────────────────────────────
@@ -4609,6 +4633,11 @@ function saveKaryawan(){
   }
   closeM('m-karyawan');
   filterKaryawan();
+  _updateArsipBadge();
+  // If edited karyawan's status changed to RESIGN/FIRED, switch to arsip tab hint
+  if(idx!=='' && (entry.status==='RESIGN'||entry.status==='FIRED')){
+    toast(`${entry.nama} dipindah ke Arsip (status ${entry.status})`,'info');
+  }
 }
 function deleteKaryawan(idx){
   const e=EMP_DATA[idx];
@@ -4618,6 +4647,64 @@ function deleteKaryawan(idx){
   toast('Karyawan dihapus','info');
   logActivity('karyawan',`Hapus karyawan: ${e.nama}`,'Data Karyawan');
   filterKaryawan();
+}
+
+// ─── ARSIP KARYAWAN (otomatis RESIGN/FIRED) ───────────
+function _updateArsipBadge(){
+  const btn=document.getElementById('ktab-arsip');
+  if(!btn)return;
+  const count=EMP_DATA.filter(e=>e.status==='RESIGN'||e.status==='FIRED').length;
+  btn.textContent=count>0?`📦 Arsip (${count})`:'📦 Arsip';
+}
+
+function renderArsipKaryawan(){
+  _updateArsipBadge();
+  const canEdit=CU.role==='superadmin'||CU.role==='admin';
+  const q=(document.getElementById('arsip-search')?.value||'').toLowerCase();
+  const statusF=document.getElementById('arsip-status-f')?.value||'';
+  const list=EMP_DATA.filter(e=>{
+    if(e.status!=='RESIGN'&&e.status!=='FIRED')return false;
+    if(statusF&&e.status!==statusF)return false;
+    if(q&&!(e.nama.toLowerCase().includes(q)||(e.divisi||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  const cnt=document.getElementById('arsip-count');
+  if(cnt) cnt.textContent=`${list.length} karyawan`;
+  const tbody=document.getElementById('arsip-tbody');
+  if(!tbody)return;
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--muted);">Tidak ada karyawan RESIGN / FIRED</td></tr>';
+    return;
+  }
+  tbody.innerHTML=list.map((e,i)=>{
+    const origIdx=EMP_DATA.indexOf(e);
+    const sc=SC[e.status]||SC.RESIGN;
+    const dc=DC[e.divisi]||'#888';
+    return`<tr style="background:${e.status==='FIRED'?'#fff5f5':'#fafafa'};">
+      <td class="mono tmuted" style="font-size:11px;">${i+1}</td>
+      <td style="padding:5px 8px;">${avatarHTML(e,32)}</td>
+      <td><strong style="font-size:12px;">${e.nama}</strong>${e.panggilan?`<br><span style="font-size:10px;color:var(--muted);">"${e.panggilan}"</span>`:''}</td>
+      <td><span style="font-size:10px;font-weight:700;color:${sc.c};background:${sc.bg};border:1px solid ${sc.bc};padding:2px 8px;border-radius:99px;">${e.status}</span></td>
+      <td><span style="font-size:10px;font-weight:600;color:${dc};background:${dc}18;padding:2px 7px;border-radius:8px;">${e.divisi||'—'}</span></td>
+      <td class="mono" style="font-size:11px;color:var(--accent);">${fmtRpK(e.gaji)}</td>
+      <td class="mono" style="font-size:11px;">${fmtD(e.tgl_join)}</td>
+      <td>${canEdit?`<div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" style="font-size:10px;padding:3px 9px;" onclick="aktifkanKaryawan(${origIdx})">✅ Aktifkan</button>
+        <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="openEditKaryawan(${origIdx})">✏️</button>
+        <button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteKaryawan(${origIdx})">🗑</button>
+      </div>`:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function aktifkanKaryawan(idx){
+  const e=EMP_DATA[idx];
+  if(!e)return;
+  if(!confirm(`Aktifkan kembali "${e.nama}"?\nStatus akan diubah menjadi ACTIVE dan muncul di Data Karyawan.`))return;
+  EMP_DATA[idx]={...e, status:'ACTIVE'};
+  toast(`${e.nama} diaktifkan kembali`,'success');
+  logActivity('karyawan',`Aktifkan kembali: ${e.nama} (dari ${e.status})`,'Data Karyawan');
+  renderArsipKaryawan();
 }
 
 function avatarHTML(e,size=36){
