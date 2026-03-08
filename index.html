@@ -1404,28 +1404,15 @@ function renderDashInvoicePanel(){
   if(invCard)invCard.style.display='block';
   const todayD=new Date(); todayD.setHours(0,0,0,0);
   // Filter invoices by selected period
-  // Pakai: periode_dari, periode_sampai, tgl_invoice, atau created_at sebagai referensi tanggal
-  function getInvDate(i){
-    return i.tgl_invoice||i.periode_dari||i.periode_sampai||i.created_at||null;
-  }
   let periodInvs;
   if(_dashMode==='month'){
     const ym=`${_dashYear}-${String(_dashMonth+1).padStart(2,'0')}`;
-    periodInvs=INVOICES.filter(i=>{
-      const d=getInvDate(i);
-      if(!d)return false;
-      return d.slice(0,7)===ym||i.periode_dari?.slice(0,7)===ym||i.periode_sampai?.slice(0,7)===ym;
-    });
+    periodInvs=INVOICES.filter(i=>i.periode_dari?.slice(0,7)===ym||i.periode_sampai?.slice(0,7)===ym);
     const label=new Date(_dashYear,_dashMonth,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
     const el=document.getElementById('dash-inv-period');
     if(el)el.textContent=label;
   } else {
-    const yr=String(_dashYear);
-    periodInvs=INVOICES.filter(i=>{
-      const d=getInvDate(i);
-      if(!d)return false;
-      return d.slice(0,4)===yr||i.periode_dari?.slice(0,4)===yr||i.periode_sampai?.slice(0,4)===yr;
-    });
+    periodInvs=INVOICES.filter(i=>(i.periode_dari?.slice(0,4)===String(_dashYear))||(i.periode_sampai?.slice(0,4)===String(_dashYear)));
     const el=document.getElementById('dash-inv-period');
     if(el)el.textContent=`Tahun ${_dashYear}`;
   }
@@ -1437,7 +1424,7 @@ function renderDashInvoicePanel(){
     base.setDate(base.getDate()+(+(cust?.tempo||30)));
     return base<todayD;
   });
-  const sumGrand=arr=>arr.reduce((s,i)=>s+(parseFloat(i.grand_total)||0),0);
+  const sumGrand=arr=>arr.reduce((s,i)=>s+(+i.grand_total||0),0);
   const sent=periodInvs.filter(i=>i.status==='sent');
   const paid=periodInvs.filter(i=>i.status==='paid');
   // Overdue within period + globally
