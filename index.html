@@ -6750,14 +6750,24 @@ function renderInvSummary(){
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── KAS KECIL ─────────────────────────────────────────────────────────────────
+async function sbGetAll(table, query='', pageSize=1000){
+  // Supabase max 1000 rows per request — paginate automatically
+  let all=[], offset=0;
+  while(true){
+    const r = await sbGet(table, `${query}&limit=${pageSize}&offset=${offset}`);
+    if(!r||!r.length) break;
+    all = all.concat(r);
+    if(r.length < pageSize) break; // last page
+    offset += pageSize;
+  }
+  return all;
+}
+
 async function loadKasFromDB(){
   try{
-    // Load all kas rows ordered by date desc
-    const rows = await sbGet('kas_transactions','select=*&order=tgl.asc,id.asc&limit=10000');
+    const rows = await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
     if(!rows||!rows.length){ 
       console.log('KAS DB: no rows, using embedded data');
-      // rows=[] could mean empty table OR table doesn't exist (404 returned [])
-      // Probe with a count check
       _DB_KAS_READY = (rows !== null);
       return; 
     }
@@ -6831,9 +6841,9 @@ async function deleteKasRowFromDB(dbId){
 async function loadInvFromDB(){
   try{
     const [prods, acts, opname] = await Promise.all([
-      sbGet('inv_products','select=*&order=nama.asc&limit=2000'),
-      sbGet('inv_activities','select=*&order=tgl.asc,id.asc&limit=20000'),
-      sbGet('inv_opname','select=*&limit=5000')
+      sbGetAll('inv_products','select=*&order=nama.asc'),
+      sbGetAll('inv_activities','select=*&order=tgl.asc,id.asc'),
+      sbGetAll('inv_opname','select=*')
     ]);
 
     if(prods && prods.length){ _DB_INV_READY=true;
