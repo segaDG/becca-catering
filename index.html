@@ -7002,6 +7002,10 @@ async function _silentReloadKas(){
     }));
     _kasLastUpdated = new Date();
     _updateKasRefreshBadge();
+    // Don't re-render if user is actively editing a cell
+    const _focused = document.activeElement;
+    const _isEditingKas = _focused && _focused.closest('#kas-tbody');
+    if(_isEditingKas){ console.log('KAS poll: skip render (user editing)'); return; }
     // Re-render current kas tab
     const activeTab = document.querySelector('.kas-tab.active')?.dataset?.tab;
     if(activeTab==='transaksi'||!activeTab) filterKas();
@@ -7034,6 +7038,11 @@ async function _silentReloadInv(){
     }
     _invLastUpdated = new Date();
     _updateInvRefreshBadge();
+    // Don't re-render if user is actively editing a cell
+    const focused = document.activeElement;
+    const isEditingInv = focused && focused.closest('#inv-tbody');
+    const isEditingKas = focused && focused.closest('#kas-tbody');
+    if(isEditingInv){ console.log('INV poll: skip render (user editing)'); return; }
     // Re-render current inv tab
     const activeTab = document.querySelector('.rtab.active[id^="invtab-"]')?.id?.replace('invtab-','');
     if(activeTab==='transaksi'||!activeTab) filterInv();
