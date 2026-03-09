@@ -5557,6 +5557,89 @@ function kasEditSaldoAwal(){
   if(!isNaN(n)){KAS_SALDO_AWAL=n;_renderBalanceBar();filterKas();toast('Saldo awal diperbarui','success');}
 }
 
+// ── AI Auto-Type Detection ───────────────────────────────────────────────────
+const _KAS_AI_CACHE={};  // cache nama→type agar tidak hit API berulang
+
+async function kasAIAutoType(idx,nama){
+  const d=KAS_DATA[idx];
+  if(!d||!nama||nama.trim().length<3)return;  // skip kalau terlalu pendek
+  if(d.type&&d.type!=='')return;               // skip kalau sudah ada type
+
+  // Check cache dulu
+  const key=nama.trim().toLowerCase();
+  if(_KAS_AI_CACHE[key]){
+    _kasApplyType(idx,_KAS_AI_CACHE[key]);
+    return;
+  }
+
+  // Tampilkan loading state di type select
+  const sel=document.getElementById('ktype-'+idx);
+  if(sel){sel.style.background='#fef3c7';sel.style.color='#d97706';}
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:20,
+        system:`Kamu adalah classifier pengeluaran kas kecil dapur/katering Indonesia.
+Pilih SATU type yang paling cocok dari daftar ini:
+Raw Food, Sayuran, Buah segar, Raw Materials, Minuman, Snack, Kasbon, Gaji, Bensin, Maintenance, OP.Expense, B.Logistik, Listrik PLN, PDAM, Pulsa, Pajak, Kas, Lain-lain
+
+Rules:
+- Sayuran: tahu, tempe, cabe, bawang, wortel, kol, bayam, dll sayuran
+- Raw Food: ikan, daging, ayam, telur, udang, dll protein mentah
+- Buah segar: buah-buahan, frozen buah
+- Raw Materials: tepung, minyak, gula, garam, bumbu kering, kulit lumpia, dll bahan kering
+- Minuman: air, yakult, jus, galon
+- Snack: kue, roti, snack, takjil
+- Kasbon: kasbon, pinjaman karyawan
+- Bensin: bensin, solar, bahan bakar, isi ulang kendaraan, etoll
+- Maintenance: servis, perbaikan, cat, alat
+- B.Logistik: ongkir, pengiriman, ekspedisi, toll
+- Listrik PLN: listrik, token, kwh
+- PDAM: air PDAM, tagihan air
+- Pulsa: pulsa, internet, wifi, paket data
+- Gaji: gaji, THR, bonus karyawan
+- Kas: kas masuk, setoran, modal
+- Lain-lain: tidak masuk kategori lain
+
+Jawab HANYA dengan nama type-nya saja, tanpa penjelasan.`,
+        messages:[{role:'user',content:nama.trim()}]
+      })
+    });
+    const data=await resp.json();
+    const result=(data.content?.[0]?.text||'').trim();
+    const valid=KAS_TYPES.find(t=>t.toLowerCase()===result.toLowerCase());
+    const finalType=valid||'Lain-lain';
+    _KAS_AI_CACHE[key]=finalType;
+    _kasApplyType(idx,finalType);
+    toast(`🤖 Auto-type: "${finalType}" untuk "${nama.length>25?nama.slice(0,25)+'...':nama}"`, 'info');
+  }catch(e){
+    console.warn('AI auto-type error:',e);
+    if(sel){sel.style.background='#f3f4f6';sel.style.color='#9ca3af';}
+  }
+}
+
+function _kasApplyType(idx,type){
+  const d=KAS_DATA[idx];if(!d)return;
+  d.type=type;
+  if(type==='Kas'){d.kredit=d.total;d.debit=0;}
+  else{d.debit=d.total;d.kredit=0;}
+  // Update select element
+  const sel=document.getElementById('ktype-'+idx);
+  if(sel){
+    sel.value=type;
+    const tc=KAS_TC[type]||{c:'#6b7280',bg:'#f3f4f6'};
+    sel.style.background=tc.bg;sel.style.color=tc.c;
+  }
+  // Update row color
+  kasRowColor(idx);
+  _renderBalanceBar();
+}
+
+
 // Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
 function _kasRowBg(d){
   if(d.status==='DONE') return '#b0b0b0';
@@ -5634,11 +5717,14 @@ function _renderKasTable(){
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.nama_barang||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:190px;padding:2px;"
-          onchange="kasEdit(${idx},'nama_barang',this.value)" placeholder="Nama barang...">
+          onchange="kasEdit(${idx},'nama_barang',this.value)"
+          onblur="kasAIAutoType(${idx},this.value)"
+          placeholder="Nama barang...">
       </td>
       <td style="padding:1px 3px;">
-        <select style="border:none;background:${tc.bg};color:${tc.c};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;max-width:112px;"
+        <select id="ktype-${idx}" style="border:none;background:${d.type?tc.bg:'#f3f4f6'};color:${d.type?tc.c:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;max-width:112px;"
           onchange="kasEdit(${idx},'type',this.value);kasEditDebitKredit(${idx});kasRefreshTypeCell(${idx},this)">
+          <option value="" ${!d.type?'selected':''}>— pilih type —</option>
           ${KAS_TYPES.map(t=>`<option value="${t}" ${d.type===t?'selected':''}>${t}</option>`).join('')}
         </select>
       </td>
@@ -5778,7 +5864,7 @@ function _kasKeyNav(){
 function kasAddRow(){
   const today=new Date().toISOString().slice(0,10);
   const bulan=_KAUTO(today)||'Maret';
-  const newRow={id:_KID(),tgl:today,bulan,nama_barang:'',type:'Raw Food',vendor:'',qty:1,satuan:'Pcs',harga:0,debit:0,kredit:0,total:0,penerima:'',status:''};
+  const newRow={id:_KID(),tgl:today,bulan,nama_barang:'',type:'',vendor:'',qty:1,satuan:'Pcs',harga:0,debit:0,kredit:0,total:0,penerima:'',status:''};
   KAS_DATA.unshift(newRow); // unshift = prepend sehingga muncul di atas setelah sort desc
   // Clear filters agar baris baru keliatan
   const srch=document.getElementById('kas-search');if(srch)srch.value='';
