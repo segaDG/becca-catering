@@ -6589,7 +6589,7 @@ function renderInvLaporan(){
         <td style="padding:3px 8px;text-align:center;">${d.kode}</td>
         <td style="padding:3px 8px;text-align:right;font-family:monospace;">${_IRN(d.stock_out)}</td>
         <td style="padding:3px 8px;text-align:right;font-family:monospace;">${_IRP(d.harga)}</td>
-        <td style="padding:3px 8px;text-align:right;font-family:monospace;font-weight:700;">${_IRP(d.value)}</td>
+        <td style="padding:3px 8px;text-align:right;font-family:monospace;font-weight:700;">${_IRP((d.stock_out||0)*(d.harga||0))}</td>
       </tr>`).join('')}
     </tbody>
     <tfoot>
@@ -6629,7 +6629,7 @@ function renderInvSummary(){
 
   const active=INV_PRODUCTS.filter(p=>p.status==='Activated');
   const totalValue=active.reduce((s,p)=>s+(p.balance*p.harga),0);
-  const totalHpp=INV_ACTIVITIES.filter(d=>d.is_hpp).reduce((s,d)=>s+(d.value||0),0);
+  const totalHpp=INV_ACTIVITIES.filter(d=>d.is_hpp).reduce((s,d)=>s+((d.stock_out||0)*(d.harga||0)),0);
   const lowStock=active.filter(p=>p.balance<=p.min_stock&&p.min_stock>0);
 
   // By category
