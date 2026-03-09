@@ -1821,14 +1821,14 @@ function ledit(o){const e=(o.history||[]).filter(h=>h.action==='edit');return e.
 function loading(show,txt=''){document.getElementById('ldo').classList.toggle('show',show);if(txt)document.getElementById('ltxt').textContent=txt;}
 function setDb(s){const el=document.getElementById('dbchip');el.className='db-chip '+s;el.title=s==='connected'?'Database: Terhubung ✓':s==='disconnected'?'Database: Terputus ✗':'Database: Menghubungkan...';}
 function getRK(nama){const u=USERS_DATA.find(x=>x.nama===nama);return u?u.role:'viewer';}
+// Pages with default access even if not yet in privilege_config DB
+const PRIV_DEFAULTS={'view_kas':['superadmin','admin'],'view_ap':['superadmin','admin']};
 function canDo(key){
   if(!CU)return false;
   if(CU.role==='superadmin')return true;
   const p=PRIVS.find(x=>x.feature_key===key);
-  if(!p)return false;
-  // built-in roles use DB columns
+  if(!p){const def=PRIV_DEFAULTS[key];return def?def.includes(CU.role):false;}
   if(['admin','operator','viewer'].includes(CU.role))return p[`role_${CU.role}`]===true;
-  // custom roles: stored in p.custom_roles JSON field
   try{const cr=JSON.parse(p.custom_roles||'{}');return cr[CU.role]===true;}catch{return false;}
 }
 function allowedPages(){return Object.entries(ALL_PAGES).filter(([,v])=>canDo(v.priv_key)).map(([k])=>k);}
@@ -1949,7 +1949,7 @@ function buildNav(){
   const nav=document.getElementById('nav-menu');nav.innerHTML='';
   const allowed=allowedPages();
   const secs=[
-    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice','activity','tasks','karyawan','ap']},
+    {l:'Menu',   pages:['dashboard','input','orders','reports','invoice','activity','tasks','karyawan','ap','kas']},
     {l:'Kelola', pages:['customers','columns','privilege','users','settings']},
   ];
   secs.forEach(sec=>{
