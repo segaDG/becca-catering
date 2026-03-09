@@ -817,7 +817,6 @@ tr:hover td{background:var(--bg);}
               <span class="card-title">💰 Kas Kecil 2026</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" id="kas-add-btn" onclick="kasAddRow()"><span class="btn-plus">+</span>Baris</button>
-                <button class="btn btn-secondary btn-sm" onclick="kasBatchPaste()" title="Paste Tab-separated dari Excel">📋 Paste Excel</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="kas-search" placeholder="Cari nama/vendor..." oninput="filterKas()"></div>
                 <select class="sel" id="kas-f-bulan" onchange="filterKas()">
                   <option value="">Semua Bulan</option>
@@ -5581,32 +5580,34 @@ async function kasAIAutoType(idx,nama){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-6',
         max_tokens:20,
-        system:`Kamu adalah classifier pengeluaran kas kecil dapur/katering Indonesia.
-Pilih SATU type yang paling cocok dari daftar ini:
+        messages:[{
+          role:'user',
+          content:`Kamu adalah classifier pengeluaran kas kecil dapur/katering Indonesia.
+Pilih SATU type yang paling cocok dari daftar ini (jawab HANYA nama type-nya, tanpa penjelasan):
 Raw Food, Sayuran, Buah segar, Raw Materials, Minuman, Snack, Kasbon, Gaji, Bensin, Maintenance, OP.Expense, B.Logistik, Listrik PLN, PDAM, Pulsa, Pajak, Kas, Lain-lain
 
 Rules:
-- Sayuran: tahu, tempe, cabe, bawang, wortel, kol, bayam, dll sayuran
-- Raw Food: ikan, daging, ayam, telur, udang, dll protein mentah
+- Sayuran: tahu, tempe, cabe, bawang, wortel, kol, bayam, sayuran segar
+- Raw Food: ikan, daging, ayam, telur, udang, seafood, protein mentah
 - Buah segar: buah-buahan, frozen buah
-- Raw Materials: tepung, minyak, gula, garam, bumbu kering, kulit lumpia, dll bahan kering
-- Minuman: air, yakult, jus, galon
-- Snack: kue, roti, snack, takjil
-- Kasbon: kasbon, pinjaman karyawan
-- Bensin: bensin, solar, bahan bakar, isi ulang kendaraan, etoll
-- Maintenance: servis, perbaikan, cat, alat
-- B.Logistik: ongkir, pengiriman, ekspedisi, toll
-- Listrik PLN: listrik, token, kwh
+- Raw Materials: tepung, minyak, gula, garam, bumbu kering, kulit lumpia, bahan kering dapur
+- Minuman: air, yakult, jus, galon, minuman
+- Snack: kue, roti, snack, takjil, camilan
+- Kasbon: kasbon, pinjaman karyawan, bon
+- Bensin: bensin, solar, bahan bakar, etoll, tol, parkir
+- Maintenance: servis, perbaikan, cat, alat, bangunan, renovasi
+- B.Logistik: ongkir, pengiriman, ekspedisi, kirim dokumen
+- Listrik PLN: listrik, token listrik, kwh, PLN
 - PDAM: air PDAM, tagihan air
-- Pulsa: pulsa, internet, wifi, paket data
-- Gaji: gaji, THR, bonus karyawan
-- Kas: kas masuk, setoran, modal
+- Pulsa: pulsa, internet, wifi, paket data, kuota
+- Gaji: gaji, THR, bonus, tunjangan karyawan
+- Kas: kas masuk, setoran, modal, dana masuk
 - Lain-lain: tidak masuk kategori lain
 
-Jawab HANYA dengan nama type-nya saja, tanpa penjelasan.`,
-        messages:[{role:'user',content:nama.trim()}]
+Nama barang: "${nama.trim()}"`
+        }]
       })
     });
     const data=await resp.json();
@@ -5910,31 +5911,6 @@ function _renderKasPagination(){
   document.getElementById('kas-page-num').textContent=`Hal ${_kasPage}/${tp}`;
   document.getElementById('kas-prev').disabled=_kasPage<=1;
   document.getElementById('kas-next').disabled=_kasPage>=tp;
-}
-
-// ── PASTE FROM EXCEL ──────────────────────────────────────────────────────────
-async function kasBatchPaste(){
-  try{
-    const text=await navigator.clipboard.readText();
-    if(!text.trim()){toast('Clipboard kosong','error');return;}
-    const lines=text.trim().split('\n');let added=0;
-    lines.forEach(line=>{
-      const cols=line.split('\t').map(c=>c.trim());
-      if(cols.length<2||!cols[1])return;
-      const tglRaw=cols[0];let tgl='';
-      if(tglRaw){const p=tglRaw.split(/[\/\-]/);if(p.length===3)tgl=p[0].length===4?tglRaw:`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
-      if(!tgl)tgl=new Date().toISOString().slice(0,10);
-      const bulan=_KAUTO(tgl)||'Januari';
-      const type=cols[2]||'Lain-lain';
-      const qty=parseFloat(cols[4])||1;
-      const harga=Math.round(parseFloat((cols[6]||'').replace(/[^0-9.]/g,''))||0);
-      const total=qty*harga||Math.round(parseFloat((cols[8]||'').replace(/[^0-9.]/g,''))||0);
-      const isK=_kasIsKredit(type);
-      KAS_DATA.push({id:_KID(),tgl,bulan,nama_barang:cols[1],type,vendor:cols[3]||'',qty,satuan:cols[5]||'Pcs',harga,debit:isK?0:total,kredit:isK?total:0,total,penerima:cols[7]||'',status:''});
-      added++;
-    });
-    toast(`${added} baris ditambahkan`,'success');filterKas();
-  }catch(e){toast('Gagal baca clipboard','error');}
 }
 
 // ── SUMMARY ──────────────────────────────────────────────────────────────────
