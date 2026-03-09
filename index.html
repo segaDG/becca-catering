@@ -6013,7 +6013,9 @@ function invEdit(idx,field,val){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     invRecalcValue(idx);
   }
-  // Auto-save to DB (debounced)
+  // Save to DB: if row is pending (no nama yet), only save once nama is filled
+  if(d._pending && !d.nama) return; // don't save empty rows
+  if(d._pending && d.nama){ d._pending=false; } // nama filled → ready to save
   clearTimeout(d._saveTimer);
   d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),800);
 }
@@ -6133,10 +6135,9 @@ function deleteInvRow(idx){
 }
 function invAddRow(){
   const today=new Date().toISOString().slice(0,10);
-  const newAct={id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'STOCK IN',catatan:'',is_hpp:false,harga:0,value:0,locked:false};
+  const newAct={id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'STOCK IN',catatan:'',is_hpp:false,harga:0,value:0,locked:false,_pending:true};
   INV_ACTIVITIES.unshift(newAct);
-  // Save to DB
-  saveInvActivityToDB(newAct);
+  // Don't save to DB yet — wait until nama is filled
   // clear filters
   ['inv-search','inv-f-tgl-from','inv-f-tgl-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['inv-f-kode','inv-f-hpp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -7021,7 +7022,15 @@ async function _silentReloadInv(){
       sbGetAll('inv_opname','select=*')
     ]);
     if(acts&&acts.length){
-      INV_ACTIVITIES = acts.map(r=>({
+      // MERGE strategy: preserve local unsaved rows, update existing rows from DB
+      const dbMap = {};
+      acts.forEach(r=>{ dbMap[r.id]=r; });
+      
+      // Keep local rows that don't have a DB id yet (brand new unsaved)
+      const localUnsaved = INV_ACTIVITIES.filter(r=>!r._db_id);
+      
+      // Build new array from DB data
+      const fromDB = acts.map(r=>({
         id:r.id, tgl:r.tgl, nama:r.nama,
         stock_in:+r.stock_in||0, stock_out:+r.stock_out||0,
         pengambil:r.pengambil||'', pjawab:r.pjawab||'',
@@ -7029,6 +7038,27 @@ async function _silentReloadInv(){
         is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
         locked:!!r.locked, _db_id:r.id
       }));
+
+      // For rows that exist locally with _db_id, keep local version if being edited
+      const focused = document.activeElement;
+      const focusedRow = focused?.closest('tr[id^="invrow-"]');
+      const focusedIdx = focusedRow ? parseInt(focusedRow.id.replace('invrow-','')) : -1;
+      const focusedDbId = focusedIdx>=0 ? INV_ACTIVITIES[focusedIdx]?._db_id : null;
+
+      const merged = fromDB.map(r=>{
+        // If this row is currently being edited locally, keep local data
+        if(focusedDbId && r._db_id===focusedDbId){
+          const local = INV_ACTIVITIES.find(l=>l._db_id===r._db_id);
+          return local || r;
+        }
+        // Also keep local edits if save timer is pending
+        const local = INV_ACTIVITIES.find(l=>l._db_id===r._db_id);
+        if(local && local._saveTimer) return local;
+        return r;
+      });
+
+      // Prepend any local unsaved rows (no _db_id) at top
+      INV_ACTIVITIES = [...localUnsaved, ...merged];
     }
     if(opname&&opname.length){
       opname.forEach(r=>{
