@@ -5552,6 +5552,14 @@ function kasEditSaldoAwal(){
   if(!isNaN(n)){KAS_SALDO_AWAL=n;_renderBalanceBar();filterKas();toast('Saldo awal diperbarui','success');}
 }
 
+// Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
+function _kasRowBg(d){
+  if(d.status==='DONE') return '#b0b0b0';
+  if(d.type==='Kas')    return '#dbeafe';
+  if(d.type==='Kasbon') return '#fed7aa';
+  if(d.status==='TBC')  return '#fffde7';
+  return '#ffffff';
+}
 function filterKas(){
   const q=(document.getElementById('kas-search')?.value||'').toLowerCase();
   const fb=document.getElementById('kas-f-bulan')?.value||'';
@@ -5569,7 +5577,8 @@ function _renderKasStats(){
   const totalDebit=_kasFiltered.reduce((s,d)=>s+(d.debit||0),0);
   const totalKredit=_kasFiltered.reduce((s,d)=>s+(d.kredit||0),0);
   const done=_kasFiltered.filter(d=>d.status==='DONE').length;
-  const tbc=_kasFiltered.length-done;
+  const tbc=_kasFiltered.filter(d=>d.status==='TBC').length;
+  const empty=_kasFiltered.filter(d=>!d.status).length;
   const el=document.getElementById('kas-stats');if(!el)return;
   const byType={};_kasFiltered.forEach(d=>{byType[d.type]=(byType[d.type]||0)+(d.debit||d.kredit||0);});
   const top=Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,4);
@@ -5578,6 +5587,7 @@ function _renderKasStats(){
     <span style="color:var(--green);font-weight:700;">Kredit: ${_KRP(totalKredit)}</span>
     <span style="color:var(--green);background:var(--green-bg);padding:1px 7px;border-radius:99px;">✔ ${done}</span>
     <span style="color:#b45309;background:#fef3c7;padding:1px 7px;border-radius:99px;">TBC ${tbc}</span>
+    ${empty?`<span style="color:#6b7280;background:#f3f4f6;padding:1px 7px;border-radius:99px;">— ${empty}</span>`:''}
     ${top.map(([t,v])=>`<span style="color:${(KAS_TC[t]||{c:'#666'}).c};font-size:11px;">${t}: ${_KRP(v)}</span>`).join('')}`;
 }
 
@@ -5603,9 +5613,9 @@ function _renderKasTable(){
     const tc=KAS_TC[d.type]||{c:'#6b7280',bg:'#f3f4f6'};
     const isDone=d.status==='DONE';
     const isKredit=_kasIsKredit(d.type);
-    // DONE = abu lebih gelap, TBC = kuning terang
-    const rowBg=isDone?'#c8c8c8':'#fffde7';
-    const rowStyle=`background:${rowBg};border-bottom:1px solid ${isDone?'#aaa':'#f0e68c'};`;
+    const rowBg=_kasRowBg(d);
+    const rowBorder=isDone?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
+    const rowStyle=`background:${rowBg};border-bottom:1px solid ${rowBorder};`;
     const hargaFmt=d.harga?_KRP(d.harga):'—';
     const debitVal=d.debit||0;
     const kreditVal=d.kredit||0;
@@ -5668,11 +5678,12 @@ function _renderKasTable(){
       </td>
       <td style="padding:1px 3px;text-align:center;">
         <select style="border:none;font-size:9px;font-weight:700;border-radius:99px;padding:2px 4px;cursor:pointer;
-          background:${isDone?'#9e9e9e':'#fffde7'};color:${isDone?'#fff':'#b45309'};
-          border:1px solid ${isDone?'#757575':'#f9a825'};"
-          onchange="kasEdit(${idx},'status',this.value);kasRowColor(${idx})">
+          background:${isDone?'#9e9e9e':d.status==='TBC'?'#fef3c7':'#f3f4f6'};color:${isDone?'#fff':d.status==='TBC'?'#b45309':'#6b7280'};
+          border:1px solid ${isDone?'#757575':d.status==='TBC'?'#f9a825':'#d1d5db'};"
+          onchange="kasEdit(${idx},'status',this.value);kasRowColor(${idx});">
+          <option value="" ${d.status===''||d.status===undefined?'selected':''}>—</option>
+          <option value="TBC" ${d.status==='TBC'?'selected':''}>TBC</option>
           <option value="DONE" ${isDone?'selected':''}>DONE</option>
-          <option value="TBC"  ${!isDone?'selected':''}>TBC</option>
         </select>
       </td>
       <td style="padding:1px 2px;white-space:nowrap;text-align:center;">
@@ -5722,8 +5733,8 @@ function kasRowColor(idx){
   const d=KAS_DATA[idx];if(!d)return;
   const row=document.getElementById('krow-'+idx);if(!row)return;
   const isDone=d.status==='DONE';
-  row.style.background=isDone?'#c8c8c8':'#fffde7';
-  row.style.borderBottomColor=isDone?'#aaa':'#f0e68c';
+  row.style.background=_kasRowBg(d);
+  row.style.borderBottomColor=isDone?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
 }
 
 function kasAutoMonth(idx){
@@ -5774,7 +5785,7 @@ function _kasKeyNav(){
 function kasAddRow(){
   const today=new Date().toISOString().slice(0,10);
   const bulan=_KAUTO(today)||'Maret';
-  const newRow={id:_KID(),tgl:today,bulan,nama_barang:'',type:'Raw Food',vendor:'',qty:1,satuan:'Pcs',harga:0,debit:0,kredit:0,total:0,penerima:'',status:'TBC'};
+  const newRow={id:_KID(),tgl:today,bulan,nama_barang:'',type:'Raw Food',vendor:'',qty:1,satuan:'Pcs',harga:0,debit:0,kredit:0,total:0,penerima:'',status:''};
   KAS_DATA.unshift(newRow); // unshift = prepend sehingga muncul di atas setelah sort desc
   // Clear filters agar baris baru keliatan
   const srch=document.getElementById('kas-search');if(srch)srch.value='';
@@ -5840,7 +5851,7 @@ async function kasBatchPaste(){
       const harga=Math.round(parseFloat((cols[6]||'').replace(/[^0-9.]/g,''))||0);
       const total=qty*harga||Math.round(parseFloat((cols[8]||'').replace(/[^0-9.]/g,''))||0);
       const isK=_kasIsKredit(type);
-      KAS_DATA.push({id:_KID(),tgl,bulan,nama_barang:cols[1],type,vendor:cols[3]||'',qty,satuan:cols[5]||'Pcs',harga,debit:isK?0:total,kredit:isK?total:0,total,penerima:cols[7]||'',status:'TBC'});
+      KAS_DATA.push({id:_KID(),tgl,bulan,nama_barang:cols[1],type,vendor:cols[3]||'',qty,satuan:cols[5]||'Pcs',harga,debit:isK?0:total,kredit:isK?total:0,total,penerima:cols[7]||'',status:''});
       added++;
     });
     toast(`${added} baris ditambahkan`,'success');filterKas();
