@@ -726,7 +726,7 @@ tr:hover td{background:var(--bg);}
                 <thead><tr>
                   <th>#</th><th>Tgl</th><th>Vendor / Supplier</th><th>Item Deskripsi</th>
                   <th>Qty</th><th>Satuan</th><th>Harga/Item</th><th>Total</th>
-                  <th>Status</th><th>Tgl Bayar</th><th>Bulan</th><th>Aksi</th>
+                  <th>Status</th><th>Tgl Bayar</th><th>Aksi</th>
                 </tr></thead>
                 <tbody id="ap-tbody"></tbody>
               </table>
@@ -757,12 +757,11 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">💸 VAP Payment — Transfer Supplier by Periode</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <select class="sel" id="vap-f-bulan" onchange="renderVAP()">
-                  <option value="">Semua Periode</option>
-                  <option>JANUARI</option><option>FEBUARI</option><option>MARET</option><option>APRIL</option>
-                  <option>MEI</option><option>JUNI</option><option>JULI</option><option>AGUSTUS</option>
-                  <option>SEPTEMBER</option><option>OKTOBER</option><option>NOVEMBER</option><option>DESEMBER</option>
-                </select>
+                <label style="font-size:11px;color:var(--muted);">Dari:</label>
+                <input type="date" id="vap-f-dari" class="sel" style="padding:5px 8px;font-size:12px;" onchange="renderVAP()">
+                <label style="font-size:11px;color:var(--muted);">Sampai:</label>
+                <input type="date" id="vap-f-sampai" class="sel" style="padding:5px 8px;font-size:12px;" onchange="renderVAP()">
+                <button class="btn btn-secondary btn-sm" onclick="clearVapFilter()" style="font-size:11px;">✕ Reset</button>
                 <button class="btn btn-secondary btn-sm" onclick="printVAP()" style="font-size:11px;">🖨️ Print</button>
               </div>
             </div>
@@ -4720,12 +4719,16 @@ function filterAP(){
   const bulan=document.getElementById('ap-f-bulan')?.value||'';
   const status=document.getElementById('ap-f-status')?.value||'';
   const vendor=document.getElementById('ap-f-vendor')?.value||'';
-  const filtered=AP_DATA.filter(d=>{
+  // newest first: sort by tgl desc, then by AP_DATA index desc
+  const filtered=[...AP_DATA].reverse().filter(d=>{
     if(bulan&&d.bulan!==bulan)return false;
     if(status&&d.status!==status)return false;
     if(vendor&&d.vendor!==vendor)return false;
     if(q&&!(d.vendor.toLowerCase().includes(q)||d.item.toLowerCase().includes(q)))return false;
     return true;
+  }).sort((a,b)=>{
+    const da=a.tgl||'',db=b.tgl||'';
+    return db.localeCompare(da); // newest first
   });
   const totalAmt=filtered.reduce((s,d)=>s+d.total,0);
   const lunas=filtered.filter(d=>d.status==='LUNAS').reduce((s,d)=>s+d.total,0);
@@ -4738,28 +4741,56 @@ function filterAP(){
     `<span style="color:var(--red);font-weight:600;">⚠️ Unpaid: ${fmtRpNum(unpaid)}</span>`;
   const canEdit=CU.role==='superadmin'||CU.role==='admin';
   const tbody=document.getElementById('ap-tbody');
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>';return;}
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>';return;}
   tbody.innerHTML=filtered.map((d,i)=>{
-    const sc=AP_STATUS_COLOR[d.status]||AP_STATUS_COLOR['UNPAID'];
     const origIdx=AP_DATA.indexOf(d);
-    return`<tr>
+    const sc=AP_STATUS_COLOR[d.status]||AP_STATUS_COLOR['UNPAID'];
+    const statusOpts=['UNPAID','RECEIVED UNPAID','LUNAS'].map(s=>
+      `<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('');
+    return`<tr id="ap-row-${origIdx}">
       <td class="mono tmuted" style="font-size:11px;">${i+1}</td>
-      <td class="mono" style="font-size:11px;">${fmtDate(d.tgl)}</td>
-      <td style="font-size:12px;font-weight:600;max-width:150px;">${d.vendor}</td>
-      <td style="font-size:11px;max-width:180px;color:var(--muted);">${d.item}</td>
-      <td class="mono" style="font-size:11px;">${d.qty?d.qty.toLocaleString('id-ID'):'-'}</td>
-      <td style="font-size:11px;">${d.satuan||'-'}</td>
-      <td class="mono" style="font-size:11px;">${d.harga?fmtRpNum(d.harga):'-'}</td>
-      <td class="mono" style="font-weight:700;color:var(--accent);font-size:12px;">${fmtRpNum(d.total)}</td>
-      <td><span style="font-size:10px;font-weight:700;color:${sc.c};background:${sc.bg};border:1px solid ${sc.bc};padding:2px 8px;border-radius:99px;">${d.status}</span></td>
-      <td class="mono" style="font-size:11px;">${d.tgl_bayar?fmtDate(d.tgl_bayar):'-'}</td>
-      <td><span style="font-size:10px;background:var(--bg2);padding:2px 7px;border-radius:8px;">${d.bulan}</span></td>
-      ${canEdit?`<td><div style="display:flex;gap:3px;">
-        <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;" onclick="openEditAP(${origIdx})">✏️</button>
-        <button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteAP(${origIdx})">🗑</button>
-      </div></td>`:'<td>—</td>'}
+      <td><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;" onchange="apInlineEdit(${origIdx},'tgl',this.value)"></td>
+      <td style="min-width:140px;"><select style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;cursor:pointer;max-width:160px;" onchange="apInlineEdit(${origIdx},'vendor',this.value)">${_apVendorOpts(d.vendor)}</select></td>
+      <td style="min-width:160px;"><input type="text" value="${d.item.replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:100%;min-width:150px;" onchange="apInlineEdit(${origIdx},'item',this.value)"></td>
+      <td><input type="number" value="${d.qty}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:60px;text-align:right;" onchange="apInlineEdit(${origIdx},'qty',+this.value);apRecalcTotal(${origIdx})"></td>
+      <td><input type="text" value="${d.satuan||''}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:45px;" onchange="apInlineEdit(${origIdx},'satuan',this.value)"></td>
+      <td><input type="number" value="${d.harga}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:80px;text-align:right;" onchange="apInlineEdit(${origIdx},'harga',+this.value);apRecalcTotal(${origIdx})"></td>
+      <td><input type="number" value="${d.total}" style="border:none;background:transparent;font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);width:90px;text-align:right;" onchange="apInlineEdit(${origIdx},'total',+this.value)" id="ap-total-${origIdx}"></td>
+      <td><select style="border:1px solid ${sc.bc};background:${sc.bg};color:${sc.c};font-size:10px;font-weight:700;border-radius:99px;padding:2px 6px;cursor:pointer;" onchange="apInlineStatus(${origIdx},this.value,this)">${statusOpts}</select></td>
+      <td><input type="date" value="${d.tgl_bayar||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;" onchange="apInlineEdit(${origIdx},'tgl_bayar',this.value)"></td>
+      ${canEdit?`<td><button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteAP(${origIdx})">🗑</button></td>`:'<td></td>'}
     </tr>`;
   }).join('');
+}
+function _apVendorOpts(selected){
+  const names=[...new Set([...SUP_DATA.map(s=>s.nama),...AP_DATA.map(d=>d.vendor)])].sort();
+  return names.map(n=>`<option value="${n}" ${n===selected?'selected':''}>${n}</option>`).join('');
+}
+function apInlineEdit(idx,field,val){
+  if(!AP_DATA[idx])return;
+  AP_DATA[idx][field]=val;
+}
+function apRecalcTotal(idx){
+  const d=AP_DATA[idx]; if(!d)return;
+  if(d.qty&&d.harga){
+    d.total=d.qty*d.harga;
+    const el=document.getElementById('ap-total-'+idx);
+    if(el)el.value=d.total;
+  }
+}
+function apInlineStatus(idx,val,selEl){
+  if(!AP_DATA[idx])return;
+  AP_DATA[idx].status=val;
+  const sc=AP_STATUS_COLOR[val]||AP_STATUS_COLOR['UNPAID'];
+  selEl.style.borderColor=sc.bc;
+  selEl.style.background=sc.bg;
+  selEl.style.color=sc.c;
+  // auto-set tgl_bayar if LUNAS and empty
+  if(val==='LUNAS'&&!AP_DATA[idx].tgl_bayar){
+    AP_DATA[idx].tgl_bayar=new Date().toISOString().slice(0,10);
+    const row=document.getElementById('ap-row-'+idx);
+    if(row){const dt=row.querySelectorAll('input[type=date]');if(dt[1])dt[1].value=AP_DATA[idx].tgl_bayar;}
+  }
 }
 
 // ─── AP CRUD ──────────────────────────────────────────
@@ -4914,94 +4945,105 @@ function renderApSummary(){
 }
 
 // ─── VAP PAYMENT ─────────────────────────────────────
+function clearVapFilter(){
+  const el1=document.getElementById('vap-f-dari');
+  const el2=document.getElementById('vap-f-sampai');
+  if(el1)el1.value='';if(el2)el2.value='';
+  renderVAP();
+}
 function renderVAP(){
-  const bulan=document.getElementById('vap-f-bulan')?.value||'';
+  const dari=document.getElementById('vap-f-dari')?.value||'';
+  const sampai=document.getElementById('vap-f-sampai')?.value||'';
   const body=document.getElementById('vap-body');
   if(!body)return;
 
-  // Group by vendor per bulan
-  const periods=bulan?[bulan]:AP_MONTHS.filter(m=>AP_DATA.some(d=>d.bulan===m));
-  let html='';
-
-  periods.forEach(periode=>{
-    const rows=AP_DATA.filter(d=>d.bulan===periode);
-    if(!rows.length)return;
-
-    // Group by vendor
-    const vendors={};
-    rows.forEach(d=>{
-      if(!vendors[d.vendor])vendors[d.vendor]=[];
-      vendors[d.vendor].push(d);
-    });
-
-    const periodTotal=rows.reduce((s,d)=>s+d.total,0);
-    html+=`<div style="padding:20px;border-bottom:2px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div style="font-size:16px;font-weight:800;color:var(--accent);">📄 VENDOR ACCOUNT PAYABLE</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">PT. BOGA PANGAN SENTOSA · PERIODE: <strong>${periode} 2026</strong></div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:var(--muted);">Total Periode</div>
-          <div style="font-size:18px;font-weight:800;color:var(--accent);">${fmtRpNum(periodTotal)}</div>
-        </div>
-      </div>`;
-
-    Object.entries(vendors).forEach(([vendorName,txns],vi)=>{
-      const sup=SUP_DATA.find(s=>s.nama===vendorName)||{};
-      const vendorTotal=txns.reduce((s,d)=>s+d.total,0);
-      const lunas=txns.filter(d=>d.status==='LUNAS').reduce((s,d)=>s+d.total,0);
-      const unpaid=txns.filter(d=>d.status!=='LUNAS').reduce((s,d)=>s+d.total,0);
-
-      html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <div>
-            <span style="font-size:13px;font-weight:700;color:#fff;">${vendorName}</span>
-            ${sup.bidang?`<span style="font-size:10px;background:#ffffff22;color:#dbeafe;padding:2px 8px;border-radius:10px;margin-left:8px;">${sup.bidang}</span>`:''}
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:14px;font-weight:800;color:#fff;">Total: ${fmtRpNum(vendorTotal)}</div>
-            ${unpaid?`<div style="font-size:10px;color:#fca5a5;">⚠️ Unpaid: ${fmtRpNum(unpaid)}</div>`:''}
-          </div>
-        </div>
-        <div style="padding:10px 16px;background:var(--bg2);display:flex;gap:20px;flex-wrap:wrap;font-size:11px;border-bottom:1px solid var(--border);">
-          ${sup.bank?`<span>🏦 <strong>${sup.bank}</strong></span>`:''}<span>${sup.no_rek||'—'}</span>
-          ${sup.nama_rek?`<span>👤 ${sup.nama_rek}</span>`:''}
-          ${sup.kota?`<span>📍 ${sup.kota}</span>`:''}
-          ${sup.hp?`<span>📞 ${sup.hp}</span>`:''}
-        </div>
-        <div class="tw" style="margin:0;">
-          <table style="font-size:11px;">
-            <thead><tr><th>#</th><th>Tanggal</th><th>Item Deskripsi</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Total</th><th>Status</th><th>Tgl Bayar</th></tr></thead>
-            <tbody>
-              ${txns.map((t,ti)=>{
-                const sc=AP_STATUS_COLOR[t.status]||AP_STATUS_COLOR['UNPAID'];
-                return`<tr>
-                  <td class="mono tmuted">${ti+1}</td>
-                  <td class="mono">${fmtDate(t.tgl)}</td>
-                  <td style="max-width:220px;">${t.item}</td>
-                  <td class="mono" style="text-align:right;">${t.qty.toLocaleString('id-ID')}</td>
-                  <td>${t.satuan}</td>
-                  <td class="mono" style="text-align:right;">${fmtRpNum(t.harga)}</td>
-                  <td class="mono" style="font-weight:700;text-align:right;">${fmtRpNum(t.total)}</td>
-                  <td><span style="font-size:10px;font-weight:700;color:${sc.c};background:${sc.bg};border:1px solid ${sc.bc};padding:2px 6px;border-radius:99px;">${t.status}</span></td>
-                  <td class="mono">${t.tgl_bayar?fmtDate(t.tgl_bayar):'-'}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-            <tfoot><tr style="background:var(--bg2);font-weight:700;">
-              <td colspan="6" style="text-align:right;font-size:11px;">Subtotal ${vendorName}:</td>
-              <td class="mono" style="font-weight:800;color:var(--accent);">${fmtRpNum(vendorTotal)}</td>
-              <td colspan="2"></td>
-            </tr></tfoot>
-          </table>
-        </div>
-      </div>`;
-    });
-    html+='</div>';
+  // Filter: exclude LUNAS, apply date range
+  const filtered=AP_DATA.filter(d=>{
+    if(d.status==='LUNAS')return false; // sudah lunas tidak tampil
+    if(dari&&d.tgl&&d.tgl<dari)return false;
+    if(sampai&&d.tgl&&d.tgl>sampai)return false;
+    return true;
   });
 
-  if(!html) html='<div style="text-align:center;padding:40px;color:var(--muted);">Tidak ada data VAP Payment</div>';
+  if(!filtered.length){
+    body.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);">Tidak ada transaksi belum lunas' + (dari||sampai?' pada periode yang dipilih':'')+' </div>';
+    return;
+  }
+
+  // Group by vendor
+  const vendors={};
+  filtered.forEach(d=>{
+    if(!vendors[d.vendor])vendors[d.vendor]=[];
+    vendors[d.vendor].push(d);
+  });
+
+  const grandTotal=filtered.reduce((s,d)=>s+d.total,0);
+  const periodeLabel=dari&&sampai?`${fmtDate(dari)} s/d ${fmtDate(sampai)}`:dari?`Dari ${fmtDate(dari)}`:sampai?`Sampai ${fmtDate(sampai)}`:'Semua Periode (Belum Lunas)';
+
+  let html=`<div style="padding:20px;border-bottom:2px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--accent);">📄 VENDOR ACCOUNT PAYABLE</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">PT. BOGA PANGAN SENTOSA · <strong>${periodeLabel}</strong></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--muted);">Total Belum Lunas</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red);">${fmtRpNum(grandTotal)}</div>
+        <div style="font-size:11px;color:var(--muted);">${filtered.length} transaksi · ${Object.keys(vendors).length} vendor</div>
+      </div>
+    </div>`;
+
+  Object.entries(vendors).forEach(([vendorName,txns])=>{
+    const sup=SUP_DATA.find(s=>s.nama===vendorName)||{};
+    const vendorTotal=txns.reduce((s,d)=>s+d.total,0);
+
+    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#7c2d12,#dc2626);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <span style="font-size:13px;font-weight:700;color:#fff;">${vendorName}</span>
+          ${sup.bidang?`<span style="font-size:10px;background:#ffffff22;color:#fecaca;padding:2px 8px;border-radius:10px;margin-left:8px;">${sup.bidang}</span>`:''}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:800;color:#fff;">⚠️ Tagihan: ${fmtRpNum(vendorTotal)}</div>
+          <div style="font-size:10px;color:#fecaca;">${txns.length} transaksi pending</div>
+        </div>
+      </div>
+      <div style="padding:10px 16px;background:var(--bg2);display:flex;gap:20px;flex-wrap:wrap;font-size:11px;border-bottom:1px solid var(--border);">
+        ${sup.bank?`<span>🏦 <strong>${sup.bank}</strong></span>`:'<span style="color:var(--muted);">Bank: —</span>'}
+        <span>${sup.no_rek||'—'}</span>
+        ${sup.nama_rek?`<span>👤 ${sup.nama_rek}</span>`:''}
+        ${sup.kota?`<span>📍 ${sup.kota}</span>`:''}
+        ${sup.hp?`<span>📞 ${sup.hp}</span>`:''}
+      </div>
+      <div class="tw" style="margin:0;">
+        <table style="font-size:11px;">
+          <thead><tr><th>#</th><th>Tanggal</th><th>Item Deskripsi</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody>
+            ${txns.map((t,ti)=>{
+              const sc=AP_STATUS_COLOR[t.status]||AP_STATUS_COLOR['UNPAID'];
+              return`<tr>
+                <td class="mono tmuted">${ti+1}</td>
+                <td class="mono">${fmtDate(t.tgl)}</td>
+                <td style="max-width:240px;">${t.item}</td>
+                <td class="mono" style="text-align:right;">${t.qty.toLocaleString('id-ID')}</td>
+                <td>${t.satuan}</td>
+                <td class="mono" style="text-align:right;">${fmtRpNum(t.harga)}</td>
+                <td class="mono" style="font-weight:700;text-align:right;color:var(--red);">${fmtRpNum(t.total)}</td>
+                <td><span style="font-size:10px;font-weight:700;color:${sc.c};background:${sc.bg};border:1px solid ${sc.bc};padding:2px 6px;border-radius:99px;">${t.status}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot><tr style="background:var(--bg2);font-weight:700;">
+            <td colspan="6" style="text-align:right;font-size:11px;">Total Tagihan ${vendorName}:</td>
+            <td class="mono" style="font-weight:800;color:var(--red);">${fmtRpNum(vendorTotal)}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  html+='</div>';
   body.innerHTML=html;
 }
 function printVAP(){window.print();}
