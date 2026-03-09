@@ -56,8 +56,7 @@ input[type=number]{text-align:right;}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:1.5px solid transparent;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all .18s;white-space:nowrap;}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .btn-primary:hover{background:#163d57;box-shadow:0 4px 14px rgba(30,77,107,.3);transform:translateY(-1px);}
-.btn-plus{font-weight:800;font-size:16px;line-height:1;margin-right:5px;color:#fff!important;vertical-align:middle;}
-.btn-primary .btn-plus,.btn-primary span{color:#fff!important;}
+.btn-plus{font-weight:800;font-size:15px;line-height:1;margin-right:4px;color:#fff!important;vertical-align:middle;display:inline-block;}
 .btn-secondary{background:var(--surface);color:var(--text2);border-color:var(--border);}
 .btn-secondary:hover{border-color:var(--border2);background:var(--bg2);}
 .btn-ghost{background:transparent;color:var(--muted);border-color:transparent;}
@@ -521,7 +520,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">👷 Data Karyawan BPS</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Karyawan Baru</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Karyawan Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
                 <select class="sel" id="k-divisi" onchange="filterKaryawan()">
                   <option value="">Semua Divisi</option>
@@ -561,7 +560,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">📒 Log Book Karyawan</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Log Baru</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Log Baru</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
                 <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
                 <select class="sel" id="lb-bulan" onchange="filterLogbook()">
@@ -701,7 +700,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">💳 Transaksi Account Payable</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddAP()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Tambah Transaksi</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddAP()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Tambah Transaksi</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="ap-search" placeholder="Cari vendor / item..." oninput="filterAP()"></div>
                 <select class="sel" id="ap-f-bulan" onchange="filterAP()">
                   <option value="">Semua Bulan</option>
@@ -776,7 +775,7 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">🏢 Data Supplier</span>
               <div style="display:flex;gap:7px;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="openAddSupplier()" style="font-size:11px;padding:4px 12px;"><span style="color:#fff;">➕</span> Tambah Supplier</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddSupplier()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Tambah Supplier</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="sup-search" placeholder="Cari supplier..." oninput="filterSupplier()"></div>
               </div>
             </div>
@@ -4747,35 +4746,41 @@ function filterAP(){
     const origIdx=AP_DATA.indexOf(d);
     const sc=AP_STATUS_COLOR[d.status]||AP_STATUS_COLOR['UNPAID'];
     const locked=!!d._locked;
+    const isLunas=d.status==='LUNAS';
+    // Lock row background: lunas = gelap hijau, belum lunas = kuning muda
+    const rowBg=locked
+      ? (isLunas ? '#1a2e1f' : '#2e2a14')   // dark mode: lunas=hijau gelap, unpaid=kuning gelap
+      : '';
+    // Akan override dengan light-mode-aware colors via CSS var check
+    const rowStyle=locked
+      ? (isLunas
+          ? 'background:#e8f5ec;border-left:3px solid var(--green);'
+          : 'background:#fef9e7;border-left:3px solid var(--amber);')
+      : '';
     const lockIcon=locked?'🔒':'🔓';
     const lockTitle=locked?'Terkunci — klik untuk buka':'Tidak terkunci — klik untuk kunci';
-    const dis=locked?'disabled':'' ;
-    const disStyle=locked?'pointer-events:none;opacity:.6;':'';
+    const dis=locked?'disabled':'';
+    const disStyle=locked?'pointer-events:none;opacity:.7;':'';
     const statusOpts=['UNPAID','RECEIVED UNPAID','LUNAS'].map(s=>
       `<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('');
-    const hargaFmt='Rp '+Number(d.harga||0).toLocaleString('id-ID');
-    const totalFmt='Rp '+Number(d.total||0).toLocaleString('id-ID');
-    return`<tr id="ap-row-${origIdx}" style="${locked?'background:var(--bg2);':''}">
+    // Format Rp no-wrap: "Rp\u00a01.500.000" pakai non-breaking space + nowrap style
+    const fmtRpNW=v=>`<span style="white-space:nowrap;font-family:monospace;font-size:11px;">Rp\u00a0${Number(v||0).toLocaleString('id-ID')}</span>`;
+    const fmtRpNWBold=v=>`<span style="white-space:nowrap;font-family:monospace;font-size:12px;font-weight:700;color:var(--accent);">Rp\u00a0${Number(v||0).toLocaleString('id-ID')}</span>`;
+    return`<tr id="ap-row-${origIdx}" style="${rowStyle}">
       <td class="mono tmuted" style="font-size:11px;">${i+1}</td>
-      <td><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl',this.value)"></td>
+      <td style="white-space:nowrap;"><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl',this.value)"></td>
       <td style="min-width:140px;"><select style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;cursor:pointer;max-width:160px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'vendor',this.value)">${_apVendorOpts(d.vendor)}</select></td>
       <td style="min-width:160px;"><input type="text" value="${d.item.replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:100%;min-width:150px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'item',this.value)"></td>
       <td><input type="number" value="${d.qty}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:55px;text-align:right;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'qty',+this.value);apRecalcTotal(${origIdx})"></td>
       <td><input type="text" value="${d.satuan||''}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:42px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'satuan',this.value)"></td>
-      <td id="ap-harga-cell-${origIdx}" onclick="apToggleHargaEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};min-width:90px;">
-        ${locked
-          ? `<span style="font-size:11px;font-family:monospace;">${hargaFmt}</span>`
-          : `<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">${hargaFmt}</span>`
-        }
+      <td id="ap-harga-cell-${origIdx}" onclick="apToggleHargaEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};white-space:nowrap;">
+        ${fmtRpNW(d.harga)}
       </td>
-      <td id="ap-total-cell-${origIdx}" onclick="apToggleTotalEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};min-width:100px;">
-        ${locked
-          ? `<span style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">${totalFmt}</span>`
-          : `<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">${totalFmt}</span>`
-        }
+      <td id="ap-total-cell-${origIdx}" onclick="apToggleTotalEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};white-space:nowrap;">
+        ${fmtRpNWBold(d.total)}
       </td>
       <td><select style="border:1px solid ${sc.bc};background:${sc.bg};color:${sc.c};font-size:10px;font-weight:700;border-radius:99px;padding:2px 6px;cursor:${locked?'default':'pointer'};${disStyle}" ${dis} onchange="apInlineStatus(${origIdx},this.value,this)">${statusOpts}</select></td>
-      <td><input type="date" value="${d.tgl_bayar||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl_bayar',this.value)"></td>
+      <td style="white-space:nowrap;"><input type="date" value="${d.tgl_bayar||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl_bayar',this.value)"></td>
       <td>
         <div style="display:flex;gap:3px;align-items:center;">
           <button title="${lockTitle}" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;" onclick="apToggleLock(${origIdx})">${lockIcon}</button>
@@ -4793,26 +4798,23 @@ function apInlineEdit(idx,field,val){
   if(!AP_DATA[idx])return;
   AP_DATA[idx][field]=val;
 }
+function _fmtApRp(v){return`<span style="white-space:nowrap;font-family:monospace;font-size:11px;">Rp\u00a0${Number(v||0).toLocaleString('id-ID')}</span>`;}
+function _fmtApRpBold(v){return`<span class="ap-num-display" style="white-space:nowrap;font-family:monospace;font-size:12px;font-weight:700;color:var(--accent);">Rp\u00a0${Number(v||0).toLocaleString('id-ID')}</span>`;}
 function apRecalcTotal(idx){
   const d=AP_DATA[idx]; if(!d||d._locked)return;
   if(d.qty&&d.harga){
     d.total=d.qty*d.harga;
-    // update displayed total cell
     const cell=document.getElementById('ap-total-cell-'+idx);
-    if(cell){
-      const span=cell.querySelector('.ap-num-display,span');
-      if(span)span.textContent='Rp '+Number(d.total).toLocaleString('id-ID');
-    }
+    if(cell) cell.innerHTML=_fmtApRpBold(d.total);
   }
 }
 function apToggleLock(idx){
   const d=AP_DATA[idx]; if(!d)return;
   d._locked=!d._locked;
-  filterAP(); // re-render to reflect lock state
+  filterAP();
 }
 function apToggleHargaEdit(idx,cell){
   const d=AP_DATA[idx]; if(!d||d._locked)return;
-  // If already has input, skip
   if(cell.querySelector('input'))return;
   const cur=d.harga||0;
   cell.innerHTML=`<input type="number" value="${cur}" style="width:90px;font-size:11px;font-family:monospace;text-align:right;border:1px solid var(--accent);border-radius:4px;padding:2px 4px;background:var(--bg);color:var(--text);"
@@ -4825,7 +4827,7 @@ function apToggleHargaEdit(idx,cell){
 function apCancelHarga(idx){
   const d=AP_DATA[idx]; if(!d)return;
   const cell=document.getElementById('ap-harga-cell-'+idx);
-  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">Rp ${Number(d.harga||0).toLocaleString('id-ID')}</span>`;
+  if(cell) cell.innerHTML=_fmtApRp(d.harga);
 }
 function apCommitHarga(idx,inp){
   const d=AP_DATA[idx]; if(!d)return;
@@ -4833,7 +4835,7 @@ function apCommitHarga(idx,inp){
   d.harga=val;
   apRecalcTotal(idx);
   const cell=document.getElementById('ap-harga-cell-'+idx);
-  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">Rp ${Number(val).toLocaleString('id-ID')}</span>`;
+  if(cell) cell.innerHTML=_fmtApRp(val);
 }
 function apRecalcFromHargaInput(idx,inp){
   const d=AP_DATA[idx]; if(!d)return;
@@ -4841,7 +4843,7 @@ function apRecalcFromHargaInput(idx,inp){
   if(d.qty&&h){
     const newTotal=d.qty*h;
     const cell=document.getElementById('ap-total-cell-'+idx);
-    if(cell){const sp=cell.querySelector('span');if(sp)sp.textContent='Rp '+Number(newTotal).toLocaleString('id-ID');}
+    if(cell){const sp=cell.querySelector('span');if(sp)sp.textContent=`Rp\u00a0${Number(newTotal).toLocaleString('id-ID')}`;}
   }
 }
 function apToggleTotalEdit(idx,cell){
@@ -4857,14 +4859,14 @@ function apToggleTotalEdit(idx,cell){
 function apCancelTotal(idx){
   const d=AP_DATA[idx]; if(!d)return;
   const cell=document.getElementById('ap-total-cell-'+idx);
-  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">Rp ${Number(d.total||0).toLocaleString('id-ID')}</span>`;
+  if(cell) cell.innerHTML=_fmtApRpBold(d.total);
 }
 function apCommitTotal(idx,inp){
   const d=AP_DATA[idx]; if(!d)return;
   const val=+inp.value||0;
   d.total=val;
   const cell=document.getElementById('ap-total-cell-'+idx);
-  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">Rp ${Number(val).toLocaleString('id-ID')}</span>`;
+  if(cell) cell.innerHTML=_fmtApRpBold(val);
 }
 function apInlineStatus(idx,val,selEl){
   if(!AP_DATA[idx])return;
