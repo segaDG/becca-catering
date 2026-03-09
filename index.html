@@ -6175,13 +6175,36 @@ function invBarangAdd(){
 }
 
 // ── TAB 3: STOCK OPNAME ──────────────────────────────────────────────────────
+// Storage for fisik aktual edits (persists while page open)
+const _OPNAME_FISIK = {}; // key: "nama|bulan|tahun" → value
+
+function _opnameKey(nama,bulan,tahun){ return nama+'|'+bulan+'|'+tahun; }
+function _opnameFisik(nama,bulan,tahun){ 
+  const k=_opnameKey(nama,bulan,tahun);
+  return _OPNAME_FISIK[k]!==undefined ? _OPNAME_FISIK[k] : null;
+}
+function invOpnameSetFisik(nama,bulan,tahun,val){
+  _OPNAME_FISIK[_opnameKey(nama,bulan,tahun)] = (+val||0);
+  // Update selisih cell in-place
+  const key = _opnameKey(nama,bulan,tahun);
+  const row = document.querySelector(`[data-opname-key="${key}"]`);
+  if(row){
+    const balance = +row.dataset.balance;
+    const fisik = +val||0;
+    const selisih = fisik - balance;
+    const selisihEl = row.querySelector('.opname-selisih');
+    if(selisihEl){
+      selisihEl.textContent = (selisih>=0?'+':'')+selisih.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
+      selisihEl.style.color = selisih>0?'#166534':selisih<0?'#dc2626':'#374151';
+      selisihEl.style.fontWeight = selisih!==0?'800':'400';
+    }
+  }
+}
+
 function renderInvOpname(){
   const bulan=document.getElementById('inv-opname-bulan')?.value||'Maret';
   const tahun=document.getElementById('inv-opname-tahun')?.value||'2026';
   const el=document.getElementById('inv-opname-content');if(!el)return;
-
-  // Filter STOCK OPNAME rows for this period
-  const opRows=INV_ACTIVITIES.filter(d=>d.kode==='STOCK OPNAME'&&(d.tgl||'').startsWith(tahun));
 
   // Build per-product opname data
   const prodMap={};
@@ -6195,6 +6218,13 @@ function renderInvOpname(){
   const rows=Object.values(prodMap).filter(p=>p.status==='Activated'&&p.balance>0)
     .sort((a,b)=>a.category.localeCompare(b.category)||a.nama.localeCompare(b.nama));
 
+  // Selisih summary
+  const withFisik=rows.filter(p=>_opnameFisik(p.nama,bulan,tahun)!==null);
+  const totalSelisihVal=withFisik.reduce((s,p)=>{
+    const fisik=_opnameFisik(p.nama,bulan,tahun);
+    const sel=fisik-p.balance;
+    return s+(sel*p.harga);
+  },0);
   const totalValue=rows.reduce((s,p)=>s+(p.balance*p.harga),0);
 
   el.innerHTML=`<div id="inv-opname-print">
@@ -6203,57 +6233,91 @@ function renderInvOpname(){
     <div style="font-size:12px;font-weight:700;">STOCK OPNAME — ${bulan.toUpperCase()} ${tahun}</div>
     <div style="font-size:10px;color:#666;">Dicetak: ${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
   </div>
-  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+  <!-- KPI Cards -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
     <div style="background:#dbeafe;padding:10px 18px;border-radius:8px;text-align:center;">
       <div style="font-size:10px;color:#1e40af;">Total Item</div>
       <div style="font-size:18px;font-weight:800;color:#1e40af;">${rows.length}</div>
     </div>
     <div style="background:#dcfce7;padding:10px 18px;border-radius:8px;text-align:center;">
-      <div style="font-size:10px;color:#166534;">Total Value Stock</div>
+      <div style="font-size:10px;color:#166534;">Value Saldo Buku</div>
       <div style="font-size:18px;font-weight:800;color:#166534;">${_IRP(totalValue)}</div>
     </div>
+    <div style="background:#fffbeb;padding:10px 18px;border-radius:8px;text-align:center;">
+      <div style="font-size:10px;color:#92400e;">Sudah Diisi</div>
+      <div style="font-size:18px;font-weight:800;color:#92400e;">${withFisik.length} / ${rows.length}</div>
+    </div>
+    ${withFisik.length>0?`<div style="background:${totalSelisihVal>=0?'#dcfce7':'#fee2e2'};padding:10px 18px;border-radius:8px;text-align:center;">
+      <div style="font-size:10px;color:${totalSelisihVal>=0?'#166534':'#991b1b'};">Selisih Value</div>
+      <div style="font-size:18px;font-weight:800;color:${totalSelisihVal>=0?'#166534':'#991b1b'};">${_IRP(totalSelisihVal)}</div>
+    </div>`:''}
   </div>
+  <!-- Legend -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:10px;align-items:center;">
+    <span style="font-weight:700;color:#374151;">Keterangan:</span>
+    <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;">Saldo Buku = sistem</span>
+    <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;border:1px dashed #fde68a;">Fisik Aktual = input manual ✏️</span>
+    <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;">Selisih + = stok lebih</span>
+    <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;">Selisih − = stok kurang</span>
+  </div>
+  <div style="overflow-x:auto;max-height:65vh;overflow-y:auto;">
   <table style="width:100%;border-collapse:collapse;font-size:11px;">
     <thead>
-      <tr style="background:#1e4d6b;color:#fff;">
+      <tr style="background:#1e4d6b;color:#fff;position:sticky;top:0;z-index:2;">
         <th style="padding:6px 8px;text-align:left;">No</th>
-        <th style="padding:6px 8px;text-align:left;">Nama Barang</th>
+        <th style="padding:6px 8px;text-align:left;min-width:160px;">Nama Barang</th>
         <th style="padding:6px 8px;">Kategori</th>
         <th style="padding:6px 8px;">Lokasi</th>
         <th style="padding:6px 8px;text-align:right;">Sat</th>
         <th style="padding:6px 8px;text-align:right;">Total Masuk</th>
         <th style="padding:6px 8px;text-align:right;">Total Keluar</th>
-        <th style="padding:6px 8px;text-align:right;">Saldo Buku</th>
-        <th style="padding:6px 8px;text-align:right;">Fisik Aktual</th>
-        <th style="padding:6px 8px;text-align:right;">Selisih</th>
+        <th style="padding:6px 8px;text-align:right;background:#1a3f5c;">Saldo Buku</th>
+        <th style="padding:6px 8px;text-align:right;background:#b45309;">Fisik Aktual ✏️</th>
+        <th style="padding:6px 8px;text-align:right;background:#6b21a8;">Selisih</th>
         <th style="padding:6px 8px;text-align:right;">Harga</th>
         <th style="padding:6px 8px;text-align:right;">Total Value</th>
       </tr>
     </thead>
     <tbody>
-      ${rows.map((p,i)=>`
-      <tr style="border-bottom:1px solid #e5e7eb;background:${i%2?'#f9fafb':'#fff'};">
-        <td style="padding:4px 8px;">${i+1}</td>
+      ${rows.map((p,i)=>{
+        const fisik=_opnameFisik(p.nama,bulan,tahun);
+        const hasFisik=fisik!==null;
+        const selisih=hasFisik?fisik-p.balance:null;
+        const rowKey=_opnameKey(p.nama,bulan,tahun);
+        const rowBg=hasFisik?(selisih>0?'#f0fdf4':selisih<0?'#fff5f5':'#f0fdf4'):(i%2?'#f9fafb':'#fff');
+        return `
+      <tr style="border-bottom:1px solid #e5e7eb;background:${rowBg};" data-opname-key="${rowKey}" data-balance="${p.balance}">
+        <td style="padding:4px 8px;font-size:10px;color:#888;">${i+1}</td>
         <td style="padding:4px 8px;font-weight:600;">${p.nama}</td>
-        <td style="padding:4px 8px;">${p.category}</td>
-        <td style="padding:4px 8px;">${p.location}</td>
-        <td style="padding:4px 8px;text-align:right;">${p.satuan}</td>
-        <td style="padding:4px 8px;text-align:right;font-family:monospace;">${_IRN(p.total_in)}</td>
-        <td style="padding:4px 8px;text-align:right;font-family:monospace;">${_IRN(p.total_out)}</td>
-        <td style="padding:4px 8px;text-align:right;font-family:monospace;font-weight:700;">${_IRN(p.balance)}</td>
-        <td style="padding:4px 8px;text-align:right;background:#fffbeb;"></td>
-        <td style="padding:4px 8px;text-align:right;background:#fffbeb;"></td>
-        <td style="padding:4px 8px;text-align:right;font-family:monospace;">${_IRP(p.harga)}</td>
+        <td style="padding:4px 8px;font-size:10px;color:#6b7280;">${p.category}</td>
+        <td style="padding:4px 8px;font-size:10px;color:#6b7280;">${p.location}</td>
+        <td style="padding:4px 8px;text-align:right;font-size:10px;">${p.satuan}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:monospace;color:#166534;">${_IRN(p.total_in)}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:monospace;color:#dc2626;">${_IRN(p.total_out)}</td>
+        <td style="padding:4px 8px;text-align:right;font-family:monospace;font-weight:700;background:#eff6ff;color:#1e40af;">${_IRN(p.balance)}</td>
+        <td style="padding:2px 4px;text-align:right;background:#fffbeb;border-left:2px solid #fde68a;border-right:2px solid #fde68a;">
+          <input type="number" value="${hasFisik?fisik:''}" placeholder="—" min="0" step="0.01"
+            style="width:72px;border:1px solid #fde68a;border-radius:4px;background:#fffde7;color:#92400e;font-family:monospace;font-size:11px;font-weight:700;text-align:right;padding:3px 5px;outline:none;"
+            oninput="invOpnameSetFisik('${p.nama.replace(/'/g,"\\'")}','${bulan}','${tahun}',this.value)"
+            onfocus="this.style.borderColor='#f59e0b';this.style.boxShadow='0 0 0 2px #fde68a';"
+            onblur="this.style.borderColor='#fde68a';this.style.boxShadow='';">
+        </td>
+        <td style="padding:4px 8px;text-align:right;font-family:monospace;font-weight:800;background:#faf5ff;border-left:2px solid #d8b4fe;border-right:2px solid #d8b4fe;">
+          ${hasFisik?`<span class="opname-selisih" style="color:${selisih>0?'#166534':selisih<0?'#dc2626':'#374151'};font-weight:${selisih!==0?'800':'400'};">${(selisih>=0?'+':'')}${selisih.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2})}</span>`
+          :`<span class="opname-selisih" style="color:#9ca3af;">—</span>`}
+        </td>
+        <td style="padding:4px 8px;text-align:right;font-family:monospace;font-size:10px;">${_IRP(p.harga)}</td>
         <td style="padding:4px 8px;text-align:right;font-family:monospace;font-weight:700;">${_IRP(p.balance*p.harga)}</td>
-      </tr>`).join('')}
+      </tr>`;}).join('')}
     </tbody>
     <tfoot>
       <tr style="background:#1e4d6b;color:#fff;">
-        <td colspan="11" style="padding:6px 8px;text-align:right;font-weight:700;">TOTAL VALUE INVENTORY</td>
+        <td colspan="11" style="padding:6px 8px;text-align:right;font-weight:700;">TOTAL VALUE INVENTORY (Saldo Buku)</td>
         <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:800;">${_IRP(totalValue)}</td>
       </tr>
     </tfoot>
   </table>
+  </div>
   </div>`;
 }
 function printInvOpname(){
@@ -6263,9 +6327,20 @@ function printInvOpname(){
   const tahun=document.getElementById('inv-opname-tahun')?.value||'2026';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>Stock Opname ${bulan} ${tahun}</title>
-  <style>@page{size:A4 landscape;margin:8mm;}body{margin:0;font-family:Arial,sans-serif;font-size:10px;}
-  table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;}
-  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
+  <style>
+    @page{size:A4 landscape;margin:8mm;}
+    body{margin:0;font-family:Arial,sans-serif;font-size:10px;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{border:1px solid #ccc;padding:4px 6px;}
+    thead tr{background:#1e4d6b!important;color:#fff!important;-webkit-print-color-adjust:exact;}
+    .opname-selisih{font-weight:800;}
+    input[type=number]{border:1px solid #fde68a;background:#fffde7;color:#92400e;font-weight:700;padding:2px 4px;text-align:right;width:60px;}
+    @media print{
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      input[type=number]{border:1px solid #fde68a;}
+      thead{display:table-header-group;}
+    }
+  </style>
   </head><body>${content}</body></html>`);
   win.document.close();setTimeout(()=>win.print(),400);
 }
