@@ -857,10 +857,9 @@ tr:hover td{background:var(--bg);}
                     <th style="min-width:55px;text-align:center;">Qty</th>
                     <th style="min-width:58px;text-align:center;">Satuan</th>
                     <th style="min-width:120px;text-align:center;">Harga/Satuan</th>
-                    <th style="min-width:115px;text-align:center;">Debit (Keluar)</th>
-                    <th style="min-width:115px;text-align:center;">Kredit (Masuk)</th>
-                    <th style="min-width:120px;text-align:center;">Balance</th>
                     <th style="min-width:88px;text-align:center;">Penerima</th>
+                    <th style="min-width:120px;text-align:center;">Jumlah</th>
+                    <th style="min-width:115px;text-align:center;">Balance</th>
                     <th style="width:62px;text-align:center;">Status</th>
                     <th style="width:36px;text-align:center;">⚙</th>
                   </tr>
@@ -5532,11 +5531,11 @@ function _renderBalanceBar(){
       <button onclick="kasEditSaldoAwal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;cursor:pointer;">✏️</button>
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:10px;opacity:.8;">Total Kredit (Masuk):</span>
+      <span style="font-size:10px;opacity:.8;">Total Masuk (Kredit):</span>
       <span style="font-weight:700;font-family:monospace;color:#4ade80;">${_KRP(totalKredit)}</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:10px;opacity:.8;">Total Debit (Keluar):</span>
+      <span style="font-size:10px;opacity:.8;">Total Keluar (Debit):</span>
       <span style="font-weight:700;font-family:monospace;color:#f87171;">${_KRP(totalDebit)}</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-left:auto;background:rgba(0,0,0,.2);padding:6px 14px;border-radius:8px;">
@@ -5596,7 +5595,7 @@ function _renderKasTable(){
   const start=(_kasPage-1)*_kasPageSize;
   const rows=_kasFiltered.slice(start,start+_kasPageSize);
   if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="14" style="text-align:center;padding:40px;color:var(--muted);">Tidak ada data. Klik <b>+Baris</b> untuk menambah transaksi baru.</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted);">Tidak ada data. Klik <b>+Baris</b> untuk menambah transaksi baru.</td></tr>`;
     return;
   }
   const canDel=CU&&(CU.role==='superadmin'||CU.role==='admin');
@@ -5617,8 +5616,6 @@ function _renderKasTable(){
     const rowBorder=isDone?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
     const rowStyle=`background:${rowBg};border-bottom:1px solid ${rowBorder};`;
     const hargaFmt=d.harga?_KRP(d.harga):'—';
-    const debitVal=d.debit||0;
-    const kreditVal=d.kredit||0;
     const rowBal=balMap[d.id]||0;
     const balColor=rowBal>=0?'#15803d':'#dc2626';
     return `<tr id="krow-${idx}" style="${rowStyle}">
@@ -5662,19 +5659,16 @@ function _renderKasTable(){
           onchange="kasEdit(${idx},'harga',+this.value);kasRecalcTotal(${idx})"
           onblur="kasHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')kasHideHarga(${idx})">
       </td>
-      <td id="kdebit-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:#dc2626;white-space:nowrap;">
-        ${debitVal?_KRP(debitVal):''}
-      </td>
-      <td id="kkred-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:#16a34a;white-space:nowrap;">
-        ${kreditVal?_KRP(kreditVal):''}
-      </td>
-      <td id="kbal-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${balColor};white-space:nowrap;">
-        ${_KRP(rowBal)}
-      </td>
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.penerima||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:68px;padding:2px;"
           onchange="kasEdit(${idx},'penerima',this.value)">
+      </td>
+      <td id="kjml-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${isKredit?'#16a34a':'#dc2626'};white-space:nowrap;">
+        ${d.total?_KRP(d.total):''}
+      </td>
+      <td id="kbal-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${balColor};white-space:nowrap;">
+        ${_KRP(rowBal)}
       </td>
       <td style="padding:1px 3px;text-align:center;">
         <select style="border:none;font-size:9px;font-weight:700;border-radius:99px;padding:2px 4px;cursor:pointer;
@@ -5721,11 +5715,8 @@ function kasEditDebitKredit(idx){
   const d=KAS_DATA[idx];if(!d)return;
   if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
   else{d.debit=d.total;d.kredit=0;}
-  // Update cells if visible
-  const dc=document.getElementById('kdebit-'+idx);
-  const kc=document.getElementById('kkred-'+idx);
-  if(dc)dc.innerHTML=d.debit?_KRP(d.debit):'';
-  if(kc)kc.innerHTML=d.kredit?_KRP(d.kredit):'';
+  const jml=document.getElementById('kjml-'+idx);
+  if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
   _renderBalanceBar();
 }
 
@@ -5747,12 +5738,8 @@ function kasRecalcTotal(idx){
   d.total=Math.round((d.qty||0)*(d.harga||0));
   if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
   else{d.debit=d.total;d.kredit=0;}
-  const dc=document.getElementById('kdebit-'+idx);
-  const kc=document.getElementById('kkred-'+idx);
-  const tc=document.getElementById('ktot-'+idx);
-  if(dc)dc.innerHTML=d.debit?_KRP(d.debit):'';
-  if(kc)kc.innerHTML=d.kredit?_KRP(d.kredit):'';
-  if(tc)tc.textContent=_KRP(d.total);
+  const jml=document.getElementById('kjml-'+idx);
+  if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
   _renderBalanceBar();
 }
 
