@@ -6006,7 +6006,7 @@ function invEdit(idx,field,val){
   if(field==='stock_in'){
     if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
     invRecalcValue(idx);
-    filterInv();
+    // Don't call filterInv() here — it re-renders table mid-edit
   }
   // Auto-set kode: if stock_out > 0 and kode was STOCK IN, clear it
   if(field==='stock_out'){
@@ -6928,11 +6928,21 @@ async function saveInvActivityToDB(d){
       await sbPatch('inv_activities',`id=eq.${d._db_id}`,body);
     } else {
       const res=await sbPost('inv_activities',body);
-      if(res&&res[0]){ d._db_id=res[0].id; _DB_INV_READY=true; }
+      if(res&&res[0]){ 
+        d._db_id=res[0].id; 
+        _DB_INV_READY=true;
+        // Mark row as saved in UI
+        const rowEl=document.querySelector(`tr[id^="invrow-"]`);
+        if(rowEl) rowEl.style.outline='2px solid #16a34a';
+        setTimeout(()=>{ if(rowEl) rowEl.style.outline=''; },1500);
+        console.log('INV saved to DB, _db_id=',d._db_id,'nama=',d.nama);
+      }
     }
+    d._lastSaved=Date.now();
   } catch(e){ 
     console.warn('saveInvActivity error:',e.message);
     if(e.message.includes('relation')||e.message.includes('does not exist')) _DB_INV_READY=false;
+    toast('Gagal simpan: '+e.message,'error');
   }
 }
 
