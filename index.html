@@ -2127,7 +2127,7 @@ async function initApp(){
   document.getElementById('nav-rl').textContent=r.label;
   loading(true,'Memuat data...');
   try{
-    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices(),loadTasks()]);
+    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices(),loadTasks(),loadKasFromDB(),loadInvFromDB()]);
     setDb('connected');
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
@@ -5941,13 +5941,16 @@ function invEdit(idx,field,val){
   if(field==='stock_in'){
     if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
     invRecalcValue(idx);
-    filterInv(); // re-render to show updated kode select
+    filterInv();
   }
   // Auto-set kode: if stock_out > 0 and kode was STOCK IN, clear it
   if(field==='stock_out'){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     invRecalcValue(idx);
   }
+  // Auto-save to DB (debounced)
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),800);
 }
 
 function invToggleHpp(idx){
@@ -5963,6 +5966,7 @@ function invToggleHpp(idx){
   }
   // Learn: add to HPP training set
   _invHppLearn(d.nama, d.kode, d.is_hpp);
+  saveInvActivityToDB(d);
 }
 
 // ── HPP AI: keyword rules + learned overrides ─────────────────────────────────
@@ -6051,16 +6055,22 @@ function invHideHarga(idx){
 function invToggleLock(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   d.locked=!d.locked;
+  saveInvActivityToDB(d);
   _renderInvTable();
 }
 function deleteInvRow(idx){
   if(!confirm('Hapus baris ini?'))return;
+  const d=INV_ACTIVITIES[idx];
+  if(d&&d._db_id) deleteInvActivityFromDB(d._db_id);
   if(idx>=0&&idx<INV_ACTIVITIES.length){INV_ACTIVITIES.splice(idx,1);}
   filterInv();toast('Baris dihapus','success');
 }
 function invAddRow(){
   const today=new Date().toISOString().slice(0,10);
-  INV_ACTIVITIES.unshift({id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'STOCK IN',catatan:'',is_hpp:false,harga:0,value:0,locked:false});
+  const newAct={id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'STOCK IN',catatan:'',is_hpp:false,harga:0,value:0,locked:false};
+  INV_ACTIVITIES.unshift(newAct);
+  // Save to DB
+  saveInvActivityToDB(newAct);
   // clear filters
   ['inv-search','inv-f-tgl-from','inv-f-tgl-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['inv-f-kode','inv-f-hpp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -6150,7 +6160,12 @@ function renderInvBarang(){
     </tr>`;
   }).join('');
 }
-function invProdEdit(idx,field,val){const p=INV_PRODUCTS[idx];if(p)p[field]=val;}
+function invProdEdit(idx,field,val){
+  const p=INV_PRODUCTS[idx];if(!p)return;
+  p[field]=val;
+  clearTimeout(p._saveTimer);
+  p._saveTimer=setTimeout(()=>saveInvProductToDB(p),800);
+}
 function invBarangToggleLock(idx){const p=INV_PRODUCTS[idx];if(p){p.locked=!p.locked;}renderInvBarang();}
 function invBarangToggleHarga(idx){
   document.getElementById('invbh-disp-'+idx)?.style.setProperty('display','none');
@@ -6165,10 +6180,14 @@ function invBarangHideHarga(idx){
 }
 function deleteInvProd(idx){
   if(!confirm('Hapus barang ini dari daftar?'))return;
+  const p=INV_PRODUCTS[idx];
+  if(p&&p._db_id){ sbDelete('inv_products',`id=eq.${p._db_id}`).catch(e=>console.warn(e)); }
   INV_PRODUCTS.splice(idx,1);renderInvBarang();toast('Barang dihapus','success');
 }
 function invBarangAdd(){
-  INV_PRODUCTS.unshift({id:_invID(),nama:'',category:'Fresh',location:'Gudang Kering',status:'Activated',satuan:'Kg',min_stock:0,harga:0,locked:false,stock_in:0,stock_out:0,balance:0});
+  const newProd={id:_invID(),nama:'',category:'Fresh',location:'Gudang Kering',status:'Activated',satuan:'Kg',min_stock:0,harga:0,locked:false,stock_in:0,stock_out:0,balance:0};
+  INV_PRODUCTS.unshift(newProd);
+  saveInvProductToDB(newProd);
   ['inv-barang-search','inv-barang-cat','inv-barang-loc','inv-barang-stat'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   renderInvBarang();
   setTimeout(()=>{const inp=document.querySelector('#inv-barang-tbody tr:first-child td:nth-child(2) input');if(inp){inp.focus();}},80);
@@ -6186,6 +6205,9 @@ function _opnameFisik(nama,bulan,tahun){
 function invOpnameSetFisik(nama,bulan,tahun,val){
   const numVal = val===''||val===null||val===undefined ? null : (+val||0);
   _OPNAME_FISIK[_opnameKey(nama,bulan,tahun)] = numVal;
+  // Save to DB (debounced)
+  clearTimeout(window._opnameSaveTimer);
+  window._opnameSaveTimer = setTimeout(()=>saveOpnameToDB(nama,bulan,tahun,numVal), 800);
   // Update selisih cell in-place
   const key = _opnameKey(nama,bulan,tahun);
   const row = document.querySelector(`[data-opname-key="${key}"]`);
@@ -6667,6 +6689,169 @@ function renderInvSummary(){
 }
 
 
+// ══════════════════════════════════════════════════════════════════════════════
+// DATABASE SYNC — KAS KECIL + INVENTORY
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── KAS KECIL ─────────────────────────────────────────────────────────────────
+async function loadKasFromDB(){
+  try{
+    // Load all kas rows ordered by date desc
+    const rows = await sbGet('kas_transactions','select=*&order=tgl.asc,id.asc&limit=10000');
+    if(!rows||!rows.length){ console.log('KAS DB: no rows, using embedded data'); return; }
+    KAS_DATA = rows.map(r=>({
+      id: r.id,
+      tgl: r.tgl,
+      nama_barang: r.nama_barang||'',
+      type: r.type||'',
+      vendor: r.vendor||'',
+      qty: +r.qty||0,
+      satuan: r.satuan||'',
+      harga: +r.harga||0,
+      penerima: r.penerima||'',
+      debit: +r.debit||0,
+      kredit: +r.kredit||0,
+      jumlah: +r.jumlah||0,
+      status: r.status||'',
+      catatan: r.catatan||'',
+      locked: !!r.locked,
+      _db_id: r.id
+    }));
+    console.log(`KAS DB: loaded ${KAS_DATA.length} rows`);
+    // Recalc balance
+    KAS_DATA.sort((a,b)=>a.tgl.localeCompare(b.tgl)||(a.id-b.id));
+  } catch(e){ console.warn('loadKasFromDB error:', e.message); }
+}
+
+async function saveKasRowToDB(d){
+  if(!d) return;
+  const body = {
+    tgl: d.tgl, nama_barang: d.nama_barang, type: d.type,
+    vendor: d.vendor, qty: d.qty||0, satuan: d.satuan,
+    harga: d.harga||0, penerima: d.penerima,
+    debit: d.debit||0, kredit: d.kredit||0, jumlah: d.jumlah||0,
+    status: d.status||'', catatan: d.catatan||'',
+    locked: !!d.locked, month_key: (d.tgl||'').slice(0,7),
+    updated_at: new Date().toISOString()
+  };
+  try{
+    if(d._db_id){
+      await sbPatch('kas_transactions',`id=eq.${d._db_id}`,body);
+    } else {
+      const res = await sbPost('kas_transactions',body);
+      if(res&&res[0]) d._db_id=res[0].id;
+    }
+  } catch(e){ console.warn('saveKasRowToDB error:', e.message); toast('Gagal simpan kas','error'); }
+}
+
+async function deleteKasRowFromDB(dbId){
+  if(!dbId) return;
+  try{ await sbDelete('kas_transactions',`id=eq.${dbId}`); }
+  catch(e){ console.warn('deleteKasRow error:', e.message); }
+}
+
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
+async function loadInvFromDB(){
+  try{
+    const [prods, acts, opname] = await Promise.all([
+      sbGet('inv_products','select=*&order=nama.asc&limit=2000'),
+      sbGet('inv_activities','select=*&order=tgl.asc,id.asc&limit=20000'),
+      sbGet('inv_opname','select=*&limit=5000')
+    ]);
+
+    if(prods && prods.length){
+      INV_PRODUCTS = prods.map(r=>({
+        id:r.id, nama:r.nama, category:r.category||'', location:r.location||'',
+        status:r.status||'Activated', satuan:r.satuan||'Kg',
+        min_stock:+r.min_stock||0, harga:+r.harga||0, locked:!!r.locked,
+        stock_in:0, stock_out:0, balance:0, _db_id:r.id
+      }));
+      console.log(`INV PRODUCTS DB: ${INV_PRODUCTS.length} rows`);
+    }
+
+    if(acts && acts.length){
+      INV_ACTIVITIES = acts.map(r=>({
+        id:r.id, tgl:r.tgl, nama:r.nama,
+        stock_in:+r.stock_in||0, stock_out:+r.stock_out||0,
+        pengambil:r.pengambil||'', pjawab:r.pjawab||'',
+        kode:r.kode||'STOCK IN', catatan:r.catatan||'',
+        is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
+        locked:!!r.locked, _db_id:r.id
+      }));
+      console.log(`INV ACTIVITIES DB: ${INV_ACTIVITIES.length} rows`);
+    }
+
+    if(opname && opname.length){
+      opname.forEach(r=>{
+        const k=r.nama+'|'+r.bulan+'|'+r.tahun;
+        _OPNAME_FISIK[k]=r.fisik_aktual!==null?+r.fisik_aktual:null;
+        // store db_id for upsert
+        _OPNAME_FISIK[k+'__dbid']=r.id;
+      });
+      console.log(`INV OPNAME DB: ${opname.length} rows`);
+    }
+  } catch(e){ console.warn('loadInvFromDB error:', e.message); }
+}
+
+async function saveInvProductToDB(p){
+  if(!p) return;
+  const body={
+    nama:p.nama, category:p.category, location:p.location,
+    status:p.status, satuan:p.satuan, min_stock:p.min_stock||0,
+    harga:p.harga||0, locked:!!p.locked, updated_at:new Date().toISOString()
+  };
+  try{
+    if(p._db_id){
+      await sbPatch('inv_products',`id=eq.${p._db_id}`,body);
+    } else {
+      const res=await sbPost('inv_products',body);
+      if(res&&res[0]) p._db_id=res[0].id;
+    }
+  } catch(e){ console.warn('saveInvProduct error:',e.message); }
+}
+
+async function saveInvActivityToDB(d){
+  if(!d) return;
+  const body={
+    tgl:d.tgl, nama:d.nama, stock_in:d.stock_in||0, stock_out:d.stock_out||0,
+    pengambil:d.pengambil||'', pjawab:d.pjawab||'',
+    kode:d.kode||'STOCK IN', catatan:d.catatan||'',
+    is_hpp:!!d.is_hpp, harga:d.harga||0, value_out:d.value||0,
+    locked:!!d.locked, updated_at:new Date().toISOString()
+  };
+  try{
+    if(d._db_id){
+      await sbPatch('inv_activities',`id=eq.${d._db_id}`,body);
+    } else {
+      const res=await sbPost('inv_activities',body);
+      if(res&&res[0]) d._db_id=res[0].id;
+    }
+  } catch(e){ console.warn('saveInvActivity error:',e.message); }
+}
+
+async function deleteInvActivityFromDB(dbId){
+  if(!dbId) return;
+  try{ await sbDelete('inv_activities',`id=eq.${dbId}`); }
+  catch(e){ console.warn('deleteInvActivity error:',e.message); }
+}
+
+async function saveOpnameToDB(nama,bulan,tahun,fisik){
+  const body={
+    nama, bulan, tahun:+tahun, fisik_aktual:fisik,
+    updated_at:new Date().toISOString()
+  };
+  try{
+    // Upsert by unique(nama,bulan,tahun)
+    const res=await fetch(`${SB_URL}/rest/v1/inv_opname`,{
+      method:'POST',
+      headers:{...SBH,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error(await res.text());
+  } catch(e){ console.warn('saveOpname error:',e.message); }
+}
+
+
 // ── Auto-Type Detection (keyword-based, instant) ────────────────────────────
 const KAS_TYPE_RULES = {
   "Sayuran":["cabe","cabai","rawit","keriting","bawang","putih","bombai","wortel","tauge","tahu","tempe","cina","segitiga","kol","timun","tomat","seledri","kangkung","bayam","pecay","pakcoy","sesin","jagung","kentang","terong","buncis","nangka","labu","pare","melinjo","kacang panjang","kembang kol","lengkuas","jahe","kunyit","kencur","jinten","kapulaga","serai","kemangi","selada","jamur tiram","jamur kuping","talas","singkong","lobak","brokoli","sawi","hijau"],
@@ -6944,6 +7129,8 @@ function kasAddRow(){
   const bulan=_KAUTO(today)||'Maret';
   const newRow={id:_KID(),tgl:today,bulan,nama_barang:'',type:'',vendor:'',qty:1,satuan:'Pcs',harga:0,debit:0,kredit:0,total:0,penerima:'',status:''};
   KAS_DATA.unshift(newRow); // unshift = prepend sehingga muncul di atas setelah sort desc
+  // Save new row to DB
+  saveKasRowToDB(newRow);
   // Clear filters agar baris baru keliatan
   const srch=document.getElementById('kas-search');if(srch)srch.value='';
   const fb=document.getElementById('kas-f-bulan');if(fb)fb.value='';
