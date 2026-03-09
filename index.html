@@ -5578,10 +5578,12 @@ const KAS_TYPE_RULES = {
 };
 const _KAS_AI_CACHE = {};
 
-function kasAIAutoType(idx, nama) {
+function kasAIAutoType(idx, nama, force) {
   const d = KAS_DATA[idx];
   if (!d || !nama || nama.trim().length < 3) return;
-  if (d.type && d.type !== '') return;
+  // force=true saat edit nama (onblur) — selalu refresh type
+  // force=false/undefined saat baris baru — skip jika sudah ada type
+  if (!force && d.type && d.type !== '') return;
   const key = nama.trim().toLowerCase();
   if (_KAS_AI_CACHE[key]) { _kasApplyType(idx, _KAS_AI_CACHE[key]); toast('Auto-type: "'+_KAS_AI_CACHE[key]+'"','info'); return; }
   const hits = [];
@@ -5683,7 +5685,7 @@ function _renderKasTable(){
         <input type="text" value="${(d.nama_barang||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:190px;padding:2px;"
           onchange="kasEdit(${idx},'nama_barang',this.value)"
-          onblur="kasAIAutoType(${idx},this.value)"
+          onblur="kasAIAutoType(${idx},this.value,true)"
           placeholder="Nama barang...">
       </td>
       <td style="padding:1px 3px;">
