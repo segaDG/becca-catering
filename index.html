@@ -57,6 +57,7 @@ input[type=number]{text-align:right;}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .btn-primary:hover{background:#163d57;box-shadow:0 4px 14px rgba(30,77,107,.3);transform:translateY(-1px);}
 .btn-plus{font-weight:800;font-size:16px;line-height:1;margin-right:5px;color:#fff!important;vertical-align:middle;}
+.btn-primary .btn-plus,.btn-primary span{color:#fff!important;}
 .btn-secondary{background:var(--surface);color:var(--text2);border-color:var(--border);}
 .btn-secondary:hover{border-color:var(--border2);background:var(--bg2);}
 .btn-ghost{background:transparent;color:var(--muted);border-color:transparent;}
@@ -726,7 +727,7 @@ tr:hover td{background:var(--bg);}
                 <thead><tr>
                   <th>#</th><th>Tgl</th><th>Vendor / Supplier</th><th>Item Deskripsi</th>
                   <th>Qty</th><th>Satuan</th><th>Harga/Item</th><th>Total</th>
-                  <th>Status</th><th>Tgl Bayar</th><th>Aksi</th>
+                  <th>Status</th><th>Tgl Bayar</th><th style="white-space:nowrap;">🔒 Aksi</th>
                 </tr></thead>
                 <tbody id="ap-tbody"></tbody>
               </table>
@@ -4741,24 +4742,46 @@ function filterAP(){
     `<span style="color:var(--red);font-weight:600;">⚠️ Unpaid: ${fmtRpNum(unpaid)}</span>`;
   const canEdit=CU.role==='superadmin'||CU.role==='admin';
   const tbody=document.getElementById('ap-tbody');
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>';return;}
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data</td></tr>';return;}
   tbody.innerHTML=filtered.map((d,i)=>{
     const origIdx=AP_DATA.indexOf(d);
     const sc=AP_STATUS_COLOR[d.status]||AP_STATUS_COLOR['UNPAID'];
+    const locked=!!d._locked;
+    const lockIcon=locked?'🔒':'🔓';
+    const lockTitle=locked?'Terkunci — klik untuk buka':'Tidak terkunci — klik untuk kunci';
+    const dis=locked?'disabled':'' ;
+    const disStyle=locked?'pointer-events:none;opacity:.6;':'';
     const statusOpts=['UNPAID','RECEIVED UNPAID','LUNAS'].map(s=>
       `<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('');
-    return`<tr id="ap-row-${origIdx}">
+    const hargaFmt='Rp '+Number(d.harga||0).toLocaleString('id-ID');
+    const totalFmt='Rp '+Number(d.total||0).toLocaleString('id-ID');
+    return`<tr id="ap-row-${origIdx}" style="${locked?'background:var(--bg2);':''}">
       <td class="mono tmuted" style="font-size:11px;">${i+1}</td>
-      <td><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;" onchange="apInlineEdit(${origIdx},'tgl',this.value)"></td>
-      <td style="min-width:140px;"><select style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;cursor:pointer;max-width:160px;" onchange="apInlineEdit(${origIdx},'vendor',this.value)">${_apVendorOpts(d.vendor)}</select></td>
-      <td style="min-width:160px;"><input type="text" value="${d.item.replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:100%;min-width:150px;" onchange="apInlineEdit(${origIdx},'item',this.value)"></td>
-      <td><input type="number" value="${d.qty}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:60px;text-align:right;" onchange="apInlineEdit(${origIdx},'qty',+this.value);apRecalcTotal(${origIdx})"></td>
-      <td><input type="text" value="${d.satuan||''}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:45px;" onchange="apInlineEdit(${origIdx},'satuan',this.value)"></td>
-      <td><input type="number" value="${d.harga}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:80px;text-align:right;" onchange="apInlineEdit(${origIdx},'harga',+this.value);apRecalcTotal(${origIdx})"></td>
-      <td><input type="number" value="${d.total}" style="border:none;background:transparent;font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);width:90px;text-align:right;" onchange="apInlineEdit(${origIdx},'total',+this.value)" id="ap-total-${origIdx}"></td>
-      <td><select style="border:1px solid ${sc.bc};background:${sc.bg};color:${sc.c};font-size:10px;font-weight:700;border-radius:99px;padding:2px 6px;cursor:pointer;" onchange="apInlineStatus(${origIdx},this.value,this)">${statusOpts}</select></td>
-      <td><input type="date" value="${d.tgl_bayar||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;" onchange="apInlineEdit(${origIdx},'tgl_bayar',this.value)"></td>
-      ${canEdit?`<td><button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteAP(${origIdx})">🗑</button></td>`:'<td></td>'}
+      <td><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl',this.value)"></td>
+      <td style="min-width:140px;"><select style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;cursor:pointer;max-width:160px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'vendor',this.value)">${_apVendorOpts(d.vendor)}</select></td>
+      <td style="min-width:160px;"><input type="text" value="${d.item.replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:100%;min-width:150px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'item',this.value)"></td>
+      <td><input type="number" value="${d.qty}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:55px;text-align:right;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'qty',+this.value);apRecalcTotal(${origIdx})"></td>
+      <td><input type="text" value="${d.satuan||''}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:42px;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'satuan',this.value)"></td>
+      <td id="ap-harga-cell-${origIdx}" onclick="apToggleHargaEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};min-width:90px;">
+        ${locked
+          ? `<span style="font-size:11px;font-family:monospace;">${hargaFmt}</span>`
+          : `<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">${hargaFmt}</span>`
+        }
+      </td>
+      <td id="ap-total-cell-${origIdx}" onclick="apToggleTotalEdit(${origIdx},this)" style="cursor:${locked?'default':'pointer'};min-width:100px;">
+        ${locked
+          ? `<span style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">${totalFmt}</span>`
+          : `<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">${totalFmt}</span>`
+        }
+      </td>
+      <td><select style="border:1px solid ${sc.bc};background:${sc.bg};color:${sc.c};font-size:10px;font-weight:700;border-radius:99px;padding:2px 6px;cursor:${locked?'default':'pointer'};${disStyle}" ${dis} onchange="apInlineStatus(${origIdx},this.value,this)">${statusOpts}</select></td>
+      <td><input type="date" value="${d.tgl_bayar||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:102px;cursor:pointer;${disStyle}" ${dis} onchange="apInlineEdit(${origIdx},'tgl_bayar',this.value)"></td>
+      <td>
+        <div style="display:flex;gap:3px;align-items:center;">
+          <button title="${lockTitle}" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;" onclick="apToggleLock(${origIdx})">${lockIcon}</button>
+          ${canEdit&&!locked?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 6px;" onclick="deleteAP(${origIdx})">🗑</button>`:''}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -4771,12 +4794,77 @@ function apInlineEdit(idx,field,val){
   AP_DATA[idx][field]=val;
 }
 function apRecalcTotal(idx){
-  const d=AP_DATA[idx]; if(!d)return;
+  const d=AP_DATA[idx]; if(!d||d._locked)return;
   if(d.qty&&d.harga){
     d.total=d.qty*d.harga;
-    const el=document.getElementById('ap-total-'+idx);
-    if(el)el.value=d.total;
+    // update displayed total cell
+    const cell=document.getElementById('ap-total-cell-'+idx);
+    if(cell){
+      const span=cell.querySelector('.ap-num-display,span');
+      if(span)span.textContent='Rp '+Number(d.total).toLocaleString('id-ID');
+    }
   }
+}
+function apToggleLock(idx){
+  const d=AP_DATA[idx]; if(!d)return;
+  d._locked=!d._locked;
+  filterAP(); // re-render to reflect lock state
+}
+function apToggleHargaEdit(idx,cell){
+  const d=AP_DATA[idx]; if(!d||d._locked)return;
+  // If already has input, skip
+  if(cell.querySelector('input'))return;
+  const cur=d.harga||0;
+  cell.innerHTML=`<input type="number" value="${cur}" style="width:90px;font-size:11px;font-family:monospace;text-align:right;border:1px solid var(--accent);border-radius:4px;padding:2px 4px;background:var(--bg);color:var(--text);"
+    onblur="apCommitHarga(${idx},this)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){apCancelHarga(${idx})}"
+    oninput="apRecalcFromHargaInput(${idx},this)">`;
+  cell.querySelector('input').focus();
+  cell.querySelector('input').select();
+}
+function apCancelHarga(idx){
+  const d=AP_DATA[idx]; if(!d)return;
+  const cell=document.getElementById('ap-harga-cell-'+idx);
+  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">Rp ${Number(d.harga||0).toLocaleString('id-ID')}</span>`;
+}
+function apCommitHarga(idx,inp){
+  const d=AP_DATA[idx]; if(!d)return;
+  const val=+inp.value||0;
+  d.harga=val;
+  apRecalcTotal(idx);
+  const cell=document.getElementById('ap-harga-cell-'+idx);
+  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:11px;font-family:monospace;color:var(--text);">Rp ${Number(val).toLocaleString('id-ID')}</span>`;
+}
+function apRecalcFromHargaInput(idx,inp){
+  const d=AP_DATA[idx]; if(!d)return;
+  const h=+inp.value||0;
+  if(d.qty&&h){
+    const newTotal=d.qty*h;
+    const cell=document.getElementById('ap-total-cell-'+idx);
+    if(cell){const sp=cell.querySelector('span');if(sp)sp.textContent='Rp '+Number(newTotal).toLocaleString('id-ID');}
+  }
+}
+function apToggleTotalEdit(idx,cell){
+  const d=AP_DATA[idx]; if(!d||d._locked)return;
+  if(cell.querySelector('input'))return;
+  const cur=d.total||0;
+  cell.innerHTML=`<input type="number" value="${cur}" style="width:100px;font-size:12px;font-family:monospace;font-weight:700;text-align:right;border:1px solid var(--accent);border-radius:4px;padding:2px 4px;background:var(--bg);color:var(--accent);"
+    onblur="apCommitTotal(${idx},this)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){apCancelTotal(${idx})}">`;
+  cell.querySelector('input').focus();
+  cell.querySelector('input').select();
+}
+function apCancelTotal(idx){
+  const d=AP_DATA[idx]; if(!d)return;
+  const cell=document.getElementById('ap-total-cell-'+idx);
+  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">Rp ${Number(d.total||0).toLocaleString('id-ID')}</span>`;
+}
+function apCommitTotal(idx,inp){
+  const d=AP_DATA[idx]; if(!d)return;
+  const val=+inp.value||0;
+  d.total=val;
+  const cell=document.getElementById('ap-total-cell-'+idx);
+  if(cell)cell.innerHTML=`<span class="ap-num-display" style="font-size:12px;font-family:monospace;font-weight:700;color:var(--accent);">Rp ${Number(val).toLocaleString('id-ID')}</span>`;
 }
 function apInlineStatus(idx,val,selEl){
   if(!AP_DATA[idx])return;
