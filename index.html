@@ -961,6 +961,7 @@ tr:hover td{background:var(--bg);}
               <span class="card-title">📋 Activity Line — Transaksi Inventory</span>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" id="inv-add-btn" onclick="invAddRow()"><span class="btn-plus">+</span>Baris</button>
+                <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;" onclick="invAiHppAll()" title="AI auto-detect semua HPP">🤖 AI HPP</button>
               </div>
             </div>
             <!-- Filter bar -->
@@ -971,6 +972,7 @@ tr:hover td{background:var(--bg);}
               <span style="font-size:11px;color:var(--muted);">s/d</span>
               <input type="date" id="inv-f-tgl-to" class="sel" style="width:130px;flex-shrink:0;" onchange="filterInv()" title="Sampai tanggal">
               <select id="inv-f-kode" class="sel" style="width:130px;flex-shrink:0;" onchange="filterInv()">
+                <option value="NO_OPNAME">Semua (–Opname)</option>
                 <option value="">Semua Aktivitas</option>
                 <option>STOCK IN</option><option>STOCK OPNAME</option>
                 <option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option><option>EVENT</option>
@@ -987,8 +989,6 @@ tr:hover td{background:var(--bg);}
                 <option value="500">500/hal</option>
               </select>
             </div>
-            <!-- Stats bar -->
-            <div id="inv-stats-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:11px;"></div>
             <!-- Table -->
             <div id="inv-table-wrap" style="overflow-x:auto;max-height:60vh;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:11px;" id="inv-table">
@@ -1014,6 +1014,8 @@ tr:hover td{background:var(--bg);}
             </div>
             <!-- Pagination -->
             <div id="inv-pagination" style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:12px;"></div>
+            <!-- Stats bar (footer) -->
+            <div id="inv-stats-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px;background:var(--surface);border-radius:8px;font-size:11px;"></div>
           </div>
         </div>
 
@@ -5794,7 +5796,8 @@ function filterInv(){
       if(q && !d.nama.toLowerCase().includes(q)) return false;
       if(from && d.tgl<from) return false;
       if(to && d.tgl>to) return false;
-      if(kode && d.kode!==kode) return false;
+      if(kode==='NO_OPNAME' && d.kode==='STOCK OPNAME') return false;
+      else if(kode && kode!=='NO_OPNAME' && d.kode!==kode) return false;
       if(hpp==='1' && !d.is_hpp) return false;
       if(hpp==='0' && d.is_hpp) return false;
       return true;
@@ -5808,18 +5811,21 @@ function filterInv(){
 
 function _renderInvStats(){
   const el=document.getElementById('inv-stats-bar');if(!el)return;
+  // Exclude STOCK OPNAME from in/out summary (opname = cek stok bukan transaksi)
+  const txn=_invFiltered.filter(d=>d.kode!=='STOCK OPNAME');
   const total=_invFiltered.length;
-  const totalIn=_invFiltered.reduce((s,d)=>s+(d.stock_in||0),0);
-  const totalOut=_invFiltered.reduce((s,d)=>s+(d.stock_out||0),0);
-  const totalVal=_invFiltered.reduce((s,d)=>s+(d.value||0),0);
+  const totalIn=txn.filter(d=>d.kode==='STOCK IN').reduce((s,d)=>s+(d.stock_in||0),0);
+  const totalOut=txn.filter(d=>d.kode!=='STOCK IN').reduce((s,d)=>s+(d.stock_out||0),0);
   const hppRows=_invFiltered.filter(d=>d.is_hpp);
-  const hppVal=hppRows.reduce((s,d)=>s+(d.value||0),0);
+  const hppVal=hppRows.reduce((s,d)=>s+((d.stock_out||0)*(d.harga||0)),0);
+  const stockInVal=txn.filter(d=>d.kode==='STOCK IN').reduce((s,d)=>s+((d.stock_in||0)*(d.harga||0)),0);
   el.innerHTML=`
     <span style="background:#f3f4f6;padding:3px 8px;border-radius:99px;"><b>${total}</b> baris</span>
-    <span style="background:#dcfce7;color:#166534;padding:3px 8px;border-radius:99px;">In: <b>${_IRN(totalIn)}</b></span>
-    <span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:99px;">Out: <b>${_IRN(totalOut)}</b></span>
-    <span style="background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:99px;">Value: <b>${_IRP(totalVal)}</b></span>
-    <span style="background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:99px;">HPP: <b>${_IRP(hppVal)}</b></span>
+    <span style="background:#dcfce7;color:#166534;padding:3px 8px;border-radius:99px;">📥 Stock In: <b>${_IRN(totalIn)}</b></span>
+    <span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:99px;">📤 Stock Out: <b>${_IRN(totalOut)}</b></span>
+    <span style="background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:99px;">💰 Value In: <b>${_IRP(stockInVal)}</b></span>
+    <span style="background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:99px;">🏭 Total HPP: <b>${_IRP(hppVal)}</b></span>
+    <span style="background:#f3e8ff;color:#7c3aed;padding:3px 8px;border-radius:99px;">🔍 Opname: <b>${_invFiltered.filter(d=>d.kode==='STOCK OPNAME').length}</b> baris</span>
   `;
 }
 
@@ -5874,7 +5880,11 @@ function _renderInvTable(){
         </select>`}
       </td>
       <td style="padding:1px 3px;text-align:center;">
-        <span style="background:${d.is_hpp?'#fef3c7':'#f3f4f6'};color:${d.is_hpp?'#92400e':'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;">${d.is_hpp?'HPP':'—'}</span>
+        <div style="display:flex;gap:2px;align-items:center;justify-content:center;">
+          <span id="invhpp-${idx}" style="background:${d.is_hpp?'#fef3c7':'#f3f4f6'};color:${d.is_hpp?'#92400e':'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:pointer;user-select:none;border:1px solid ${d.is_hpp?'#fde68a':'#e5e7eb'};"
+            onclick="invToggleHpp(${idx})" title="Klik untuk toggle HPP">${d.is_hpp?'HPP':'—'}</span>
+          <button style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 1px;" onclick="invAiHpp(${idx})" title="AI: auto-detect HPP">🤖</button>
+        </div>
       </td>
       <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;">
         ${locked?`<span>${d.harga?_IRP(d.harga):'—'}</span>`:
@@ -5927,6 +5937,95 @@ function invPageSizeChange(){
 function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   d[field]=val;
+  // Auto-set kode: if stock_in > 0, force kode = STOCK IN
+  if(field==='stock_in'){
+    if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
+    invRecalcValue(idx);
+    filterInv(); // re-render to show updated kode select
+  }
+  // Auto-set kode: if stock_out > 0 and kode was STOCK IN, clear it
+  if(field==='stock_out'){
+    if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
+    invRecalcValue(idx);
+  }
+}
+
+function invToggleHpp(idx){
+  const d=INV_ACTIVITIES[idx];if(!d||d.locked)return;
+  d.is_hpp=!d.is_hpp;
+  // Update badge in-place
+  const el=document.getElementById('invhpp-'+idx);
+  if(el){
+    el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';
+    el.style.color=d.is_hpp?'#92400e':'#9ca3af';
+    el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';
+    el.textContent=d.is_hpp?'HPP':'—';
+  }
+  // Learn: add to HPP training set
+  _invHppLearn(d.nama, d.kode, d.is_hpp);
+}
+
+// ── HPP AI: keyword rules + learned overrides ─────────────────────────────────
+const _INV_HPP_LEARN = {}; // {nama: true/false} — user corrections
+const _HPP_NON_FOOD = ['plastik','kardus','sarung tangan','tisu','sabun','deterjen','karung',
+  'ember','baskom','selang','karet','paku','baut','alat','peralatan','bahan kimia','solar',
+  'bensin','minyak tanah','lakban','tali','kantong','sapu','pel','sikat','kain'];
+const _HPP_ALWAYS = ['beras','ayam','daging','ikan','telur','minyak','bumbu','cabe','bawang',
+  'sayur','tomat','kentang','wortel','kol','bayam','kangkung','tahu','tempe','garam','gula',
+  'tepung','santan','kecap','saus','terasi','jahe','kunyit','lengkuas','daun','seledri',
+  'mentimun','timun','labu','nangka','singkong','ubi','jagung','udang','cumi','teri',
+  'sarden','kerupuk','mie','pasta','makaroni','roti','susu','keju','margarin','mentega'];
+
+function _invHppAiGuess(nama, kode){
+  const n = (nama||'').toLowerCase();
+  // User learned override
+  if(_INV_HPP_LEARN[nama] !== undefined) return _INV_HPP_LEARN[nama];
+  // STOCK IN and STOCK OPNAME are never HPP
+  if(kode==='STOCK IN'||kode==='STOCK OPNAME') return false;
+  // Check non-food (not HPP)
+  for(const w of _HPP_NON_FOOD){ if(n.includes(w)) return false; }
+  // Check always-HPP foods
+  for(const w of _HPP_ALWAYS){ if(n.includes(w)) return true; }
+  // Kode-based: SHIFT & EVENT = HPP
+  if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(kode)) return true;
+  return false;
+}
+
+function _invHppLearn(nama, kode, isHpp){
+  if(!nama) return;
+  _INV_HPP_LEARN[nama] = isHpp;
+  // Apply to all rows with same nama and same kode type
+  INV_ACTIVITIES.forEach((d,i)=>{
+    if(d.nama===nama && d.kode===kode){
+      d.is_hpp=isHpp;
+    }
+  });
+}
+
+function invAiHpp(idx){
+  const d=INV_ACTIVITIES[idx];if(!d)return;
+  const guess=_invHppAiGuess(d.nama, d.kode);
+  const old=d.is_hpp;
+  d.is_hpp=guess;
+  const el=document.getElementById('invhpp-'+idx);
+  if(el){
+    el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';
+    el.style.color=d.is_hpp?'#92400e':'#9ca3af';
+    el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';
+    el.textContent=d.is_hpp?'HPP':'—';
+  }
+  toast(`AI: ${d.nama} → ${d.is_hpp?'HPP':'Non-HPP'}`, 'info');
+}
+
+function invAiHppAll(){
+  let changed=0;
+  INV_ACTIVITIES.forEach((d,i)=>{
+    if(d.locked) return;
+    const guess=_invHppAiGuess(d.nama, d.kode);
+    if(d.is_hpp!==guess){ d.is_hpp=guess; changed++; }
+  });
+  filterInv();
+  toast(`AI selesai: ${changed} baris diupdate`, 'success');
 }
 function invRefreshHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
