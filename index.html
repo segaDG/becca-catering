@@ -6478,21 +6478,21 @@ function renderInvLaporan(){
   const totalStockIn=stockInRows.reduce((s,d)=>s+(d.stock_in||0)*d.harga,0);
   const totalOut=rows.filter(d=>d.stock_out>0).reduce((s,d)=>s+(d.value||0),0);
 
-  // HPP by product (top items)
+  // HPP by product (top items) — value = stock_out × harga
   const hppByProd={};
   hppRows.forEach(d=>{
     if(!hppByProd[d.nama])hppByProd[d.nama]={nama:d.nama,qty:0,value:0};
     hppByProd[d.nama].qty+=d.stock_out||0;
-    hppByProd[d.nama].value+=d.value||0;
+    hppByProd[d.nama].value+=(d.stock_out||0)*(d.harga||0);
   });
   const hppList=Object.values(hppByProd).sort((a,b)=>b.value-a.value);
 
-  // Stock OUT by kode
+  // Stock OUT by kode — value = stock_out × harga
   const byKode={};
   rows.filter(d=>d.stock_out>0).forEach(d=>{
     if(!byKode[d.kode])byKode[d.kode]={kode:d.kode,qty:0,value:0,count:0};
     byKode[d.kode].qty+=d.stock_out;
-    byKode[d.kode].value+=d.value||0;
+    byKode[d.kode].value+=(d.stock_out||0)*(d.harga||0);
     byKode[d.kode].count++;
   });
 
