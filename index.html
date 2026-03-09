@@ -899,7 +899,13 @@ tr:hover td{background:var(--bg);}
                 <select class="sel" id="mr-tahun" onchange="renderKasMonthly()">
                   <option value="2026">2026</option><option value="2025">2025</option>
                 </select>
-                <button class="btn btn-primary btn-sm" onclick="printKasMonthly()">🖨️ Print</button>
+                <select class="sel" id="mr-bulan" onchange="renderKasMonthly()">
+                  <option value="">Semua Bulan</option>
+                  <option>Januari</option><option>Febuari</option><option>Maret</option><option>April</option>
+                  <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
+                  <option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="printKasMonthly()">🖨️ Print / PDF</button>
               </div>
             </div>
             <div id="kas-monthly-content" style="padding:8px;"></div>
@@ -5950,21 +5956,24 @@ function renderKasSummary(){
 // ── MONTHLY REPORT ────────────────────────────────────────────────────────────
 function renderKasMonthly(){
   const tahun=document.getElementById('mr-tahun')?.value||'2026';
+  const filterBulan=document.getElementById('mr-bulan')?.value||'';
   const el=document.getElementById('kas-monthly-content');if(!el)return;
   const MONTHS=['Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  const usedMonths=MONTHS.filter(m=>KAS_DATA.some(d=>d.bulan===m&&(d.tgl||'').startsWith(tahun)));
-  if(!usedMonths.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);">Tidak ada data untuk tahun ini.</div>';return;}
+  const allUsed=MONTHS.filter(m=>KAS_DATA.some(d=>d.bulan===m&&(d.tgl||'').startsWith(tahun)));
+  if(!allUsed.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);">Tidak ada data untuk tahun ini.</div>';return;}
 
+  // Hitung running balance dari awal tahun untuk semua bulan (agar saldo awal per bulan akurat)
   let runBal=KAS_SALDO_AWAL;
-  const monthRows=usedMonths.map((m,mi)=>{
+  const allMonthRows=allUsed.map(m=>{
     const rows=KAS_DATA.filter(d=>d.bulan===m&&(d.tgl||'').startsWith(tahun)).sort((a,b)=>a.tgl.localeCompare(b.tgl));
     const mDebit=rows.reduce((s,d)=>s+(d.debit||0),0);
     const mKredit=rows.reduce((s,d)=>s+(d.kredit||0),0);
     const saldoAwalBulan=runBal;
     runBal=runBal+mKredit-mDebit;
-    const saldoAkhir=runBal;
-    return{m,rows,mDebit,mKredit,saldoAwalBulan,saldoAkhir};
+    return{m,rows,mDebit,mKredit,saldoAwalBulan,saldoAkhir:runBal};
   });
+  // Filter tampilan sesuai pilihan bulan
+  const monthRows=filterBulan?allMonthRows.filter(r=>r.m===filterBulan):allMonthRows;
 
   el.innerHTML=`<div id="kas-monthly-print">
   ${monthRows.map(({m,rows,mDebit,mKredit,saldoAwalBulan,saldoAkhir})=>{
@@ -6078,14 +6087,35 @@ function kasCalcSelisih(bulan,kasVal,saldoBuku){
 
 function printKasMonthly(){
   const content=document.getElementById('kas-monthly-print')?.innerHTML;
-  if(!content)return;
+  if(!content){toast('Render laporan dulu','error');return;}
+  const tahun=document.getElementById('mr-tahun')?.value||'2026';
+  const bulan=document.getElementById('mr-bulan')?.value||'';
+  const judul=bulan?`Laporan Kas Kecil — ${bulan} ${tahun}`:`Laporan Kas Kecil — Semua Bulan ${tahun}`;
   const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>Monthly Report Kas Kecil</title>
-  <style>@page{size:A4 landscape;margin:8mm;}body{margin:0;font-family:Arial,sans-serif;font-size:10px;}
-  table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;}
-  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
-  .no-print{display:none;}</style></head><body>${content}</body></html>`);
-  win.document.close();setTimeout(()=>win.print(),400);
+  win.document.write(`<!DOCTYPE html><html><head>
+  <title>${judul}</title>
+  <style>
+    @page{size:A4 landscape;margin:8mm;}
+    body{margin:0;font-family:Arial,sans-serif;font-size:10px;color:#222;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{border:1px solid #ddd;padding:3px 5px;}
+    .card{border:1px solid #ddd;border-radius:6px;margin-bottom:16px;page-break-inside:avoid;}
+    h2{margin:0;font-size:13px;}
+    @media print{
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .no-print{display:none!important;}
+      .card{page-break-inside:avoid;}
+    }
+  </style>
+  </head><body>
+  <div style="text-align:center;padding:8px 0 12px;border-bottom:2px solid #1e4d6b;margin-bottom:14px;">
+    <div style="font-size:14px;font-weight:800;color:#1e4d6b;letter-spacing:1px;">PT. BOGA PANGAN SENTOSA</div>
+    <div style="font-size:12px;font-weight:700;">${judul}</div>
+    <div style="font-size:9px;color:#666;">Dicetak: ${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+  </div>
+  ${content}
+  </body></html>`);
+  win.document.close();setTimeout(()=>win.print(),500);
 }
 
 // ── LAPORAN PDF ───────────────────────────────────────────────────────────────
