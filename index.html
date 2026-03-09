@@ -6992,6 +6992,13 @@ async function _silentReloadKas(){
     const rows = await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
     if(!rows||!rows.length) return;
     const _BULAN_NAMES=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    // MERGE: keep rows being edited (pending _saveTimer), replace rest from DB
+    const _dbKasMap={};
+    rows.forEach(r=>{ _dbKasMap[r.id]=r; });
+    const _focused2=document.activeElement;
+    const _focusedKasRow=_focused2?.closest('tr[id^="krow-"]');
+    const _focusedKasIdx=_focusedKasRow?parseInt(_focusedKasRow.id.replace('krow-','')):-1;
+    const _focusedKasDbId=_focusedKasIdx>=0?KAS_DATA[_focusedKasIdx]?._db_id:null;
     KAS_DATA = rows.map(r=>({
       id:r.id, tgl:r.tgl, nama_barang:r.nama_barang||'', type:r.type||'',
       vendor:r.vendor||'', qty:+r.qty||0, satuan:r.satuan||'',
@@ -7000,7 +7007,15 @@ async function _silentReloadKas(){
       status:r.status||'', catatan:r.catatan||'', locked:!!r.locked,
       _db_id:r.id,
       bulan:_BULAN_NAMES[+(r.tgl||'').slice(5,7)]||''
-    }));
+    })).map(r=>{
+      // Keep local version if row is being edited or has pending save
+      if(_focusedKasDbId && r._db_id===_focusedKasDbId){
+        const local=KAS_DATA.find(l=>l._db_id===r._db_id); return local||r;
+      }
+      const local=KAS_DATA.find(l=>l._db_id===r._db_id);
+      if(local&&local._saveTimer) return local;
+      return r;
+    });
     _kasLastUpdated = new Date();
     _updateKasRefreshBadge();
     // Don't re-render if user is actively editing a cell
@@ -7331,11 +7346,15 @@ function kasAutoMonth(idx){
 function kasRecalcTotal(idx){
   const d=KAS_DATA[idx];if(!d)return;
   d.total=Math.round((d.qty||0)*(d.harga||0));
+  d.jumlah=d.total;
   if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
   else{d.debit=d.total;d.kredit=0;}
   const jml=document.getElementById('kjml-'+idx);
   if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
   _renderBalanceBar();
+  // Save to DB after recalc
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
 }
 
 function kasEdit(idx,field,val){if(KAS_DATA[idx])KAS_DATA[idx][field]=val;}
