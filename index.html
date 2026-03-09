@@ -1984,7 +1984,16 @@ tr:hover td{background:var(--bg);}
 const SB_URL='https://pevwkyrsfpmzhwxkoask.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBldndreXJzZnBtemh3eGtvYXNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTg0MTEsImV4cCI6MjA4ODI3NDQxMX0.725qbv0LxRBqic3qa1utj1N7REZMMSrnBnktxNmeZtc';
 const SBH={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
-async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:SBH});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbGet(t,q=''){
+  const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:SBH});
+  if(!r.ok){
+    const txt=await r.text();
+    // Table not found = DB not set up yet, return empty array silently
+    if(r.status===404||txt.includes('relation')||txt.includes('does not exist')) return [];
+    throw new Error(txt);
+  }
+  return r.json();
+}
 async function sbPost(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{...SBH,'Prefer':'return=representation'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbPatch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{...SBH,'Prefer':'return=representation'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:SBH});if(!r.ok)throw new Error(await r.text());}
@@ -2127,7 +2136,10 @@ async function initApp(){
   document.getElementById('nav-rl').textContent=r.label;
   loading(true,'Memuat data...');
   try{
-    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices(),loadTasks(),loadKasFromDB(),loadInvFromDB()]);
+    await Promise.all([loadCols(),loadOrders(),loadUsers(),loadPrivs(),loadCustomers(),loadInvoices(),loadTasks()]);
+    // Load DB data separately (non-blocking, silent-fail if tables not created yet)
+    loadKasFromDB().catch(e=>console.log('KAS DB not ready:',e.message));
+    loadInvFromDB().catch(e=>console.log('INV DB not ready:',e.message));
     setDb('connected');
   }catch(e){setDb('disconnected');toast('Gagal memuat data','error');}
   loading(false);
@@ -5708,7 +5720,44 @@ function _kasCurrentBalance(){
   return KAS_SALDO_AWAL+totalKredit-totalDebit;
 }
 
-function renderKasPage(){setKasTab('transaksi');filterKas();}
+function renderKasPage(){
+  setKasTab('transaksi');filterKas();
+  // Show DB setup banner if tables not ready
+  setTimeout(()=>showDbSetupBanner('kas-content'),200);
+}
+
+// ── DB SETUP BANNER ────────────────────────────────────────────────────────────
+let _DB_SETUP_SHOWN = false;
+function showDbSetupBanner(containerId){
+  const el = document.getElementById(containerId);
+  if(!el || _DB_SETUP_SHOWN) return;
+  // Check if tables likely don't exist (both readiness flags are false/null after load attempt)
+  if(_DB_KAS_READY===false || _DB_INV_READY===false){
+    const b=document.getElementById('db-setup-banner');
+    if(b) return; // already shown
+    const banner=document.createElement('div');
+    banner.id='db-setup-banner';
+    banner.style.cssText='background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px;';
+    banner.innerHTML=`
+      <div style="font-size:24px;">⚠️</div>
+      <div style="flex:1;">
+        <div style="font-weight:800;color:#92400e;font-size:14px;margin-bottom:4px;">Tabel Database Belum Dibuat</div>
+        <div style="font-size:12px;color:#78350f;line-height:1.6;">
+          Data Kas & Inventory masih tersimpan lokal (embedded). Untuk menyimpan ke Supabase, 
+          jalankan SQL berikut di <b>Supabase → SQL Editor</b>:<br>
+          <code style="background:#fde68a;padding:2px 6px;border-radius:4px;">01_create_tables.sql</code> → 
+          <code style="background:#fde68a;padding:2px 6px;border-radius:4px;">02_import_kas_ALL.sql</code> → 
+          <code style="background:#fde68a;padding:2px 6px;border-radius:4px;">03_import_inv_products.sql</code> → 
+          <code style="background:#fde68a;padding:2px 6px;border-radius:4px;">04_import_inv_activities.sql</code>
+        </div>
+        <button onclick="this.closest('#db-setup-banner').remove();_DB_SETUP_SHOWN=true;" 
+          style="margin-top:8px;background:#f59e0b;color:#fff;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;">
+          Tutup (data embedded tetap berfungsi)
+        </button>
+      </div>`;
+    el.insertBefore(banner, el.firstChild);
+  }
+}
 
 function setKasTab(tab){
   _kasTab=tab;
@@ -5761,6 +5810,7 @@ function kasEditSaldoAwal(){
 
 function renderInventoryPage(){
   setInvTab(document.querySelector('.rtab.active[id^="invtab-"]')?.id.replace('invtab-','') || 'transaksi');
+  setTimeout(()=>showDbSetupBanner('inv-content'),200);
 }
 
 function setInvTab(tab){
@@ -6698,7 +6748,14 @@ async function loadKasFromDB(){
   try{
     // Load all kas rows ordered by date desc
     const rows = await sbGet('kas_transactions','select=*&order=tgl.asc,id.asc&limit=10000');
-    if(!rows||!rows.length){ console.log('KAS DB: no rows, using embedded data'); return; }
+    if(!rows||!rows.length){ 
+      console.log('KAS DB: no rows, using embedded data');
+      // rows=[] could mean empty table OR table doesn't exist (404 returned [])
+      // Probe with a count check
+      _DB_KAS_READY = (rows !== null);
+      return; 
+    }
+    _DB_KAS_READY = true;
     KAS_DATA = rows.map(r=>({
       id: r.id,
       tgl: r.tgl,
@@ -6723,8 +6780,19 @@ async function loadKasFromDB(){
   } catch(e){ console.warn('loadKasFromDB error:', e.message); }
 }
 
+let _DB_KAS_READY = null; // null=unknown, true=ready, false=not ready
+
+async function _checkDbTable(tbl){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${tbl}?limit=1`,{headers:SBH});
+    return r.ok || r.status!==404;
+  }catch(e){ return false; }
+}
+
 async function saveKasRowToDB(d){
   if(!d) return;
+  // Skip if DB table not ready
+  if(_DB_KAS_READY===false) return;
   const body = {
     tgl: d.tgl, nama_barang: d.nama_barang, type: d.type,
     vendor: d.vendor, qty: d.qty||0, satuan: d.satuan,
@@ -6739,9 +6807,12 @@ async function saveKasRowToDB(d){
       await sbPatch('kas_transactions',`id=eq.${d._db_id}`,body);
     } else {
       const res = await sbPost('kas_transactions',body);
-      if(res&&res[0]) d._db_id=res[0].id;
+      if(res&&res[0]){ d._db_id=res[0].id; _DB_KAS_READY=true; }
     }
-  } catch(e){ console.warn('saveKasRowToDB error:', e.message); toast('Gagal simpan kas','error'); }
+  } catch(e){ 
+    console.warn('saveKasRowToDB error:', e.message);
+    if(e.message.includes('relation')||e.message.includes('does not exist')) _DB_KAS_READY=false;
+  }
 }
 
 async function deleteKasRowFromDB(dbId){
@@ -6759,7 +6830,7 @@ async function loadInvFromDB(){
       sbGet('inv_opname','select=*&limit=5000')
     ]);
 
-    if(prods && prods.length){
+    if(prods && prods.length){ _DB_INV_READY=true;
       INV_PRODUCTS = prods.map(r=>({
         id:r.id, nama:r.nama, category:r.category||'', location:r.location||'',
         status:r.status||'Activated', satuan:r.satuan||'Kg',
@@ -6810,8 +6881,11 @@ async function saveInvProductToDB(p){
   } catch(e){ console.warn('saveInvProduct error:',e.message); }
 }
 
+let _DB_INV_READY = null;
+
 async function saveInvActivityToDB(d){
   if(!d) return;
+  if(_DB_INV_READY===false) return;
   const body={
     tgl:d.tgl, nama:d.nama, stock_in:d.stock_in||0, stock_out:d.stock_out||0,
     pengambil:d.pengambil||'', pjawab:d.pjawab||'',
@@ -6824,9 +6898,12 @@ async function saveInvActivityToDB(d){
       await sbPatch('inv_activities',`id=eq.${d._db_id}`,body);
     } else {
       const res=await sbPost('inv_activities',body);
-      if(res&&res[0]) d._db_id=res[0].id;
+      if(res&&res[0]){ d._db_id=res[0].id; _DB_INV_READY=true; }
     }
-  } catch(e){ console.warn('saveInvActivity error:',e.message); }
+  } catch(e){ 
+    console.warn('saveInvActivity error:',e.message);
+    if(e.message.includes('relation')||e.message.includes('does not exist')) _DB_INV_READY=false;
+  }
 }
 
 async function deleteInvActivityFromDB(dbId){
