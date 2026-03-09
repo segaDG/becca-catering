@@ -401,7 +401,7 @@ tr:hover td{background:var(--bg);}
 </div>
 
 <!-- APP -->
-<div id="app">
+<div id="app" style="display:none;">
   <div class="sidebar" id="sidebar">
     <div class="sb-head" style="padding:14px 14px 10px;">
       <div id="sb-company-wrap" style="display:flex;align-items:center;gap:10px;min-width:0;">
@@ -5602,7 +5602,7 @@ function _kasApplyType(idx, type) {
   if (sel) { sel.value = type; const tc = KAS_TC[type]||{c:'#6b7280',bg:'#f3f4f6'}; sel.style.background=tc.bg; sel.style.color=tc.c; }
   kasRowColor(idx);
   _renderBalanceBar();
-}}
+}
 
 
 // Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
