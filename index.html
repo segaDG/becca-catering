@@ -5889,7 +5889,8 @@ function _renderInvTable(){
     const kc=INV_KODE_COLOR[d.kode]||'#f3f4f6';
     const ktc=INV_KODE_TC[d.kode]||'#374151';
     const locked=d.locked;
-    const rowBg=d.is_hpp?'#fffbeb':'';
+    const isRealHpp=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME';
+    const rowBg=isRealHpp?'#fffbeb':'';
     const lockIcon=locked?'🔒':'🔓';
     return `<tr id="invrow-${idx}" style="background:${rowBg};border-bottom:1px solid #e5e7eb;">
       <td style="text-align:center;font-size:10px;color:#888;padding:2px 4px;">${start+i+1}</td>
@@ -5932,8 +5933,8 @@ function _renderInvTable(){
       <td style="padding:1px 3px;text-align:center;">
         <div style="display:flex;gap:2px;align-items:center;justify-content:center;">
           <span id="invhpp-${idx}" style="background:${d.is_hpp?'#fef3c7':'#f3f4f6'};color:${d.is_hpp?'#92400e':'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:pointer;user-select:none;border:1px solid ${d.is_hpp?'#fde68a':'#e5e7eb'};"
-            onclick="invToggleHpp(${idx})" title="Klik untuk toggle HPP">${d.is_hpp?'HPP':'—'}</span>
-          <button style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 1px;" onclick="invAiHpp(${idx})" title="AI: auto-detect HPP">🤖</button>
+            onclick="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':'invToggleHpp('+idx+')'}" title="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'STOCK IN/OPNAME tidak dihitung HPP':'Klik untuk toggle HPP'}">${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'<span style="color:#9ca3af">—</span>':(d.is_hpp?'HPP':'—')}</span>
+          ${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':('<button style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 1px;" onclick="invAiHpp('+idx+')" title="AI: auto-detect HPP">🤖</button>')}
         </div>
       </td>
       <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;">
@@ -5988,6 +5989,10 @@ function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   d[field]=val;
   // Auto-set kode: if stock_in > 0, force kode = STOCK IN
+  if(field==='kode'){
+    if(val==='STOCK IN'||val==='STOCK OPNAME'){ d.is_hpp=false; }
+    else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){ d.is_hpp=true; }
+  }
   if(field==='stock_in'){
     if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
     invRecalcValue(idx);
@@ -6005,6 +6010,7 @@ function invEdit(idx,field,val){
 
 function invToggleHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d||d.locked)return;
+  if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME') return; // tidak bisa toggle
   d.is_hpp=!d.is_hpp;
   // Update badge in-place
   const el=document.getElementById('invhpp-'+idx);
