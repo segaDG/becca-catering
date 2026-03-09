@@ -799,6 +799,112 @@ tr:hover td{background:var(--bg);}
           </div>
         </div>
       </div>
+      <!-- ══════════════════ KAS KECIL ══════════════════ -->
+      <div id="page-kas" class="page">
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="rtab active" id="kastab-transaksi" onclick="setKasTab('transaksi')">📒 Transaksi</button>
+          <button class="rtab" id="kastab-laporan" onclick="setKasTab('laporan')">📄 Laporan PDF</button>
+        </div>
+
+        <!-- TAB: TRANSAKSI -->
+        <div id="kas-panel-transaksi">
+          <div class="card" style="padding:0;">
+            <div class="card-head" style="flex-wrap:wrap;gap:8px;padding:12px 16px;">
+              <span class="card-title">💰 Kas Kecil 2026</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-primary btn-sm" onclick="openAddKas()"><span class="btn-plus">+</span>Tambah Baris</button>
+                <button class="btn btn-secondary btn-sm" onclick="kasBatchPaste()" title="Paste dari clipboard (Tab-separated)">📋 Paste Excel</button>
+                <div class="sbox"><span>🔍</span><input type="text" id="kas-search" placeholder="Cari nama barang..." oninput="filterKas()"></div>
+                <select class="sel" id="kas-f-bulan" onchange="filterKas()">
+                  <option value="">Semua Bulan</option>
+                  <option>Januari</option><option>Febuari</option><option>Maret</option>
+                  <option>April</option><option>Mei</option><option>Juni</option>
+                  <option>Juli</option><option>Agustus</option><option>September</option>
+                  <option>Oktober</option><option>November</option><option>Desember</option>
+                </select>
+                <select class="sel" id="kas-f-type" onchange="filterKas()">
+                  <option value="">Semua Type</option>
+                  <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
+                  <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
+                  <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
+                  <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
+                  <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
+                  <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="kasAddColumn()">➕ Kolom</button>
+              </div>
+            </div>
+            <div id="kas-stats" style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;"></div>
+            <div class="tw" style="max-height:calc(100vh - 320px);overflow:auto;" id="kas-table-wrap">
+              <table id="kas-table" style="min-width:900px;border-collapse:collapse;">
+                <thead id="kas-thead">
+                  <tr id="kas-header-row" style="position:sticky;top:0;z-index:10;background:var(--surface2);">
+                    <th style="width:36px;text-align:center;">#</th>
+                    <th style="min-width:100px;">Tanggal</th>
+                    <th style="min-width:200px;">Nama Barang</th>
+                    <th style="min-width:120px;">Type</th>
+                    <th style="min-width:120px;">Vendor</th>
+                    <th style="min-width:60px;text-align:right;">Qty</th>
+                    <th style="min-width:60px;">Satuan</th>
+                    <th style="min-width:110px;text-align:right;">Harga/Satuan</th>
+                    <th style="min-width:110px;text-align:right;">Total</th>
+                    <th style="min-width:90px;">Penerima</th>
+                    <th style="width:50px;text-align:center;">Status</th>
+                    <th style="width:44px;text-align:center;">⚙</th>
+                  </tr>
+                </thead>
+                <tbody id="kas-tbody"></tbody>
+              </table>
+            </div>
+            <div id="kas-pagination" style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);flex-wrap:wrap;gap:6px;">
+              <span id="kas-page-info"></span>
+              <div style="display:flex;gap:4px;">
+                <button class="btn btn-secondary btn-sm" id="kas-prev" onclick="kasPageNav(-1)">◀</button>
+                <span id="kas-page-num" style="padding:0 8px;line-height:28px;font-weight:600;"></span>
+                <button class="btn btn-secondary btn-sm" id="kas-next" onclick="kasPageNav(1)">▶</button>
+                <select class="sel" id="kas-page-size" onchange="kasPageSizeChange()" style="font-size:11px;">
+                  <option value="50">50/hal</option>
+                  <option value="100" selected>100/hal</option>
+                  <option value="200">200/hal</option>
+                  <option value="500">500/hal</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: LAPORAN PDF -->
+        <div id="kas-panel-laporan" style="display:none;">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">📄 Laporan Kas Kecil — Cetak PDF</span>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select class="sel" id="kl-bulan" onchange="renderKasLaporan()">
+                  <option value="">Semua Bulan</option>
+                  <option>Januari</option><option>Febuari</option><option>Maret</option>
+                  <option>April</option><option>Mei</option><option>Juni</option>
+                  <option>Juli</option><option>Agustus</option><option>September</option>
+                  <option>Oktober</option><option>November</option><option>Desember</option>
+                </select>
+                <select class="sel" id="kl-tahun" onchange="renderKasLaporan()">
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                </select>
+                <select class="sel" id="kl-type" onchange="renderKasLaporan()">
+                  <option value="">Semua Type</option>
+                  <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
+                  <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
+                  <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
+                  <option>Maintenance</option><option>OP.Expense</option><option>Lain-lain</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="printKasLaporan()">🖨️ Print / Save PDF</button>
+              </div>
+            </div>
+            <div id="kas-laporan-preview" style="padding:16px;background:var(--bg2);border-radius:8px;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ════════════════════════════════════════════ -->
 
       <div id="page-activity" class="page">
@@ -1346,6 +1452,92 @@ tr:hover td{background:var(--bg);}
   </div>
 </div>
 
+
+<!-- MODAL KAS KECIL -->
+<div class="overlay" id="m-kas">
+  <div class="modal sm">
+    <div class="mhead">
+      <div><div class="mtitle" id="kas-modal-title">+ Tambah Transaksi Kas</div><div class="msub" id="kas-modal-sub"></div></div>
+      <button class="mclose" onclick="closeM('m-kas')">X</button>
+    </div>
+    <input type="hidden" id="kas-edit-idx">
+    <div class="fg">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Tanggal *</label><input type="date" id="kas-m-tgl"></div>
+        <div class="form-group"><label>Bulan</label>
+          <select id="kas-m-bulan" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+            <option>Januari</option><option>Febuari</option><option>Maret</option><option>April</option>
+            <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
+            <option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Nama Barang *</label><input type="text" id="kas-m-nama" placeholder="Nama barang / keterangan"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Type</label>
+          <select id="kas-m-type" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+            <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
+            <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
+            <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
+            <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
+            <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
+            <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Vendor / Supplier</label><input type="text" id="kas-m-vendor" placeholder="Nama vendor / tf."></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Qty</label><input type="number" id="kas-m-qty" value="1" min="0" step="any" oninput="kasCalcTotal()"></div>
+        <div class="form-group"><label>Satuan</label>
+          <input type="text" id="kas-m-satuan" list="kas-satuan-list" placeholder="Kg,Pcs...">
+          <datalist id="kas-satuan-list">
+            <option>Kg</option><option>Pcs</option><option>Bks</option><option>Box</option>
+            <option>Btl</option><option>Kli</option><option>Prsi</option><option>Gbng</option>
+            <option>Ikt</option><option>Lbr</option><option>Pack</option><option>Bag</option>
+          </datalist>
+        </div>
+        <div class="form-group"><label>Harga/Satuan</label><input type="number" id="kas-m-harga" placeholder="0" min="0" oninput="kasCalcTotal()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Total (Rp)</label><input type="number" id="kas-m-total" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Nama Penerima</label><input type="text" id="kas-m-penerima" placeholder="Nama penerima"></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="kas-m-status" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="DONE">SELESAI</option>
+          <option value="">TBC (Belum Konfirmasi)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      <button class="btn btn-primary" onclick="saveKas()" style="flex:1;">Simpan</button>
+      <button class="btn btn-secondary" onclick="closeM('m-kas')" style="flex:1;">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD CUSTOM COLUMN KAS -->
+<div class="overlay" id="m-kas-col">
+  <div class="modal sm">
+    <div class="mhead">
+      <div><div class="mtitle">+ Tambah Kolom Kustom</div><div class="msub">Kolom tambahan pada tabel Kas Kecil</div></div>
+      <button class="mclose" onclick="closeM('m-kas-col')">X</button>
+    </div>
+    <div class="fg">
+      <div class="form-group"><label>Nama Kolom *</label><input type="text" id="kas-col-name" placeholder="Nota, Kategori, Keterangan..."></div>
+      <div class="form-group"><label>Tipe Data</label>
+        <select id="kas-col-type" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;">
+          <option value="text">Teks</option><option value="number">Angka</option><option value="date">Tanggal</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      <button class="btn btn-primary" onclick="saveKasColumn()" style="flex:1;">Tambah</button>
+      <button class="btn btn-secondary" onclick="closeM('m-kas-col')" style="flex:1;">Batal</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LOGBOOK -->
 <div class="overlay" id="m-logbook">
   <div class="modal sm">
@@ -1610,6 +1802,7 @@ const ALL_PAGES={
   tasks:    {icon:'✅',label:'Task Board',          priv_key:'view_tasks'},
   karyawan: {icon:'👷',label:'Data Karyawan',       priv_key:'view_karyawan'},
   ap:       {icon:'💳',label:'Account Payable',     priv_key:'view_ap'},
+  kas:      {icon:'💰',label:'Kas Kecil',            priv_key:'view_kas'},
 };
 let CU=null,ORDERS=[],USERS_DATA=[],COLS=[],PRIVS=[],CUSTOMERS=[],INVOICES=[],editId=null,editCustId=null,rTab='daily',_pendingOrder=null;
 
@@ -1801,6 +1994,7 @@ function renderPage(pg){
   if(pg==='tasks'){renderTasks();}
   if(pg==='karyawan'){renderKaryawanPage();}
   if(pg==='ap'){renderApPage();}
+  if(pg==='kas'){renderKasPage();}
   if(pg==='input'){document.getElementById('f-tgl').value=new Date().toISOString().split('T')[0];buildInputForm();updImeta();}
 }
 
@@ -5231,6 +5425,359 @@ function deleteSupplier(idx){
 }
 
 // ══ DATA KARYAWAN ════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+// ─── KAS KECIL ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+let KAS_DATA = [{"id":1,"tgl":"2026-01-01","nama_barang":"Tambahan Beli Minum Tahun Baru","type":"Sayuran","vendor":"Tf.Hari","qty":1.0,"satuan":"Kli","harga":500000.0,"total":500000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":2,"tgl":"2026-01-01","nama_barang":"Kasbon Rifki","type":"Kasbon","vendor":"Tf.Deny","qty":1.0,"satuan":"Kli","harga":200000.0,"total":200000.0,"penerima":"Desty","status":"","bulan":"Januari"},{"id":3,"tgl":"2026-01-01","nama_barang":"Kertas Kfc","type":"Lain-lain","vendor":"Obing","qty":10.0,"satuan":"Pack","harga":9000.0,"total":90000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":4,"tgl":"2026-01-01","nama_barang":"Yakult Shift 3","type":"Minuman","vendor":"Yanah","qty":13.0,"satuan":"Pcs","harga":2500.0,"total":32500.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":5,"tgl":"2026-01-01","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 1,2 & 3","qty":46.0,"satuan":"Prsi","harga":4500.0,"total":207000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":6,"tgl":"2026-01-01","nama_barang":"Yakult Shift 2","type":"Minuman","vendor":"Adi","qty":14.0,"satuan":"Prsi","harga":2500.0,"total":35000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":7,"tgl":"2026-01-02","nama_barang":"Tahu Segitiga Tgl 31","type":"Sayuran","vendor":"Wanda Tempe","qty":350.0,"satuan":"Pcs","harga":450.0,"total":157500.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":8,"tgl":"2026-01-02","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":20.0,"satuan":"Pcs","harga":4500.0,"total":90000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":9,"tgl":"2026-01-02","nama_barang":"Bayam","type":"Sayuran","vendor":"Wanda Tempe","qty":0.5,"satuan":"Gbng","harga":50000.0,"total":25000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":10,"tgl":"2026-01-02","nama_barang":"Ikan Nila","type":"Raw Food","vendor":"Wanda Tempe","qty":5.0,"satuan":"Kg","harga":28000.0,"total":140000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":11,"tgl":"2026-01-02","nama_barang":"Telur Puyuh","type":"Raw Food","vendor":"Wanda Tempe","qty":300.0,"satuan":"Pcs","harga":500.0,"total":150000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":12,"tgl":"2026-01-02","nama_barang":"Tauge","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":10000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":13,"tgl":"2026-01-02","nama_barang":"Kemangi","type":"Sayuran","vendor":"Wanda Tempe","qty":0.5,"satuan":"Ikt","harga":10000.0,"total":5000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":14,"tgl":"2026-01-02","nama_barang":"Jinten","type":"Raw Materials","vendor":"Wanda Tempe","qty":1.0,"satuan":"Bks","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":15,"tgl":"2026-01-02","nama_barang":"Kapulaga","type":"Raw Materials","vendor":"Wanda Tempe","qty":0.1,"satuan":"Kg","harga":200000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":16,"tgl":"2026-01-02","nama_barang":"Selada","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":25000.0,"total":25000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":17,"tgl":"2026-01-02","nama_barang":"Pecay (Tambahan)","type":"Sayuran","vendor":"Wanda Tempe","qty":20.0,"satuan":"Kg","harga":10000.0,"total":200000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":18,"tgl":"2026-01-02","nama_barang":"Cabe Merah Keriting (Tambahan)","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":40000.0,"total":80000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":19,"tgl":"2026-01-02","nama_barang":"Tahu Segitiga (Tambahan)","type":"Sayuran","vendor":"Wanda Tempe","qty":60.0,"satuan":"Pcs","harga":450.0,"total":27000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":20,"tgl":"2026-01-02","nama_barang":"Tahu Cina (Tambahan)","type":"Sayuran","vendor":"Wanda Tempe","qty":7.0,"satuan":"Pcs","harga":4500.0,"total":31500.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":21,"tgl":"2026-01-02","nama_barang":"Kelapa Parut (Tambahan)","type":"Raw Food","vendor":"Wanda Tempe","qty":1.0,"satuan":"Buah","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":22,"tgl":"2026-01-02","nama_barang":"Ikan Patin Shift 2&3","type":"Raw Food","vendor":"Wanda Tempe","qty":8.0,"satuan":"Kg","harga":27000.0,"total":216000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":23,"tgl":"2026-01-02","nama_barang":"Kulit Lumpia","type":"Raw Materials","vendor":"Wanda Tempe","qty":5.0,"satuan":"Bks","harga":12000.0,"total":60000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":24,"tgl":"2026-01-02","nama_barang":"Sosis Geboy","type":"Snack","vendor":"Wanda Tempe","qty":5.0,"satuan":"Bks","harga":13000.0,"total":65000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":25,"tgl":"2026-01-02","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":12.0,"satuan":"Ppn","harga":6000.0,"total":72000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":26,"tgl":"2026-01-02","nama_barang":"Ikan Tongkol","type":"Raw Food","vendor":"Wanda Tempe","qty":90.0,"satuan":"Ptng","harga":2000.0,"total":180000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":27,"tgl":"2026-01-02","nama_barang":"Kemangi","type":"Sayuran","vendor":"Wanda Tempe","qty":0.5,"satuan":"Ikt","harga":10000.0,"total":5000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":28,"tgl":"2026-01-02","nama_barang":"Tahu Segitiga","type":"Sayuran","vendor":"Wanda Tempe","qty":160.0,"satuan":"Pcs","harga":450.0,"total":72000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":29,"tgl":"2026-01-02","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":3.0,"satuan":"Pcs","harga":4500.0,"total":13500.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":30,"tgl":"2026-01-02","nama_barang":"Nangka Muda","type":"Sayuran","vendor":"Wanda Tempe","qty":6.0,"satuan":"Kg","harga":12000.0,"total":72000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":31,"tgl":"2026-01-02","nama_barang":"Ikan Patin Tgl 31","type":"Raw Food","vendor":"Wanda Tempe","qty":13.0,"satuan":"Kg","harga":27000.0,"total":351000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":32,"tgl":"2026-01-02","nama_barang":"Ikan Nila","type":"Raw Food","vendor":"Wanda Tempe","qty":5.0,"satuan":"Kg","harga":28000.0,"total":140000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":33,"tgl":"2026-01-02","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":87.0,"satuan":"Ppn","harga":6000.0,"total":522000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":34,"tgl":"2026-01-02","nama_barang":"Tauge","type":"Sayuran","vendor":"Wanda Tempe","qty":4.0,"satuan":"Kg","harga":10000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":35,"tgl":"2026-01-02","nama_barang":"Ikan Tongkol","type":"Raw Food","vendor":"Wanda Tempe","qty":130.0,"satuan":"Pcs","harga":1500.0,"total":195000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":36,"tgl":"2026-01-02","nama_barang":"Kulit Lumpia","type":"Raw Materials","vendor":"Wanda Tempe","qty":9.0,"satuan":"Pack","harga":12000.0,"total":108000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":37,"tgl":"2026-01-02","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":30.0,"satuan":"Pcs","harga":4500.0,"total":135000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":38,"tgl":"2026-01-02","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":20.0,"satuan":"Ppn","harga":6000.0,"total":120000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":39,"tgl":"2026-01-02","nama_barang":"Ikan Tongkol","type":"Raw Food","vendor":"Wanda Tempe","qty":70.0,"satuan":"Ptng","harga":2000.0,"total":140000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":40,"tgl":"2026-01-02","nama_barang":"Tahu Segitiga Tgl 1","type":"Sayuran","vendor":"Wanda Tempe","qty":90.0,"satuan":"Pcs","harga":450.0,"total":40500.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":41,"tgl":"2026-01-02","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":5.0,"satuan":"Ppn","harga":6000.0,"total":30000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":42,"tgl":"2026-01-02","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Pcs","harga":4500.0,"total":9000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":43,"tgl":"2026-01-02","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Ppn","harga":6000.0,"total":12000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":44,"tgl":"2026-01-02","nama_barang":"Oncom","type":"Raw Materials","vendor":"Wanda Tempe","qty":1.5,"satuan":"Ppn","harga":6000.0,"total":9000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":45,"tgl":"2026-01-02","nama_barang":"Buncis","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":46,"tgl":"2026-01-02","nama_barang":"Bensin Mobil Udin","type":"Bensin","vendor":"Tf.Denny","qty":34.5,"satuan":"Ltr","harga":10000.0,"total":345000.0,"penerima":"Desty","status":"✔","bulan":"Januari"},{"id":47,"tgl":"2026-01-02","nama_barang":"Kasbon Pawaid","type":"Kasbon","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":50000.0,"total":50000.0,"penerima":"Desty","status":"","bulan":"Januari"},{"id":48,"tgl":"2026-01-02","nama_barang":"Kasbon Nanang","type":"Kasbon","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":50000.0,"total":50000.0,"penerima":"Desty","status":"","bulan":"Januari"},{"id":49,"tgl":"2026-01-02","nama_barang":"Kasbon Lulu","type":"Kasbon","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":50000.0,"total":50000.0,"penerima":"Desty","status":"","bulan":"Januari"},{"id":50,"tgl":"2026-01-02","nama_barang":"Kasbon Karina","type":"Kasbon","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":50000.0,"total":50000.0,"penerima":"Desty","status":"","bulan":"Januari"},{"id":2245,"tgl":"2026-02-01","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 1,2 & 3","qty":1.0,"satuan":"Kli","harga":365000.0,"total":365000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2246,"tgl":"2026-02-01","nama_barang":"Kulit Lumpia Shift 1","type":"Raw Materials","vendor":"Wanda Tempe","qty":4.0,"satuan":"Pack","harga":12000.0,"total":48000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2247,"tgl":"2026-02-01","nama_barang":"Kol","type":"Sayuran","vendor":"Wanda Tempe","qty":5.0,"satuan":"Kg","harga":10000.0,"total":50000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2248,"tgl":"2026-02-01","nama_barang":"Bawang Merah","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":40000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2249,"tgl":"2026-02-01","nama_barang":"Tauge","type":"Sayuran","vendor":"Wanda Tempe","qty":4.0,"satuan":"Kg","harga":10000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2250,"tgl":"2026-02-01","nama_barang":"Kacang Panjang","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":20000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2251,"tgl":"2026-02-01","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":10.0,"satuan":"Pcs","harga":4500.0,"total":45000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2252,"tgl":"2026-02-01","nama_barang":"Cabe Merah TW","type":"Sayuran","vendor":"Wanda Tempe","qty":0.5,"satuan":"Kg","harga":28000.0,"total":14000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2253,"tgl":"2026-02-01","nama_barang":"Cabe Merah Keriting","type":"Sayuran","vendor":"Wanda Tempe","qty":4.0,"satuan":"Kg","harga":35000.0,"total":140000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2254,"tgl":"2026-02-01","nama_barang":"Timun","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2255,"tgl":"2026-02-01","nama_barang":"Kacng Panjang Shift 2&3","type":"Lain-lain","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":20000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2256,"tgl":"2026-02-01","nama_barang":"Terong Ungu","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":15000.0,"total":30000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2257,"tgl":"2026-02-01","nama_barang":"Jagung Manis","type":"Sayuran","vendor":"Wanda Tempe","qty":3.0,"satuan":"Kg","harga":12000.0,"total":36000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2258,"tgl":"2026-02-01","nama_barang":"Sesin","type":"Sayuran","vendor":"Wanda Tempe","qty":2.0,"satuan":"Kg","harga":15000.0,"total":30000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2259,"tgl":"2026-02-01","nama_barang":"Tempe","type":"Sayuran","vendor":"Wanda Tempe","qty":5.0,"satuan":"Ppn","harga":6000.0,"total":30000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2260,"tgl":"2026-02-01","nama_barang":"Wortel","type":"Sayuran","vendor":"Wanda Tempe","qty":3.0,"satuan":"Kg","harga":12000.0,"total":36000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2261,"tgl":"2026-02-01","nama_barang":"Tahu Cina","type":"Sayuran","vendor":"Wanda Tempe","qty":10.0,"satuan":"Pcs","harga":4500.0,"total":45000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2262,"tgl":"2026-02-01","nama_barang":"Kulit Lumpia ","type":"Raw Materials","vendor":"Wanda Tempe","qty":1.0,"satuan":"Pack","harga":12000.0,"total":12000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2263,"tgl":"2026-02-01","nama_barang":"Bawang Merah","type":"Sayuran","vendor":"Wanda Tempe","qty":0.5,"satuan":"Kg","harga":40000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2264,"tgl":"2026-02-01","nama_barang":"Kunyit","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2265,"tgl":"2026-02-01","nama_barang":"Cabe Merah Keriting","type":"Sayuran","vendor":"Wanda Tempe","qty":5.0,"satuan":"Kg","harga":35000.0,"total":175000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2266,"tgl":"2026-02-01","nama_barang":"Cabe Merah TW","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":28000.0,"total":28000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2267,"tgl":"2026-02-01","nama_barang":"Cabe Rawit Merah","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":70000.0,"total":70000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2268,"tgl":"2026-02-01","nama_barang":"Timun","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2269,"tgl":"2026-02-01","nama_barang":"Lengkuas","type":"Sayuran","vendor":"Wanda Tempe","qty":1.0,"satuan":"Kg","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2270,"tgl":"2026-02-01","nama_barang":"Bensin Mobil Nurdin","type":"Bensin","vendor":"Tf.Denny","qty":39.13,"satuan":"Ltr","harga":10000.0,"total":391300.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2271,"tgl":"2026-02-01","nama_barang":"Pasir","type":"Lain-lain","vendor":"Tf.Lie Sieku","qty":0.5,"satuan":"Kubik","harga":400000.0,"total":200000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2272,"tgl":"2026-02-01","nama_barang":"Semen","type":"Lain-lain","vendor":"Tf.Lie Sieku","qty":2.0,"satuan":"Sak","harga":55000.0,"total":110000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2273,"tgl":"2026-02-01","nama_barang":"Teriplek","type":"Lain-lain","vendor":"Tf.Lie Sieku","qty":1.0,"satuan":"Pcs","harga":86000.0,"total":86000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2274,"tgl":"2026-02-01","nama_barang":"Kaso","type":"Lain-lain","vendor":"Tf.Lie Sieku","qty":1.0,"satuan":"Pcs","harga":35000.0,"total":35000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2275,"tgl":"2026-02-01","nama_barang":"Kas Masuk","type":"Kas","vendor":"","qty":0,"satuan":"","harga":0,"total":0,"penerima":"Desty","status":"","bulan":"Febuari"},{"id":2276,"tgl":"2026-02-01","nama_barang":"Kerupuk Udang","type":"Raw Food","vendor":"Toko RM","qty":1.0,"satuan":"Dus","harga":155000.0,"total":155000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2277,"tgl":"2026-02-01","nama_barang":"Emping","type":"Raw Materials","vendor":"Toko RM","qty":5.0,"satuan":"Kg","harga":59000.0,"total":295000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2278,"tgl":"2026-02-01","nama_barang":"Bawang Bombai","type":"Sayuran","vendor":"Toko RM","qty":6.0,"satuan":"Kg","harga":30000.0,"total":180000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2279,"tgl":"2026-02-01","nama_barang":"Makaroni","type":"Raw Materials","vendor":"Toko RM","qty":3.0,"satuan":"Pack","harga":20000.0,"total":60000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2280,"tgl":"2026-02-01","nama_barang":"Lada Hitam","type":"Raw Materials","vendor":"Toko RM","qty":0.25,"satuan":"Kg","harga":160000.0,"total":40000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2281,"tgl":"2026-02-01","nama_barang":"Nanas (Jus IFF)","type":"Buah segar","vendor":"UD.Kharisama","qty":20.0,"satuan":"Pcs","harga":5000.0,"total":100000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2282,"tgl":"2026-02-01","nama_barang":"Salak Jumbo","type":"Buah segar","vendor":"UD.Putri Buah","qty":31.0,"satuan":"Kg","harga":7500.0,"total":232500.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2283,"tgl":"2026-02-01","nama_barang":"Semangka","type":"Buah segar","vendor":"UD.Sinar Barokah Buah","qty":100.0,"satuan":"Kg","harga":8500.0,"total":850000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2284,"tgl":"2026-02-01","nama_barang":"Pepaya","type":"Buah segar","vendor":"UD.Abadi Jaya","qty":30.0,"satuan":"Kg","harga":8000.0,"total":240000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2285,"tgl":"2026-02-01","nama_barang":"Jeruk Dr","type":"Buah segar","vendor":"UD.Gibreli","qty":20.0,"satuan":"Kg","harga":14000.0,"total":280000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2286,"tgl":"2026-02-01","nama_barang":"Frozen Buah Alpukat","type":"Buah segar","vendor":"Pasar Johar","qty":6.0,"satuan":"Pack","harga":23000.0,"total":138000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2287,"tgl":"2026-02-01","nama_barang":"Frozen Buah Sirsak","type":"Buah segar","vendor":"Pasar Johar","qty":6.0,"satuan":"Pack","harga":25000.0,"total":150000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2288,"tgl":"2026-02-01","nama_barang":"Frozen Buah Jambu","type":"Buah segar","vendor":"Pasar Johar","qty":4.0,"satuan":"Pack","harga":15000.0,"total":60000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2289,"tgl":"2026-02-01","nama_barang":"Buah Naga","type":"Buah segar","vendor":"Pasar Johar","qty":3.0,"satuan":"Kg","harga":17000.0,"total":51000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2290,"tgl":"2026-02-01","nama_barang":"Wortel","type":"Sayuran","vendor":"PD.Tiga Putra","qty":45.0,"satuan":"Kg","harga":7500.0,"total":337500.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2291,"tgl":"2026-02-01","nama_barang":"Daun Bawang","type":"Sayuran","vendor":"PD.Sumber Berkah","qty":7.0,"satuan":"Kg","harga":6500.0,"total":45500.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2292,"tgl":"2026-02-01","nama_barang":"Seledri","type":"Sayuran","vendor":"PD.Sumber Berkah","qty":1.5,"satuan":"Kg","harga":15000.0,"total":22500.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2293,"tgl":"2026-02-01","nama_barang":"Kembang Kol","type":"Sayuran","vendor":"PD.Putra Mekar Saluyu","qty":9.0,"satuan":"Kg","harga":15000.0,"total":135000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":2294,"tgl":"2026-02-01","nama_barang":"Kol","type":"Sayuran","vendor":"Anugrah Sayur","qty":50.0,"satuan":"Kg","harga":5000.0,"total":250000.0,"penerima":"Desty","status":"✔","bulan":"Febuari"},{"id":4249,"tgl":"2026-03-01","nama_barang":"Ihrom Ke Tangerang","type":"Lain-lain","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":450000.0,"total":450000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4250,"tgl":"2026-03-01","nama_barang":"Kasbon Nyo","type":"Kasbon","vendor":"Tf.Denny","qty":1.0,"satuan":"Kli","harga":100000.0,"total":100000.0,"penerima":"Desty","status":"","bulan":"Maret"},{"id":4251,"tgl":"2026-03-01","nama_barang":"Bensin Mobil Ihrom","type":"Bensin","vendor":"Tf.Denny","qty":1.0,"satuan":"Kli","harga":390400.0,"total":390400.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4252,"tgl":"2026-03-01","nama_barang":"Kas Masuk","type":"Kas","vendor":"","qty":0,"satuan":"","harga":0,"total":0,"penerima":"Desty","status":"","bulan":"Maret"},{"id":4253,"tgl":"2026-03-01","nama_barang":"Makan Bukber","type":"Lain-lain","vendor":"Tf.Umad ","qty":1.0,"satuan":"Kli","harga":1500000.0,"total":1500000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4254,"tgl":"2026-03-01","nama_barang":"Snack Berat IFF","type":"Snack","vendor":"Enza","qty":5.0,"satuan":"Prsi","harga":20000.0,"total":100000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4255,"tgl":"2026-03-01","nama_barang":"Bensin Motor Enza","type":"Bensin","vendor":"Enza","qty":1.0,"satuan":"Kli","harga":50000.0,"total":50000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4256,"tgl":"2026-03-01","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 1,2 & 3","qty":49.0,"satuan":"Prsi","harga":4500.0,"total":220500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4257,"tgl":"2026-03-01","nama_barang":"Snack Takjil PT.IFF","type":"Snack","vendor":"Shift 1","qty":29.0,"satuan":"Prsi","harga":9500.0,"total":275500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4258,"tgl":"2026-03-01","nama_barang":"Snack Takjil PT.SSK","type":"Snack","vendor":"Shift 1","qty":10.0,"satuan":"Prsi","harga":4500.0,"total":45000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4259,"tgl":"2026-03-01","nama_barang":"Snack Takjil PT.Shinto","type":"Snack","vendor":"Shift 1","qty":17.0,"satuan":"Prsi","harga":4500.0,"total":76500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4260,"tgl":"2026-03-01","nama_barang":"Isi Token Listrik Kontrakan Pak Deny","type":"Listrik PLN","vendor":"Tf.Denny","qty":1.0,"satuan":"Kli","harga":1003500.0,"total":1003500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4261,"tgl":"2026-03-01","nama_barang":"Kasbon Maksum","type":"Kasbon","vendor":"Tf.Denny","qty":1.0,"satuan":"Kli","harga":300000.0,"total":300000.0,"penerima":"Desty","status":"","bulan":"Maret"},{"id":4262,"tgl":"2026-03-02","nama_barang":"Bensin Motor Iim","type":"Bensin","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4263,"tgl":"2026-03-02","nama_barang":"Bensin Motor Pawid","type":"Bensin","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4264,"tgl":"2026-03-02","nama_barang":"Kurma","type":"Buah segar","vendor":"Rofi","qty":1.0,"satuan":"Kli","harga":360000.0,"total":360000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4265,"tgl":"2026-03-02","nama_barang":"Bensin Motor Rizal","type":"Bensin","vendor":"Cash","qty":1.0,"satuan":"Kli","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4266,"tgl":"2026-03-02","nama_barang":"Isi Ulang Air Galon","type":"Minuman","vendor":"Iim","qty":1.0,"satuan":"Kli","harga":7000.0,"total":7000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4267,"tgl":"2026-03-02","nama_barang":"Isolasi Bening","type":"Lain-lain","vendor":"Iim","qty":1.0,"satuan":"Kli","harga":17000.0,"total":17000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4268,"tgl":"2026-03-02","nama_barang":"Etoll PT.Rexsonac","type":"B.Logistik","vendor":"Sri","qty":1.0,"satuan":"Kli","harga":100000.0,"total":100000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4269,"tgl":"2026-03-02","nama_barang":"Bensin Motor Ayub","type":"Bensin","vendor":"Ayub","qty":1.0,"satuan":"Kli","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4270,"tgl":"2026-03-02","nama_barang":"Snack Takjil PT.IFF","type":"Snack","vendor":"Shift 1","qty":180.0,"satuan":"Prsi","harga":9000.0,"total":1620000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4271,"tgl":"2026-03-02","nama_barang":"Snack Takjil PT.SSK","type":"Snack","vendor":"Shift 1","qty":151.0,"satuan":"Prsi","harga":4500.0,"total":679500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4272,"tgl":"2026-03-02","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 1","qty":28.0,"satuan":"Prsi","harga":4500.0,"total":126000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4273,"tgl":"2026-03-02","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 2","qty":57.0,"satuan":"Prsi","harga":4500.0,"total":256500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4274,"tgl":"2026-03-02","nama_barang":"Snack Kue Asin & Manis PT.IFF","type":"Snack","vendor":"Shift 3","qty":65.0,"satuan":"Prsi","harga":4500.0,"total":292500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4275,"tgl":"2026-03-02","nama_barang":"Kirim Dokumen","type":"Lain-lain","vendor":"JNE","qty":1.0,"satuan":"Kli","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4276,"tgl":"2026-03-02","nama_barang":"Roti Aoka ","type":"Snack","vendor":"Maiia Store","qty":40.0,"satuan":"Pcs","harga":2000.0,"total":80000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4277,"tgl":"2026-03-02","nama_barang":"Kentang","type":"Sayuran","vendor":"Anugrah Sayur ","qty":25.0,"satuan":"Kg","harga":11500.0,"total":287500.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4278,"tgl":"2026-03-02","nama_barang":"Kol","type":"Sayuran","vendor":"Anugrah Sayur ","qty":20.0,"satuan":"Kg","harga":8000.0,"total":160000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4279,"tgl":"2026-03-02","nama_barang":"Daun Bawang","type":"Sayuran","vendor":"PD.Sumber Barokah Buah","qty":3.0,"satuan":"Kg","harga":9000.0,"total":27000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4280,"tgl":"2026-03-02","nama_barang":"Seledri","type":"Sayuran","vendor":"PD.Sumber Barokah Buah","qty":1.0,"satuan":"Kg","harga":15000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4281,"tgl":"2026-03-02","nama_barang":"Wortel","type":"Sayuran","vendor":"PD.Tiga Putra","qty":10.0,"satuan":"Kg","harga":7000.0,"total":70000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4282,"tgl":"2026-03-02","nama_barang":"Cabe Merah Keriting","type":"Sayuran","vendor":"PD.Sayur Mayur","qty":30.0,"satuan":"Kg","harga":35000.0,"total":1050000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4283,"tgl":"2026-03-02","nama_barang":"Cabe Merah TW","type":"Sayuran","vendor":"PD.Sayur Mayur","qty":2.0,"satuan":"Kg","harga":25000.0,"total":50000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4284,"tgl":"2026-03-02","nama_barang":"Cabe Hijau TW","type":"Sayuran","vendor":"PD.Sayur Mayur","qty":2.0,"satuan":"Kg","harga":25000.0,"total":50000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4285,"tgl":"2026-03-02","nama_barang":"Cabe Rawit Merah","type":"Sayuran","vendor":"PD.Sayur Mayur","qty":3.0,"satuan":"Kg","harga":85000.0,"total":255000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4286,"tgl":"2026-03-02","nama_barang":"Cabe Hijau Keriting","type":"Sayuran","vendor":"PD.Sayur Mayur","qty":17.0,"satuan":"Kg","harga":30000.0,"total":510000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4287,"tgl":"2026-03-02","nama_barang":"Pecay","type":"Sayuran","vendor":"Kelvin Evan","qty":13.0,"satuan":"Kg","harga":7000.0,"total":91000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4288,"tgl":"2026-03-02","nama_barang":"Sesin","type":"Sayuran","vendor":"Kelvin Evan","qty":10.0,"satuan":"Kg","harga":7000.0,"total":70000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4289,"tgl":"2026-03-02","nama_barang":"Jahe","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":1.0,"satuan":"Kg","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4290,"tgl":"2026-03-02","nama_barang":"Kencur","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":1.0,"satuan":"Kg","harga":65000.0,"total":65000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4291,"tgl":"2026-03-02","nama_barang":"Kunyit","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":3.0,"satuan":"Kg","harga":10000.0,"total":30000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4292,"tgl":"2026-03-02","nama_barang":"Lengkuas","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":2.0,"satuan":"Kg","harga":8000.0,"total":16000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4293,"tgl":"2026-03-02","nama_barang":"Melinjo","type":"Raw Materials","vendor":"UD.Sayur Mayur","qty":1.0,"satuan":"Kg","harga":20000.0,"total":20000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4294,"tgl":"2026-03-02","nama_barang":"Daun Melinjo","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":0.5,"satuan":"Kg","harga":30000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4295,"tgl":"2026-03-02","nama_barang":"Daun Jeruk","type":"Sayuran","vendor":"UD.Sayur Mayur","qty":0.5,"satuan":"Kg","harga":30000.0,"total":15000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4296,"tgl":"2026-03-02","nama_barang":"Jamur Tiram","type":"Sayuran","vendor":"Dede Rizki","qty":20.0,"satuan":"Kg","harga":21000.0,"total":420000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4297,"tgl":"2026-03-02","nama_barang":"Jamur Kuping","type":"Sayuran","vendor":"Dede Rizki","qty":1.0,"satuan":"Kg","harga":16000.0,"total":16000.0,"penerima":"Desty","status":"✔","bulan":"Maret"},{"id":4298,"tgl":"2026-03-02","nama_barang":"Kembang Kol","type":"Sayuran","vendor":"Dede Rizki","qty":5.0,"satuan":"Kg","harga":16000.0,"total":80000.0,"penerima":"Desty","status":"✔","bulan":"Maret"}];
+let _kasTab='transaksi',_kasPage=1,_kasPageSize=100,_kasFiltered=[],_kasCustomCols=[];
+let _kasIdCounter=KAS_DATA.length+1;
+function _kasNextId(){return _kasIdCounter++;}
+const KAS_TYPES=['Raw Food','Sayuran','Buah segar','Raw Materials','Minuman','Snack','Kasbon','Gaji','Bensin','Maintenance','OP.Expense','B.Logistik','Listrik PLN','PDAM','Pulsa','Pajak','Kas','Lain-lain'];
+const KAS_TC={'Raw Food':{c:'#b45309',bg:'#fef3c7'},'Sayuran':{c:'#16a34a',bg:'#dcfce7'},'Buah segar':{c:'#e11d48',bg:'#ffe4e6'},'Raw Materials':{c:'#0284c7',bg:'#e0f2fe'},'Minuman':{c:'#7c3aed',bg:'#ede9fe'},'Snack':{c:'#d97706',bg:'#fef3c7'},'Kasbon':{c:'#dc2626',bg:'#fee2e2'},'Gaji':{c:'#1d4ed8',bg:'#dbeafe'},'Bensin':{c:'#78716c',bg:'#f5f5f4'},'Maintenance':{c:'#0f766e',bg:'#ccfbf1'},'OP.Expense':{c:'#6d28d9',bg:'#ede9fe'},'B.Logistik':{c:'#0369a1',bg:'#e0f2fe'},'Listrik PLN':{c:'#ca8a04',bg:'#fef9c3'},'PDAM':{c:'#0284c7',bg:'#e0f2fe'},'Pulsa':{c:'#059669',bg:'#d1fae5'},'Pajak':{c:'#b91c1c',bg:'#fee2e2'},'Kas':{c:'#15803d',bg:'#dcfce7'},'Lain-lain':{c:'#6b7280',bg:'#f3f4f6'}};
+
+function renderKasPage(){setKasTab('transaksi');}
+function setKasTab(tab){
+  _kasTab=tab;
+  ['transaksi','laporan'].forEach(t=>{
+    document.getElementById('kastab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('kas-panel-'+t).style.display=t===tab?'':'none';
+  });
+  if(tab==='transaksi'){filterKas();}
+  if(tab==='laporan'){renderKasLaporan();}
+}
+
+function filterKas(){
+  const q=(document.getElementById('kas-search')?.value||'').toLowerCase();
+  const fb=document.getElementById('kas-f-bulan')?.value||'';
+  const ft=document.getElementById('kas-f-type')?.value||'';
+  _kasFiltered=KAS_DATA.filter(d=>
+    (!fb||d.bulan===fb)&&(!ft||d.type===ft)&&
+    (!q||(d.nama_barang||'').toLowerCase().includes(q)||(d.vendor||'').toLowerCase().includes(q))
+  );
+  _kasFiltered.sort((a,b)=>b.tgl.localeCompare(a.tgl));
+  _kasPage=1;
+  _renderKasStats();_renderKasTable();_renderKasPagination();
+}
+
+function _renderKasStats(){
+  const total=_kasFiltered.reduce((s,d)=>s+d.total,0);
+  const done=_kasFiltered.filter(d=>d.status==='DONE'||d.status==='✔').length;
+  const el=document.getElementById('kas-stats');if(!el)return;
+  const byType={};_kasFiltered.forEach(d=>{byType[d.type]=(byType[d.type]||0)+d.total;});
+  const top=Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  el.innerHTML=`<span style="font-weight:700;">${_kasFiltered.length} transaksi</span>
+    <span style="color:var(--accent);font-weight:700;">Total: Rp ${total.toLocaleString('id-ID')}</span>
+    <span style="color:var(--green);">Done: ${done}</span>
+    <span style="color:var(--amber);">TBC: ${_kasFiltered.length-done}</span>
+    ${top.map(([t,v])=>`<span style="color:${(KAS_TC[t]||{c:'#666'}).c};">${t}: Rp ${v.toLocaleString('id-ID')}</span>`).join('')}`;
+}
+
+function _renderKasTable(){
+  const tbody=document.getElementById('kas-tbody');if(!tbody)return;
+  const start=(_kasPage-1)*_kasPageSize;
+  const rows=_kasFiltered.slice(start,start+_kasPageSize);
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--muted);">Tidak ada data. Klik +Tambah Baris untuk input.</td></tr>`;return;}
+  const canEdit=CU&&(CU.role==='superadmin'||CU.role==='admin');
+  tbody.innerHTML=rows.map((d,i)=>{
+    const idx=KAS_DATA.indexOf(d);
+    const tc=KAS_TC[d.type]||{c:'#6b7280',bg:'#f3f4f6'};
+    const isDone=d.status==='DONE'||d.status==='✔';
+    const custCells=_kasCustomCols.map(col=>`<td><input type="${col.type==='number'?'number':col.type==='date'?'date':'text'}" value="${(d[col.key]||'').toString().replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:80px;" onchange="kasEdit(${idx},'${col.key}',this.value)"></td>`).join('');
+    return`<tr id="kas-row-${idx}" style="${isDone?'background:#f0f4f0;':''}">
+      <td style="font-size:10px;text-align:center;color:var(--muted);font-family:monospace;">${start+i+1}</td>
+      <td><input type="date" value="${d.tgl||''}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:105px;" onchange="kasEdit(${idx},'tgl',this.value);kasAutoMonth(${idx})"></td>
+      <td style="min-width:180px;"><input type="text" value="${(d.nama_barang||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:170px;" onchange="kasEdit(${idx},'nama_barang',this.value)" placeholder="Nama barang..."></td>
+      <td><select style="border:none;background:${tc.bg};color:${tc.c};font-size:10px;font-weight:600;border-radius:99px;padding:2px 6px;cursor:pointer;" onchange="kasEdit(${idx},'type',this.value)">${KAS_TYPES.map(t=>`<option ${d.type===t?'selected':''}>${t}</option>`).join('')}</select></td>
+      <td><input type="text" value="${(d.vendor||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:90px;" onchange="kasEdit(${idx},'vendor',this.value)" placeholder="vendor..."></td>
+      <td style="text-align:right;"><input type="number" value="${d.qty||0}" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:52px;" onchange="kasEdit(${idx},'qty',+this.value);kasRecalcTotal(${idx})"></td>
+      <td><input type="text" value="${d.satuan||''}" list="kas-satuan-list" style="border:none;background:transparent;font-size:11px;width:42px;" onchange="kasEdit(${idx},'satuan',this.value)"></td>
+      <td style="text-align:right;"><input type="number" value="${d.harga||0}" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:85px;" onchange="kasEdit(${idx},'harga',+this.value);kasRecalcTotal(${idx})"></td>
+      <td id="kas-total-${idx}" style="text-align:right;font-weight:700;font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap;min-width:95px;">Rp ${Number(d.total||0).toLocaleString('id-ID')}</td>
+      <td><input type="text" value="${(d.penerima||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:72px;" onchange="kasEdit(${idx},'penerima',this.value)"></td>
+      <td style="text-align:center;"><select style="border:1px solid ${isDone?'var(--green)':'var(--amber)'};background:${isDone?'var(--green-bg)':'#fef9e7'};color:${isDone?'var(--green)':'var(--amber)'};font-size:9px;font-weight:700;border-radius:99px;padding:2px 4px;" onchange="kasEdit(${idx},'status',this.value)"><option value="DONE" ${isDone?'selected':''}>DONE</option><option value="" ${!isDone?'selected':''}>TBC</option></select></td>
+      ${custCells}
+      <td style="white-space:nowrap;padding:2px 4px;">
+        ${canEdit?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 4px;" onclick="deleteKas(${idx})">🗑</button>`:''}
+        <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 4px;" onclick="openEditKas(${idx})">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  _kasAddKeyNav();
+}
+
+function _kasAddKeyNav(){
+  const tbl=document.getElementById('kas-table');if(!tbl)return;
+  tbl.querySelectorAll('tbody td input,tbody td select').forEach(el=>{
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Tab'){
+        e.preventDefault();
+        const all=[...tbl.querySelectorAll('tbody td input,tbody td select')];
+        const ni=all.indexOf(el)+(e.shiftKey?-1:1);
+        if(all[ni]){all[ni].focus();if(all[ni].select)all[ni].select();}
+      }
+      if(e.key==='Enter'&&!e.shiftKey){
+        e.preventDefault();
+        const rowEls=[...el.closest('tr').querySelectorAll('td input,td select')];
+        if(el===rowEls[rowEls.length-1]||el===rowEls[rowEls.length-2]){
+          const tglInRow=rowEls[0]?.value||'';
+          kasAddRowBelow(tglInRow);
+        }
+      }
+    });
+  });
+}
+
+function kasEdit(idx,field,val){if(KAS_DATA[idx])KAS_DATA[idx][field]=val;}
+function kasCustomEdit(idx,key,val){if(KAS_DATA[idx])KAS_DATA[idx][key]=val;}
+function kasRecalcTotal(idx){
+  const d=KAS_DATA[idx];if(!d)return;
+  if(d.qty&&d.harga){
+    d.total=d.qty*d.harga;
+    const cell=document.getElementById('kas-total-'+idx);
+    if(cell)cell.innerHTML='Rp '+Number(d.total).toLocaleString('id-ID');
+  }
+}
+function kasAutoMonth(idx){
+  const d=KAS_DATA[idx];if(!d||!d.tgl)return;
+  const months=['Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  d.bulan=months[new Date(d.tgl).getMonth()]||d.bulan;
+}
+function kasAddRowBelow(tglVal){
+  const today=tglVal||new Date().toISOString().slice(0,10);
+  const months=['Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const bulan=months[new Date(today).getMonth()]||'Januari';
+  KAS_DATA.unshift({id:_kasNextId(),tgl:today,bulan,nama_barang:'',type:'Raw Food',vendor:'',qty:1,satuan:'Pcs',harga:0,total:0,penerima:'',status:''});
+  filterKas();
+  setTimeout(()=>{document.querySelector('#kas-table tbody tr:first-child td:nth-child(3) input')?.focus();},60);
+}
+function openAddKas(){
+  document.getElementById('kas-modal-title').textContent='+ Tambah Transaksi Kas';
+  document.getElementById('kas-modal-sub').textContent='';
+  document.getElementById('kas-edit-idx').value='';
+  document.getElementById('kas-m-tgl').value=new Date().toISOString().slice(0,10);
+  const months=['Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  document.getElementById('kas-m-bulan').value=months[new Date().getMonth()];
+  ['kas-m-nama','kas-m-vendor','kas-m-penerima'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('kas-m-type').value='Raw Food';
+  document.getElementById('kas-m-qty').value=1;
+  document.getElementById('kas-m-satuan').value='';
+  document.getElementById('kas-m-harga').value='';
+  document.getElementById('kas-m-total').value='';
+  document.getElementById('kas-m-status').value='DONE';
+  openM('m-kas');
+  setTimeout(()=>document.getElementById('kas-m-tgl').focus(),100);
+}
+function openEditKas(idx){
+  const d=KAS_DATA[idx];if(!d)return;
+  document.getElementById('kas-modal-title').textContent='Edit Transaksi Kas';
+  document.getElementById('kas-modal-sub').textContent=d.nama_barang;
+  document.getElementById('kas-edit-idx').value=idx;
+  document.getElementById('kas-m-tgl').value=d.tgl||'';
+  document.getElementById('kas-m-bulan').value=d.bulan||'Januari';
+  document.getElementById('kas-m-nama').value=d.nama_barang||'';
+  document.getElementById('kas-m-type').value=d.type||'Lain-lain';
+  document.getElementById('kas-m-vendor').value=d.vendor||'';
+  document.getElementById('kas-m-qty').value=d.qty||0;
+  document.getElementById('kas-m-satuan').value=d.satuan||'';
+  document.getElementById('kas-m-harga').value=d.harga||0;
+  document.getElementById('kas-m-total').value=d.total||0;
+  document.getElementById('kas-m-penerima').value=d.penerima||'';
+  document.getElementById('kas-m-status').value=(d.status==='✔'||d.status==='DONE')?'DONE':'';
+  openM('m-kas');
+}
+function kasCalcTotal(){
+  const q=+document.getElementById('kas-m-qty').value||0;
+  const h=+document.getElementById('kas-m-harga').value||0;
+  if(q&&h)document.getElementById('kas-m-total').value=q*h;
+}
+function saveKas(){
+  const nama=(document.getElementById('kas-m-nama').value||'').trim();
+  if(!nama){toast('Nama barang wajib diisi','error');return;}
+  const entry={
+    id:_kasNextId(),
+    tgl:document.getElementById('kas-m-tgl').value||new Date().toISOString().slice(0,10),
+    bulan:document.getElementById('kas-m-bulan').value,
+    nama_barang:nama,
+    type:document.getElementById('kas-m-type').value,
+    vendor:document.getElementById('kas-m-vendor').value||'',
+    qty:+document.getElementById('kas-m-qty').value||0,
+    satuan:document.getElementById('kas-m-satuan').value||'',
+    harga:+document.getElementById('kas-m-harga').value||0,
+    total:+document.getElementById('kas-m-total').value||0,
+    penerima:document.getElementById('kas-m-penerima').value||'',
+    status:document.getElementById('kas-m-status').value,
+  };
+  const editIdx=document.getElementById('kas-edit-idx').value;
+  if(editIdx!==''){const idx=+editIdx;entry.id=KAS_DATA[idx].id;KAS_DATA[idx]=entry;toast('Transaksi diperbarui','success');}
+  else{KAS_DATA.unshift(entry);toast('Transaksi ditambahkan','success');}
+  closeM('m-kas');filterKas();
+}
+function deleteKas(idx){
+  if(!confirm('Hapus transaksi ini?'))return;
+  KAS_DATA.splice(idx,1);filterKas();toast('Dihapus','success');
+}
+function kasPageNav(dir){
+  const tp=Math.ceil(_kasFiltered.length/_kasPageSize)||1;
+  _kasPage=Math.max(1,Math.min(tp,_kasPage+dir));
+  _renderKasTable();_renderKasPagination();
+  document.getElementById('kas-table-wrap')?.scrollTo(0,0);
+}
+function kasPageSizeChange(){
+  _kasPageSize=+document.getElementById('kas-page-size').value||100;
+  _kasPage=1;_renderKasTable();_renderKasPagination();
+}
+function _renderKasPagination(){
+  const total=_kasFiltered.length,tp=Math.ceil(total/_kasPageSize)||1;
+  const s=(_kasPage-1)*_kasPageSize+1,e=Math.min(_kasPage*_kasPageSize,total);
+  document.getElementById('kas-page-info').textContent=`Menampilkan ${s}-${e} dari ${total} baris`;
+  document.getElementById('kas-page-num').textContent=`Hal ${_kasPage}/${tp}`;
+  document.getElementById('kas-prev').disabled=_kasPage<=1;
+  document.getElementById('kas-next').disabled=_kasPage>=tp;
+}
+function kasAddColumn(){
+  document.getElementById('kas-col-name').value='';
+  document.getElementById('kas-col-type').value='text';
+  openM('m-kas-col');
+}
+function saveKasColumn(){
+  const label=(document.getElementById('kas-col-name').value||'').trim();
+  if(!label){toast('Nama kolom wajib diisi','error');return;}
+  const type=document.getElementById('kas-col-type').value;
+  const key='cx_'+label.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  if(_kasCustomCols.find(c=>c.key===key)){toast('Kolom sudah ada','error');return;}
+  _kasCustomCols.push({key,label,type});
+  const hrow=document.getElementById('kas-header-row');
+  const lastTh=hrow.lastElementChild;
+  const th=document.createElement('th');
+  th.style.minWidth='85px';
+  th.innerHTML=`${label} <button onclick="kasDelCol('${key}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:10px;">✕</button>`;
+  hrow.insertBefore(th,lastTh);
+  closeM('m-kas-col');
+  _renderKasTable();
+  toast(`Kolom "${label}" ditambahkan`,'success');
+}
+function kasDelCol(key){
+  _kasCustomCols=_kasCustomCols.filter(c=>c.key!==key);
+  _renderKasTable();
+  filterKas();
+  toast('Kolom dihapus','success');
+}
+async function kasBatchPaste(){
+  try{
+    const text=await navigator.clipboard.readText();
+    if(!text.trim()){toast('Clipboard kosong','error');return;}
+    const lines=text.trim().split('\n');
+    let added=0;
+    const months=['Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    lines.forEach(line=>{
+      const cols=line.split('\t');
+      if(cols.length<2)return;
+      const tglRaw=cols[0]?.trim();const nama=cols[1]?.trim();if(!nama)return;
+      let tgl='';
+      if(tglRaw){const p=tglRaw.split(/[\/\-]/);if(p.length===3)tgl=p[0].length===4?tglRaw:`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+      if(!tgl)tgl=new Date().toISOString().slice(0,10);
+      const bulan=months[new Date(tgl).getMonth()]||'Januari';
+      const qty=parseFloat(cols[4])||1;
+      const harga=parseFloat((cols[6]||'').replace(/[^0-9.]/g,''))||0;
+      const total=qty*harga||parseFloat((cols[8]||'').replace(/[^0-9.]/g,''))||0;
+      KAS_DATA.unshift({id:_kasNextId(),tgl,bulan,nama_barang:nama,type:cols[2]?.trim()||'Lain-lain',vendor:cols[3]?.trim()||'',qty,satuan:cols[5]?.trim()||'Pcs',harga,total,penerima:cols[7]?.trim()||'',status:''});
+      added++;
+    });
+    toast(`${added} baris ditambahkan dari clipboard`,'success');
+    filterKas();
+  }catch(e){toast('Gagal baca clipboard. Allow clipboard access di browser.','error');}
+}
+function renderKasLaporan(){
+  const bulan=document.getElementById('kl-bulan')?.value||'';
+  const tahun=document.getElementById('kl-tahun')?.value||'2026';
+  const type=document.getElementById('kl-type')?.value||'';
+  const filtered=KAS_DATA.filter(d=>(!bulan||d.bulan===bulan)&&(!type||d.type===type)&&(d.tgl||'').startsWith(tahun)).sort((a,b)=>a.tgl.localeCompare(b.tgl));
+  const totalAll=filtered.reduce((s,d)=>s+d.total,0);
+  const byType={};filtered.forEach(d=>{byType[d.type]=(byType[d.type]||0)+d.total;});
+  const period=bulan||(tahun?`Tahun ${tahun}`:'Semua');
+  const preview=document.getElementById('kas-laporan-preview');if(!preview)return;
+  const rows=filtered.map((d,i)=>{
+    const tc=KAS_TC[d.type]||{c:'#666',bg:'#f5f5f5'};
+    const isDone=d.status==='DONE'||d.status==='✔';
+    return`<tr style="border-bottom:1px solid #e5e7eb;${i%2===1?'background:#f9fafb':''}">
+      <td style="padding:3px 5px;font-size:9px;color:#6b7280;">${i+1}</td>
+      <td style="padding:3px 5px;font-size:9px;font-family:monospace;white-space:nowrap;">${fmtDate(d.tgl)}</td>
+      <td style="padding:3px 5px;font-size:9px;max-width:150px;">${d.nama_barang||''}</td>
+      <td style="padding:3px 5px;"><span style="font-size:8px;font-weight:600;color:${tc.c};background:${tc.bg};padding:1px 4px;border-radius:99px;">${d.type||''}</span></td>
+      <td style="padding:3px 5px;font-size:9px;color:#6b7280;">${d.vendor||''}</td>
+      <td style="padding:3px 5px;font-size:9px;text-align:right;">${d.qty||0} ${d.satuan||''}</td>
+      <td style="padding:3px 5px;font-size:9px;text-align:right;font-family:monospace;">${Number(d.harga||0).toLocaleString('id-ID')}</td>
+      <td style="padding:3px 5px;font-size:9px;text-align:right;font-family:monospace;font-weight:700;color:#1e4d6b;">${Number(d.total||0).toLocaleString('id-ID')}</td>
+      <td style="padding:3px 5px;font-size:9px;">${d.penerima||''}</td>
+      <td style="padding:3px 5px;font-size:9px;text-align:center;">${isDone?'<span style="color:green;">✔</span>':'<span style="color:orange;">TBC</span>'}</td>
+    </tr>`;
+  }).join('');
+  const sumRows=Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([t,v])=>{
+    const tc=KAS_TC[t]||{c:'#666',bg:'#f5f5f5'};
+    return`<tr><td style="padding:3px 8px;font-size:10px;"><span style="color:${tc.c};font-weight:600;">${t}</span></td>
+      <td style="padding:3px 8px;font-size:10px;text-align:right;font-family:monospace;">Rp ${Number(v).toLocaleString('id-ID')}</td>
+      <td style="padding:3px 8px;font-size:10px;text-align:right;color:#888;">${(v/totalAll*100).toFixed(1)}%</td></tr>`;
+  }).join('');
+  preview.innerHTML=`<div id="kas-print-area" style="background:#fff;padding:18px 22px;border-radius:8px;color:#222;font-family:Arial,sans-serif;max-width:900px;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.1);">
+    <div style="text-align:center;border-bottom:2px solid #1e4d6b;padding-bottom:8px;margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:800;color:#1e4d6b;letter-spacing:1px;">PT. BOGA PANGAN SENTOSA</div>
+      <div style="font-size:12px;font-weight:700;">LAPORAN KAS KECIL</div>
+      <div style="font-size:10px;color:#666;">Periode: ${period} ${tahun}${type?' | '+type:''}</div>
+    </div>
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+      <div style="flex:3;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="background:#1e4d6b;color:#fff;">
+            <th style="padding:4px 5px;font-size:9px;">#</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:left;">Tanggal</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:left;">Nama Barang</th>
+            <th style="padding:4px 5px;font-size:9px;">Type</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:left;">Vendor</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:right;">Qty</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:right;">Harga</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:right;">Total</th>
+            <th style="padding:4px 5px;font-size:9px;">Penerima</th>
+            <th style="padding:4px 5px;font-size:9px;text-align:center;">St</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr style="background:#1e4d6b;color:#fff;font-weight:700;">
+            <td colspan="7" style="padding:4px 5px;font-size:10px;">TOTAL (${filtered.length} transaksi)</td>
+            <td style="padding:4px 5px;font-size:10px;text-align:right;font-family:monospace;">Rp ${totalAll.toLocaleString('id-ID')}</td>
+            <td colspan="2"></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="flex:0 0 175px;">
+        <div style="background:#f0f4f8;border-radius:6px;padding:10px;border:1px solid #d1d5db;">
+          <div style="font-weight:700;font-size:10px;color:#1e4d6b;margin-bottom:6px;border-bottom:1px solid #d1d5db;padding-bottom:3px;">RINGKASAN PER TYPE</div>
+          <table style="width:100%;border-collapse:collapse;"><tbody>${sumRows}</tbody>
+            <tfoot><tr style="border-top:2px solid #1e4d6b;">
+              <td style="padding:3px 8px;font-size:10px;font-weight:700;">TOTAL</td>
+              <td style="padding:3px 8px;font-size:10px;font-weight:700;text-align:right;font-family:monospace;">Rp ${totalAll.toLocaleString('id-ID')}</td>
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:8px;font-size:9px;color:#6b7280;">
+          Dicetak: ${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+          <div style="margin-top:32px;border-top:1px solid #6b7280;padding-top:4px;text-align:center;">Tanda Tangan</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function printKasLaporan(){
+  renderKasLaporan();
+  const content=document.getElementById('kas-print-area')?.outerHTML;
+  if(!content)return;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Laporan Kas Kecil</title>
+  <style>@page{size:A4 landscape;margin:8mm;}body{margin:0;font-family:Arial,sans-serif;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
+  </head><body>${content}</body></html>`);
+  win.document.close();setTimeout(()=>win.print(),400);
+}
+
 let _kTab='data', _lbPage=1;
 const LB_PER=50;
 const DC={'Management':'#7b2d8b','Service':'#1565a8','Kitchen':'#2a6b47','Warehouse':'#9a5a0a','Driver':'#0369a1','Cleaning Service':'#6b7280'};
