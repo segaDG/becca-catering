@@ -5845,6 +5845,15 @@ const INV_KODE_COLOR={'STOCK IN':'#dcfce7','SHIFT 1':'#dbeafe','SHIFT 2':'#e0f2f
 const INV_KODE_TC={'STOCK IN':'#166534','SHIFT 1':'#1e40af','SHIFT 2':'#0e7490','SHIFT 3':'#166534','EVENT':'#92400e','STOCK OPNAME':'#6b7280'};
 
 // ── TAB 1: TRANSAKSI ─────────────────────────────────────────────────────────
+function _recalcProductStocks(){
+  INV_PRODUCTS.forEach(p=>{
+    const rows=INV_ACTIVITIES.filter(a=>a.nama===p.nama);
+    p.stock_in=rows.reduce((s,a)=>s+(+a.stock_in||0),0);
+    p.stock_out=rows.reduce((s,a)=>s+(+a.stock_out||0),0);
+    p.balance=p.stock_in-p.stock_out;
+  });
+}
+
 function filterInv(){
   const q=(document.getElementById('inv-search')?.value||'').toLowerCase();
   const from=document.getElementById('inv-f-tgl-from')?.value||'';
@@ -6013,11 +6022,13 @@ function invEdit(idx,field,val){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     invRecalcValue(idx);
   }
-  // Save to DB: if row is pending (no nama yet), only save once nama is filled
-  if(d._pending && !d.nama) return; // don't save empty rows
-  if(d._pending && d.nama){ d._pending=false; } // nama filled → ready to save
+  // Recalc product stocks live so Daftar Barang stays in sync
+  _recalcProductStocks();
+  // Save to DB: only when nama is filled
+  if(!d.nama || d.nama.trim()==='') return;
+  if(d._pending){ d._pending=false; }
   clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),800);
+  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),600);
 }
 
 function invToggleHpp(idx){
@@ -6131,6 +6142,7 @@ function deleteInvRow(idx){
   const d=INV_ACTIVITIES[idx];
   if(d&&d._db_id) deleteInvActivityFromDB(d._db_id);
   if(idx>=0&&idx<INV_ACTIVITIES.length){INV_ACTIVITIES.splice(idx,1);}
+  _recalcProductStocks();
   filterInv();toast('Baris dihapus','success');
 }
 function invAddRow(){
@@ -7091,6 +7103,7 @@ async function _silentReloadInv(){
         _OPNAME_FISIK[k]=r.fisik_aktual!==null?+r.fisik_aktual:null;
       });
     }
+    _recalcProductStocks();
     _invLastUpdated = new Date();
     _updateInvRefreshBadge();
     // Don't re-render if user is actively editing a cell
