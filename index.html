@@ -6274,10 +6274,21 @@ function invEdit(idx,field,val){
   if(field==='stock_out'){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     d.stock_out=+val||0;
-    // Auto-fill harga from FIFO oldest layer if empty
-    if(d.stock_out>0 && !d.harga && d.nama){
-      const fh=_getFifoCurrentHarga(d.nama);
-      if(fh){ d.harga=fh; const disp=document.getElementById('invh-disp-'+idx); const inp=document.getElementById('invh-inp-'+idx); if(disp)disp.textContent=_IRP(fh); if(inp)inp.value=fh; }
+    // Auto-fill harga from FIFO (blended price if multi-layer)
+    if(d.stock_out>0 && d.nama){
+      // Always recalc FIFO value, update harga display
+      const fifoVal = _calcFifoValue(d.nama, d.stock_out, d);
+      const fifoH = d.stock_out>0 ? Math.round(fifoVal/d.stock_out) : 0;
+      if(fifoH){
+        d.harga=fifoH; d.value=fifoVal;
+        const disp=document.getElementById('invh-disp-'+idx);
+        const inp=document.getElementById('invh-inp-'+idx);
+        if(disp)disp.textContent=_IRP(fifoH);
+        if(inp)inp.value=fifoH;
+        // Show value immediately
+        const velEl=document.getElementById('invval-'+idx);
+        if(velEl)velEl.innerHTML=`<span style="color:#1d4ed8;">${_IRP(fifoVal)}</span>`;
+      }
     }
     invRecalcValue(idx);
     _invInstantBadge(idx,d);
@@ -6378,7 +6389,9 @@ function invRefreshHpp(idx){
 function _invInstantBadge(idx, d){
   const _hasQtyNow=(+d.stock_in>0||(+d.stock_out>0));
   const kodeEl=document.querySelector(`#invrow-${idx} select`);
-  if(kodeEl && d.kode){
+  if(kodeEl){
+    // Update SELECT value to match data (critical when kode auto-set)
+    if(kodeEl.value !== d.kode) kodeEl.value = d.kode;
     const kc2=(_hasQtyNow&&d.kode)?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
     const ktc2=(_hasQtyNow&&d.kode)?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
     kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
@@ -6398,8 +6411,12 @@ function invRecalcValue(idx){
   // FIFO value: split qty across layers (oldest first)
   if(d.stock_out>0 && d.nama){
     d.value = _calcFifoValue(d.nama, d.stock_out, d);
-  } else {
+    // Update harga to blended FIFO price
+    if(d.value && d.stock_out){ d.harga = Math.round(d.value/d.stock_out); }
+  } else if(d.stock_in>0){
     d.value = (d.stock_in||0) * (d.harga||0);
+  } else {
+    d.value = 0;
   }
   const el=document.getElementById('invval-'+idx);
   if(el)el.innerHTML=d.value?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'};">${_IRP(d.value)}</span>`:'';
