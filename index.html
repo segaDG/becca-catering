@@ -6087,7 +6087,13 @@ function filterInv(){
       if(hpp==='0' && d.is_hpp) return false;
       return true;
     })
-    .sort((a,b)=>b.tgl.localeCompare(a.tgl)||(b.id-a.id));
+    .sort((a,b)=>{
+      // Pending (new unsaved) rows always on top
+      if(a._pending && !b._pending) return -1;
+      if(!a._pending && b._pending) return 1;
+      // Then by date desc, then id desc
+      return b.tgl.localeCompare(a.tgl)||(b.id-a.id);
+    });
   _invPage=1;
   _renderInvStats();
   _renderInvTable();
