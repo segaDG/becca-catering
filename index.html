@@ -5947,10 +5947,10 @@ function _renderInvTable(){
           ${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':('<button style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 1px;" onclick="invAiHpp('+idx+')" title="AI: auto-detect HPP">🤖</button>')}
         </div>
       </td>
-      <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;">
+      <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;${locked?'':'cursor:pointer;'}" onclick="${locked?'':'invToggleHarga('+idx+')'}">
         ${locked?`<span>${d.harga?_IRP(d.harga):'—'}</span>`:
-        `<span id="invh-disp-${idx}" style="cursor:pointer;color:var(--accent);" onclick="invToggleHarga(${idx})">${d.harga?_IRP(d.harga):'—'}</span>
-        <input type="number" id="invh-inp-${idx}" value="${d.harga||0}" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
+        `<span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
+        <input type="number" id="invh-inp-${idx}" value="${d.harga||0}" onclick="event.stopPropagation()" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
           onchange="invEdit(${idx},'harga',+this.value);invRecalcValue(${idx})"
           onblur="invHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${idx})">`}
       </td>
@@ -6135,7 +6135,7 @@ function deleteInvRow(idx){
 }
 function invAddRow(){
   const today=new Date().toISOString().slice(0,10);
-  const newAct={id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'STOCK IN',catatan:'',is_hpp:false,harga:0,value:0,locked:false,_pending:true};
+  const newAct={id:_invID(),tgl:today,nama:'',stock_in:0,stock_out:0,pengambil:'',pjawab:'',kode:'',catatan:'',is_hpp:false,harga:0,value:0,locked:false,_pending:true};
   INV_ACTIVITIES.unshift(newAct);
   // Don't save to DB yet — wait until nama is filled
   // clear filters
@@ -6834,7 +6834,7 @@ async function saveKasRowToDB(d){
   };
   try{
     if(d._db_id){
-      await sbPatch('kas_transactions',`id=eq.${d._db_id}`,body);
+      await sbPatch('kas_transactions',`id=eq.${+d._db_id}`,body);
     } else {
       const res = await sbPost('kas_transactions',body);
       if(res&&res[0]){ d._db_id=res[0].id; _DB_KAS_READY=true; }
@@ -6847,7 +6847,7 @@ async function saveKasRowToDB(d){
 
 async function deleteKasRowFromDB(dbId){
   if(!dbId) return;
-  try{ await sbDelete('kas_transactions',`id=eq.${dbId}`); }
+  try{ await sbDelete('kas_transactions',`id=eq.${+dbId}`); }
   catch(e){ console.warn('deleteKasRow error:', e.message); }
 }
 
@@ -6877,7 +6877,7 @@ async function loadInvFromDB(){
         pengambil:r.pengambil||'', pjawab:r.pjawab||'',
         kode:r.kode||'STOCK IN', catatan:r.catatan||'',
         is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
-        locked:!!r.locked, _db_id:r.id
+        locked:!!r.locked, _db_id:+r.id
       }));
       console.log(`INV ACTIVITIES DB: ${INV_ACTIVITIES.length} rows`);
     }
@@ -6925,7 +6925,7 @@ async function saveInvActivityToDB(d){
   };
   try{
     if(d._db_id){
-      await sbPatch('inv_activities',`id=eq.${d._db_id}`,body);
+      await sbPatch('inv_activities',`id=eq.${+d._db_id}`,body);
     } else {
       const res=await sbPost('inv_activities',body);
       if(res&&res[0]){ 
@@ -6948,7 +6948,7 @@ async function saveInvActivityToDB(d){
 
 async function deleteInvActivityFromDB(dbId){
   if(!dbId) return;
-  try{ await sbDelete('inv_activities',`id=eq.${dbId}`); }
+  try{ await sbDelete('inv_activities',`id=eq.${+dbId}`); }
   catch(e){ console.warn('deleteInvActivity error:',e.message); }
 }
 
@@ -7061,7 +7061,7 @@ async function _silentReloadInv(){
         pengambil:r.pengambil||'', pjawab:r.pjawab||'',
         kode:r.kode||'STOCK IN', catatan:r.catatan||'',
         is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
-        locked:!!r.locked, _db_id:r.id
+        locked:!!r.locked, _db_id:+r.id
       }));
 
       // For rows that exist locally with _db_id, keep local version if being edited
