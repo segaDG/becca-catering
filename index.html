@@ -6046,7 +6046,27 @@ function _recalcProductStocks(){
     }
     
     p.balance=p.stock_in-p.stock_out;
-    p.harga_fifo=p.harga||0;
+    // Auto-update master harga when FIFO has only 1 price layer remaining
+    const fifoLayers = _getFifoLayers(p.nama);
+    if(fifoLayers.length===1){
+      // Only one price layer left → this IS the current price
+      p.harga_fifo = fifoLayers[0].harga;
+      // Auto-update master harga to match FIFO if different
+      if(p.harga !== fifoLayers[0].harga){
+        p.harga = fifoLayers[0].harga;
+        // Save updated harga to DB silently
+        if(p._db_id){
+          clearTimeout(p._hargaUpdateTimer);
+          p._hargaUpdateTimer = setTimeout(()=>{
+            sbPatch('inv_products', +p._db_id, {harga: p.harga, updated_at: new Date().toISOString()});
+          }, 2000);
+        }
+      }
+    } else if(fifoLayers.length>1){
+      p.harga_fifo = fifoLayers[0].harga; // oldest remaining layer
+    } else {
+      p.harga_fifo = p.harga||0;
+    }
   });
 }
 
@@ -7658,7 +7678,7 @@ function _renderKasTable(){
       </td>
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.penerima||'').replace(/"/g,'&quot;')}"
-          style="border:none;background:transparent;font-size:11px;color:var(--text);width:68px;padding:2px;"
+          style="border:none;background:transparent;font-size:11px;color:var(--text);width:68px;padding:2px;text-align:left;"
           onchange="kasEdit(${idx},'penerima',this.value)">
       </td>
       <td id="kjml-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${isKredit?'#16a34a':'#dc2626'};white-space:nowrap;">
