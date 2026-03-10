@@ -817,6 +817,7 @@ tr:hover td{background:var(--bg);}
               <span class="card-title">💰 Kas Kecil 2026</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" id="kas-add-btn" onclick="kasAddRow()"><span class="btn-plus">+</span>Baris</button>
+                <button class="btn btn-secondary btn-sm" onclick="importKasMasukFromExcel()" title="Import Kas Masuk dari Excel BPS 2026">📥 Kas Masuk Excel</button>
                 <div class="sbox"><span>🔍</span><input type="text" id="kas-search" placeholder="Cari nama/vendor..." oninput="filterKas()"></div>
                 <select class="sel" id="kas-f-bulan" onchange="filterKas()">
                   <option value="">Semua Bulan</option>
@@ -7362,6 +7363,58 @@ async function saveOpnameToDB(nama,bulan,tahun,fisik){
 // ══════════════════════════════════════════════════════════════════════════════
 // REALTIME POLLING — KAS & INVENTORY
 // ══════════════════════════════════════════════════════════════════════════════
+
+// ── IMPORT KAS MASUK FROM EXCEL ──────────────────────────────────────────────
+const _KAS_MASUK_EXCEL = [{"tgl": "2026-01-04", "kredit": 30000000}, {"tgl": "2026-01-05", "kredit": 94445642}, {"tgl": "2026-01-07", "kredit": 30000000}, {"tgl": "2026-01-08", "kredit": 49759779}, {"tgl": "2026-01-11", "kredit": 30000000}, {"tgl": "2026-01-12", "kredit": 30000000}, {"tgl": "2026-01-13", "kredit": 41596936}, {"tgl": "2026-01-13", "kredit": 600000}, {"tgl": "2026-01-14", "kredit": 30000000}, {"tgl": "2026-01-16", "kredit": 23598114}, {"tgl": "2026-01-18", "kredit": 30000000}, {"tgl": "2026-01-19", "kredit": 49948660}, {"tgl": "2026-01-21", "kredit": 30000000}, {"tgl": "2026-01-22", "kredit": 45158445}, {"tgl": "2026-01-25", "kredit": 30000000}, {"tgl": "2026-01-26", "kredit": 53086468}, {"tgl": "2026-01-27", "kredit": 30000000}, {"tgl": "2026-01-28", "kredit": 30000000}, {"tgl": "2026-01-29", "kredit": 34284099}, {"tgl": "2026-02-01", "kredit": 30000000}, {"tgl": "2026-02-02", "kredit": 55703639}, {"tgl": "2026-02-04", "kredit": 30000000}, {"tgl": "2026-02-05", "kredit": 59314925}, {"tgl": "2026-02-08", "kredit": 30000000}, {"tgl": "2026-02-10", "kredit": 28971593}, {"tgl": "2026-02-11", "kredit": 30000000}, {"tgl": "2026-02-12", "kredit": 53281751}, {"tgl": "2026-02-14", "kredit": 30000000}, {"tgl": "2026-02-16", "kredit": 30000000}, {"tgl": "2026-02-18", "kredit": 30000000}, {"tgl": "2026-02-19", "kredit": 58395695}, {"tgl": "2026-02-21", "kredit": 30000000}, {"tgl": "2026-02-23", "kredit": 42680856}, {"tgl": "2026-02-25", "kredit": 30000000}, {"tgl": "2026-02-26", "kredit": 59708997}, {"tgl": "2026-02-27", "kredit": 10000000}, {"tgl": "2026-02-28", "kredit": 10000000}, {"tgl": "2026-03-01", "kredit": 30000000}, {"tgl": "2026-03-02", "kredit": 67933461}, {"tgl": "2026-03-04", "kredit": 30000000}, {"tgl": "2026-03-05", "kredit": 55075033}, {"tgl": "2026-03-07", "kredit": 30000000}];
+
+function importKasMasukFromExcel(){
+  const data = _KAS_MASUK_EXCEL;
+  if(!data||!data.length){ toast('Tidak ada data Kas Masuk','error'); return; }
+  
+  let updated=0, created=0, skipped=0;
+  
+  data.forEach(item=>{
+    const tgl = item.tgl;
+    const kredit = item.kredit;
+    const _BULAN_NAMES=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const bulan = _BULAN_NAMES[+(tgl||'').slice(5,7)]||'';
+    
+    // Find existing Kas row on this date
+    const existing = KAS_DATA.find(d=>d.tgl===tgl && d.type==='Kas');
+    
+    if(existing){
+      // Update harga & kredit
+      existing.harga = kredit;
+      existing.total = kredit;
+      existing.kredit = kredit;
+      existing.debit = 0;
+      existing.qty = 1;
+      existing.jumlah = kredit;
+      clearTimeout(existing._saveTimer);
+      existing._saveTimer = setTimeout(()=>saveKasRowToDB(existing), 800);
+      updated++;
+    } else {
+      // Create new Kas Masuk row
+      const newRow = {
+        id: _KID(), tgl, bulan,
+        nama_barang: 'Kas Masuk',
+        type: 'Kas', vendor: '',
+        qty: 1, satuan: 'Kali',
+        harga: kredit, total: kredit,
+        debit: 0, kredit, jumlah: kredit,
+        penerima: '', status: 'DONE',
+        catatan: 'Import dari Excel'
+      };
+      KAS_DATA.push(newRow);
+      saveKasRowToDB(newRow);
+      created++;
+    }
+  });
+  
+  filterKas();
+  toast(`Import selesai: ${updated} diupdate, ${created} baru dibuat`, 'success');
+}
+
 let _kasRefreshInterval = null;
 let _invRefreshInterval = null;
 let _kasLastUpdated = null;
@@ -7672,11 +7725,11 @@ function _renderKasTable(){
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:48px;text-align:center;padding:2px;"
           onchange="kasEdit(${idx},'satuan',this.value)" placeholder="Sat.">
       </td>
-      <td style="padding:1px 3px;text-align:right;">
-        <span id="kh-disp-${idx}" style="font-size:11px;font-family:monospace;cursor:pointer;color:var(--accent);"
-          onclick="kasToggleHarga(${idx})">${hargaFmt}</span>
+      <td style="padding:1px 3px;text-align:right;cursor:pointer;" onclick="kasToggleHarga(${idx})">
+        <span id="kh-disp-${idx}" style="font-size:11px;font-family:monospace;color:var(--accent);pointer-events:none;">${hargaFmt}</span>
         <input type="number" id="kh-inp-${idx}" value="${d.harga||0}"
           style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
+          onclick="event.stopPropagation()"
           onchange="kasEdit(${idx},'harga',+this.value);kasRecalcTotal(${idx})"
           onblur="kasHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')kasHideHarga(${idx})">
       </td>
