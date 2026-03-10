@@ -6193,7 +6193,7 @@ function _renderInvTable(){
           onblur="invHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${idx})">`}
       </td>
       <td id="invval-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:#1e40af;">
-        ${d.value?_IRP(d.value):''}
+        ${(()=>{const v=d.value||(d.stock_in>0?d.stock_in*d.harga:d.stock_out>0?d.stock_out*d.harga:0);return v?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'}">${_IRP(v)}</span>`:'';})()}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;color:var(--muted);">${d.catatan}</span>`:
@@ -7127,7 +7127,7 @@ function renderInvSummary(){
           <td style="padding:3px 8px;text-align:center;"><span style="background:${INV_KODE_COLOR[d.kode]||'#f3f4f6'};color:${INV_KODE_TC[d.kode]||'#374151'};font-size:9px;font-weight:700;border-radius:99px;padding:2px 7px;">${d.kode}</span></td>
           <td style="padding:3px 8px;text-align:right;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</td>
           <td style="padding:3px 8px;text-align:right;color:#dc2626;">${d.stock_out?_IRN(d.stock_out):''}</td>
-          <td style="padding:3px 8px;text-align:right;font-family:monospace;">${d.value?_IRP(d.value):''}</td>
+          <td style="padding:3px 8px;text-align:right;font-family:monospace;">${(()=>{const v=d.value||(d.stock_in>0?d.stock_in*d.harga:d.stock_out>0?d.stock_out*d.harga:0);return v?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'}">${_IRP(v)}</span>`:'';})()}</td>
           <td style="padding:3px 8px;text-align:center;">${d.is_hpp?'<span style="color:#92400e;font-weight:700;">HPP</span>':''}</td>
         </tr>`).join('')}
       </tbody>
@@ -7179,6 +7179,7 @@ async function loadKasFromDB(){
       debit: +r.debit||0,
       kredit: +r.kredit||0,
       jumlah: +r.jumlah||0,
+      total: (+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
       status: r.status||'',
       catatan: r.catatan||'',
       locked: !!r.locked,
@@ -7262,6 +7263,13 @@ async function loadInvFromDB(){
         locked:!!r.locked, _db_id:+r.id
       }));
       console.log(`INV ACTIVITIES DB: ${INV_ACTIVITIES.length} rows`);
+      // Auto-recalc value for rows missing it
+      INV_ACTIVITIES.forEach(d=>{
+        if(!d.value && d.harga){
+          if(d.stock_in>0) d.value = d.stock_in * d.harga;
+          else if(d.stock_out>0) d.value = d.stock_out * d.harga;
+        }
+      });
     }
 
     if(opname && opname.length){
@@ -7396,6 +7404,7 @@ async function _silentReloadKas(){
       vendor:r.vendor||'', qty:+r.qty||0, satuan:r.satuan||'',
       harga:+r.harga||0, penerima:r.penerima||'',
       debit:+r.debit||0, kredit:+r.kredit||0, jumlah:+r.jumlah||0,
+      total:(+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
       status:r.status||'', catatan:r.catatan||'', locked:!!r.locked,
       _db_id:r.id,
       bulan:_BULAN_NAMES[+(r.tgl||'').slice(5,7)]||''
@@ -7677,7 +7686,7 @@ function _renderKasTable(){
           onchange="kasEdit(${idx},'penerima',this.value)">
       </td>
       <td id="kjml-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${isKredit?'#16a34a':'#dc2626'};white-space:nowrap;">
-        ${d.total?_KRP(d.total):''}
+        ${(()=>{const t=d.total||(+d.debit||0)||(+d.kredit||0);return t?_KRP(t):'';})()}
       </td>
       <td id="kbal-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${balColor};white-space:nowrap;">
         ${_KRP(rowBal)}
