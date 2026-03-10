@@ -960,8 +960,8 @@ tr:hover td{background:var(--bg);}
             <div class="card-head" style="margin-bottom:8px;">
               <span class="card-title">📋 Activity Line — Transaksi Inventory</span>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                <span id="inv-refresh-badge" title="Auto-sync aktif" style="font-size:9px;color:#9ca3af;user-select:none;"></span>
                 <button class="btn btn-primary btn-sm" id="inv-add-btn" onclick="invAddRow()"><span class="btn-plus">+</span>Baris</button>
+                <span id="inv-refresh-badge" title="Auto-sync aktif" style="width:10px;height:10px;border-radius:50%;background:#d1d5db;display:inline-block;flex-shrink:0;"></span>
                 </div>
             </div>
             <!-- Filter bar -->
@@ -6119,17 +6119,22 @@ function _renderInvTable(){
         ${locked?`<span style="font-size:11px;">${d.nama}</span>`:
         `<input type="text" value="${(d.nama||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:160px;padding:2px;"
+          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
           onchange="invEditNama(${idx},this.value)" list="inv-nama-list"
           placeholder="Ketik nama produk...">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</span>`:
         `<input type="number" value="${d.stock_in||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#166534;"
+          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
+          oninput="invEdit(${idx},'stock_in',+this.value)"
           onchange="invEdit(${idx},'stock_in',+this.value)">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#dc2626;">${d.stock_out?_IRN(d.stock_out):''}</span>`:
         `<input type="number" value="${d.stock_out||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#dc2626;"
+          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
+          oninput="invEdit(${idx},'stock_out',+this.value)"
           onchange="invEdit(${idx},'stock_out',+this.value)">`}
       </td>
       <td style="padding:1px 3px;">
@@ -7467,8 +7472,8 @@ function _updateInvRefreshBadge(){
   const el=document.getElementById('inv-refresh-badge');
   if(el&&_invLastUpdated){
     const sec=Math.round((Date.now()-_invLastUpdated)/1000);
-    el.textContent=sec<5?'● synced':sec<60?`synced ${sec}s ago`:'';
-    el.style.color=sec<5?'#16a34a':'#9ca3af';
+    el.style.background=sec<3?'#16a34a':sec<10?'#86efac':'#d1d5db';
+    el.title=sec<3?'Synced baru saja':`Synced ${sec}s lalu`;
   }
 }
 
