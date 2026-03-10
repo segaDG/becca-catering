@@ -5839,7 +5839,7 @@ function setInvTab(tab){
 function _IRP(v){return 'Rp '+(+v||0).toLocaleString('id-ID');}
 function _IRN(v){return (+v||0).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});}
 function _invID(){return Date.now();}
-const INV_KODES=['STOCK IN','STOCK OPNAME','SHIFT 1','SHIFT 2','SHIFT 3','EVENT'];
+const INV_KODES=['','STOCK IN','STOCK OPNAME','SHIFT 1','SHIFT 2','SHIFT 3','EVENT'];
 const INV_KODE_COLOR={'STOCK IN':'#dcfce7','SHIFT 1':'#dbeafe','SHIFT 2':'#e0f2fe','SHIFT 3':'#f0fdf4','EVENT':'#fef3c7','STOCK OPNAME':'#f3f4f6'};
 const INV_KODE_TC={'STOCK IN':'#166534','SHIFT 1':'#1e40af','SHIFT 2':'#0e7490','SHIFT 3':'#166534','EVENT':'#92400e','STOCK OPNAME':'#6b7280'};
 
@@ -6144,7 +6144,7 @@ function _renderInvTable(){
         ${locked?`<span style="background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;">${d.kode||'—'}</span>`:
         `<select style="border:none;background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;"
           onchange="invEdit(${idx},'kode',this.value);invRefreshHpp(${idx})">
-          ${INV_KODES.map(k=>`<option value="${k}" ${d.kode===k?'selected':''}>${k}</option>`).join('')}
+          ${INV_KODES.map(k=>`<option value="${k}" ${d.kode===k?'selected':''}>${k||'— Pilih —'}</option>`).join('')}
         </select>`}
       </td>
       <td style="padding:1px 3px;text-align:center;">
@@ -6390,9 +6390,53 @@ function _invInstantBadge(idx, d){
 
 function invRecalcValue(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
-  d.value=(d.stock_out||0)*d.harga;
+  // FIFO value: split qty across layers (oldest first)
+  if(d.stock_out>0 && d.nama){
+    d.value = _calcFifoValue(d.nama, d.stock_out, d);
+  } else {
+    d.value = (d.stock_in||0) * (d.harga||0);
+  }
   const el=document.getElementById('invval-'+idx);
-  if(el)el.innerHTML=d.value?_IRP(d.value):'';
+  if(el)el.innerHTML=d.value?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'};">${_IRP(d.value)}</span>`:'';
+}
+
+// Calculate FIFO value for a stock_out: splits across layers oldest→newest
+function _calcFifoValue(nama, qtyOut, excludeRow){
+  // Build STOCK IN layers sorted by tgl asc, id asc (oldest first)
+  const layers = INV_ACTIVITIES
+    .filter(a => a.nama===nama && a.stock_in>0 && a!==excludeRow)
+    .sort((a,b)=>(a.tgl||'').localeCompare(b.tgl||'')||a.id-b.id)
+    .map(a=>({harga:+a.harga||0, qty:+a.stock_in}));
+
+  // Get all previous outs (before this row by date/id) to know consumed qty
+  const prevOuts = INV_ACTIVITIES
+    .filter(a => a.nama===nama && a.stock_out>0 && a!==excludeRow)
+    .sort((a,b)=>(a.tgl||'').localeCompare(b.tgl||'')||a.id-b.id);
+
+  // Apply prev outs to layers
+  let prevConsumed = prevOuts.reduce((s,a)=>s+(+a.stock_out||0),0);
+  for(const layer of layers){
+    const use = Math.min(layer.qty, prevConsumed);
+    layer.qty -= use;
+    prevConsumed -= use;
+    if(prevConsumed<=0) break;
+  }
+
+  // Now calc value for THIS qtyOut across remaining layers
+  let remaining = qtyOut;
+  let totalValue = 0;
+  for(const layer of layers){
+    if(remaining<=0 || layer.qty<=0) continue;
+    const use = Math.min(layer.qty, remaining);
+    totalValue += use * layer.harga;
+    remaining -= use;
+  }
+  // If more qty than available layers (oversell), use last known harga
+  if(remaining>0){
+    const lastH = layers.length ? layers[layers.length-1].harga : 0;
+    totalValue += remaining * lastH;
+  }
+  return totalValue;
 }
 function invAutoHarga(idx){
   const d=INV_ACTIVITIES[idx]; if(!d||!d.nama) return;
@@ -7396,17 +7440,18 @@ async function _silentReloadInv(){
     _recalcProductStocks();
     _invLastUpdated = new Date();
     _updateInvRefreshBadge();
-    // Don't re-render if user is actively editing a cell
-    const focused = document.activeElement;
-    const isEditingInv = focused && focused.closest('#inv-tbody');
-    const isEditingKas = focused && focused.closest('#kas-tbody');
-    if(isEditingInv){ console.log('INV poll: skip render (user editing)'); return; }
-    // Re-render current inv tab + always keep barang in sync
+    // Smart render: only re-render non-transaksi tabs from poll
+    // Transaksi tab: never re-render from poll (causes index shift + data loss)
+    // Instead: rely on _lastEdited protection + user-initiated save
     const activeTab = document.querySelector('.rtab.active[id^="invtab-"]')?.id?.replace('invtab-','');
-    if(activeTab==='transaksi'||!activeTab){ filterInv(); }
-    else if(activeTab==='barang'){ _recalcProductStocks(); renderInvBarang(); }
+    if(activeTab==='barang'){ renderInvBarang(); }
     else if(activeTab==='laporan') renderInvLaporan();
     else if(activeTab==='summary') renderInvSummary();
+    // Transaksi tab: only re-render if NO row was recently edited (10s idle)
+    else {
+      const lastEdit = Math.max(...INV_ACTIVITIES.map(d=>d._lastEdited||0), 0);
+      if(Date.now()-lastEdit > 10000){ filterInv(); }
+    }
   } catch(e){ console.warn('INV poll error:',e.message); }
 }
 
