@@ -6100,8 +6100,9 @@ function _renderInvTable(){
   const rows=_invFiltered.slice(start,start+_invPageSize);
   tbody.innerHTML=rows.map((d,i)=>{
     const idx=INV_ACTIVITIES.findIndex(r=>r.id===d.id);
-    const kc=INV_KODE_COLOR[d.kode]||'#f3f4f6';
-    const ktc=INV_KODE_TC[d.kode]||'#374151';
+    const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
+    const kc=(_hasQty&&d.kode)?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
+    const ktc=(_hasQty&&d.kode)?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
     const locked=d.locked;
     const isRealHpp=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME';
     const rowBg=isRealHpp?'#fffbeb':'';
