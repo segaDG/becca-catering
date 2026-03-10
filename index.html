@@ -6147,8 +6147,8 @@ function _renderInvTable(){
       </td>
       <td style="padding:1px 3px;text-align:center;">
         <div style="display:flex;gap:2px;align-items:center;justify-content:center;">
-          <span id="invhpp-${idx}" style="background:${d.is_hpp?'#fef3c7':'#f3f4f6'};color:${d.is_hpp?'#92400e':'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:pointer;user-select:none;border:1px solid ${d.is_hpp?'#fde68a':'#e5e7eb'};"
-            onclick="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':'invToggleHpp('+idx+')'}" title="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'STOCK IN/OPNAME tidak dihitung HPP':'Klik untuk toggle HPP'}">${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'<span style="color:#9ca3af">—</span>':(d.is_hpp?'HPP':'—')}</span>
+          <span id="invhpp-${idx}" style="background:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fef3c7':'#f3f4f6')};color:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'#d1d5db':(d.is_hpp?'#92400e':'#9ca3af')};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:${(_hasQty&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME')?'pointer':'default'};user-select:none;border:1px solid ${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fde68a':'#e5e7eb')};"
+            onclick="${(_hasQty&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME')?'invToggleHpp('+idx+')':''}" title="${(!_hasQty)?'Isi qty dulu':(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'STOCK IN/OPNAME tidak dihitung HPP':'Klik untuk toggle HPP'}">${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'<span style="color:#d1d5db">—</span>':(d.is_hpp?'HPP':'—')}</span>
 
         </div>
       </td>
