@@ -962,8 +962,7 @@ tr:hover td{background:var(--bg);}
               <span id="inv-refresh-badge" title="Auto-sync aktif" style="font-size:9px;color:#9ca3af;user-select:none;"></span>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" id="inv-add-btn" onclick="invAddRow()"><span class="btn-plus">+</span>Baris</button>
-                <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;" onclick="invAiHppAll()" title="AI auto-detect semua HPP">🤖 AI HPP</button>
-              </div>
+                </div>
             </div>
             <!-- Filter bar -->
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
@@ -5885,8 +5884,11 @@ function invEditNama(idx, val){
     }
   }
   
+  // Auto-detect HPP based on product name + learning
+  if(trimmed && d.kode && d.kode!=='STOCK IN' && d.kode!=='STOCK OPNAME'){
+    d.is_hpp = _invHppAiGuess(trimmed, d.kode);
+  }
   _recalcProductStocks();
-  if(field==='harga') _checkHargaChange(idx);
   if(!d.nama || d.nama.trim()==='') return;
   if(d._pending){ d._pending=false; }
   clearTimeout(d._saveTimer);
@@ -5944,29 +5946,106 @@ function _getFifoCurrentHarga(nama){
 // When harga in transaksi differs from product master → check if new product entry needed
 function _checkHargaChange(idx){
   const d = INV_ACTIVITIES[idx]; if(!d||!d.nama||!d.harga) return;
-  if(d.kode!=='STOCK IN' && d.stock_in<=0) return; // only on stock-in
+  if(d.kode!=='STOCK IN' && (+d.stock_in||0)<=0) return; // only on stock-in
+
+  // Find product with exact same nama (base name, strip @price suffix)
+  const baseName = d.nama.replace(/\s*@[\d.,]+$/,'');
+  const existingLayer = INV_PRODUCTS.find(p=>p.nama===d.nama);
   
-  const prod = INV_PRODUCTS.find(p=>p.nama===d.nama);
-  if(!prod) return;
+  if(existingLayer){
+    // Same nama+harga product exists → OK, same layer
+    if(existingLayer.harga===d.harga) return;
+  }
+
+  // Check if this exact harga layer already exists
+  const layerName = `${baseName} @${(d.harga/1000).toFixed(d.harga%1000===0?0:1)}k`;
+  const exactLayer = INV_PRODUCTS.find(p=>p.harga===d.harga && p.nama.replace(/\s*@[\d.,]+k?$/,'')===baseName);
   
-  // If same harga, no action needed
-  if(prod.harga === d.harga) return;
-  
-  // Different harga on STOCK IN → update product master harga
-  // (FIFO is handled automatically via _getFifoLayers)
-  prod.harga = d.harga;
-  saveInvProductToDB(prod);
-  toast(`Harga ${d.nama} diupdate ke ${_IRP(d.harga)}`, 'info');
+  if(exactLayer){
+    // Layer exists → rename activity to use this layer name
+    if(exactLayer.nama !== d.nama){
+      d.nama = exactLayer.nama;
+      // update input in DOM
+      const inp = document.querySelector(`#invrow-${idx} input[list="inv-nama-list"]`);
+      if(inp) inp.value = d.nama;
+    }
+    return;
+  }
+
+  // Different harga → create new FIFO layer product
+  const baseProduct = INV_PRODUCTS.find(p=>p.nama.replace(/\s*@[\d.,]+k?$/,'')===baseName);
+  if(!baseProduct) return;
+
+  const newProd = {
+    id: Date.now(),
+    nama: layerName,
+    category: baseProduct.category||'',
+    location: baseProduct.location||'',
+    status: 'Activated',
+    satuan: baseProduct.satuan||'Kg',
+    min_stock: 0,
+    harga: d.harga,
+    locked: false,
+    stock_in:0, stock_out:0, balance:0
+  };
+  INV_PRODUCTS.push(newProd);
+  saveInvProductToDB(newProd);
+
+  // Rename this activity to use the new layer name
+  d.nama = layerName;
+  const inp2 = document.querySelector(`#invrow-${idx} input[list="inv-nama-list"]`);
+  if(inp2) inp2.value = layerName;
+
+  _recalcProductStocks();
+  toast(`FIFO layer baru: "${layerName}"`, 'success');
 }
 
 
 function _recalcProductStocks(){
+  // Group products by base name for FIFO calculation
+  const baseGroups = {};
   INV_PRODUCTS.forEach(p=>{
+    const base = p.nama.replace(/\s*@[\d.,]+k?$/,'');
+    if(!baseGroups[base]) baseGroups[base]=[];
+    baseGroups[base].push(p);
+  });
+
+  INV_PRODUCTS.forEach(p=>{
+    // Direct stock in/out for this exact product/layer
     const rows=INV_ACTIVITIES.filter(a=>a.nama===p.nama);
     p.stock_in=rows.reduce((s,a)=>s+(+a.stock_in||0),0);
-    p.stock_out=rows.reduce((s,a)=>s+(+a.stock_out||0),0);
+    
+    // For FIFO: stock_out for the BASE name reduces oldest layers first
+    const baseName = p.nama.replace(/\s*@[\d.,]+k?$/,'');
+    const layers = baseGroups[baseName];
+    
+    if(layers && layers.length>1){
+      // Multi-layer FIFO: distribute out across layers oldest first
+      const totalOut = INV_ACTIVITIES
+        .filter(a=>a.nama===p.nama || layers.some(l=>l.nama===a.nama&&a.stock_out>0))
+        .reduce((s,a)=>s+(+a.stock_out||0),0);
+      // FIFO: sort by tgl asc (oldest first)
+      const sorted = [...layers].sort((a,b)=>(a.tgl||'').localeCompare(b.tgl||'')||a.id-b.id);
+      let remainingOut = INV_ACTIVITIES
+        .filter(a=>layers.some(l=>l.nama===a.nama)&&a.stock_out>0)
+        .reduce((s,a)=>s+(+a.stock_out||0),0);
+      // Also include non-layered outs for base name
+      remainingOut += INV_ACTIVITIES
+        .filter(a=>a.nama===baseName&&a.stock_out>0)
+        .reduce((s,a)=>s+(+a.stock_out||0),0);
+      
+      for(const layer of sorted){
+        const use = Math.min(layer.stock_in, remainingOut);
+        if(layer.nama===p.nama) p.stock_out=use;
+        remainingOut -= use;
+        if(remainingOut<=0) break;
+      }
+    } else {
+      p.stock_out=rows.reduce((s,a)=>s+(+a.stock_out||0),0);
+    }
+    
     p.balance=p.stock_in-p.stock_out;
-    p.harga_fifo=_getFifoCurrentHarga(p.nama)||p.harga||0;
+    p.harga_fifo=p.harga||0;
   });
 }
 
@@ -6060,8 +6139,8 @@ function _renderInvTable(){
         `<input type="text" value="${(d.pjawab||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:80px;padding:2px;" onchange="invEdit(${idx},'pjawab',this.value)">`}
       </td>
       <td style="padding:1px 3px;text-align:center;">
-        ${locked?`<span style="background:${kc};color:${ktc};font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;">${d.kode}</span>`:
-        `<select style="border:none;background:${kc};color:${ktc};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;"
+        ${locked?`<span style="background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;">${d.kode||'—'}</span>`:
+        `<select style="border:none;background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;"
           onchange="invEdit(${idx},'kode',this.value);invRefreshHpp(${idx})">
           ${INV_KODES.map(k=>`<option value="${k}" ${d.kode===k?'selected':''}>${k}</option>`).join('')}
         </select>`}
@@ -6139,7 +6218,14 @@ function invEdit(idx,field,val){
   // Auto-set kode: if stock_in > 0, force kode = STOCK IN
   if(field==='kode'){
     if(val==='STOCK IN'||val==='STOCK OPNAME'){ d.is_hpp=false; }
-    else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){ d.is_hpp=true; }
+    else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){
+      // Auto-detect HPP based on product name + learning
+      d.is_hpp = _invHppAiGuess(d.nama, val);
+    }
+  }
+  if(field==='is_hpp'){
+    // User manually corrected → learn from it
+    _invHppLearn(d.nama, d.kode, val);
   }
   if(field==='stock_in'){
     if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
@@ -6149,6 +6235,12 @@ function invEdit(idx,field,val){
   // Auto-set kode: if stock_out > 0 and kode was STOCK IN, clear it
   if(field==='stock_out'){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
+    d.stock_out=+val||0;
+    // Auto-fill harga from FIFO oldest layer if empty
+    if(d.stock_out>0 && !d.harga && d.nama){
+      const fh=_getFifoCurrentHarga(d.nama);
+      if(fh){ d.harga=fh; const disp=document.getElementById('invh-disp-'+idx); const inp=document.getElementById('invh-inp-'+idx); if(disp)disp.textContent=_IRP(fh); if(inp)inp.value=fh; }
+    }
     invRecalcValue(idx);
   }
   // Recalc product stocks live so Daftar Barang stays in sync
@@ -7033,7 +7125,7 @@ async function loadInvFromDB(){
         id:r.id, tgl:r.tgl, nama:r.nama,
         stock_in:+r.stock_in||0, stock_out:+r.stock_out||0,
         pengambil:r.pengambil||'', pjawab:r.pjawab||'',
-        kode:r.kode||'STOCK IN', catatan:r.catatan||'',
+        kode:r.kode||'', catatan:r.catatan||'',
         is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
         locked:!!r.locked, _db_id:+r.id
       }));
@@ -7217,7 +7309,7 @@ async function _silentReloadInv(){
         id:r.id, tgl:r.tgl, nama:r.nama,
         stock_in:+r.stock_in||0, stock_out:+r.stock_out||0,
         pengambil:r.pengambil||'', pjawab:r.pjawab||'',
-        kode:r.kode||'STOCK IN', catatan:r.catatan||'',
+        kode:r.kode||'', catatan:r.catatan||'',
         is_hpp:!!r.is_hpp, harga:+r.harga||0, value:+r.value_out||0,
         locked:!!r.locked, _db_id:+r.id
       }));
