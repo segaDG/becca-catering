@@ -6248,7 +6248,7 @@ function invBarangHideHarga(idx){
 function deleteInvProd(idx){
   if(!confirm('Hapus barang ini dari daftar?'))return;
   const p=INV_PRODUCTS[idx];
-  if(p&&p._db_id){ sbDelete('inv_products',`id=eq.${p._db_id}`).catch(e=>console.warn(e)); }
+  if(p&&p._db_id){ sbDelete('inv_products',+p._db_id).catch(e=>console.warn(e)); }
   INV_PRODUCTS.splice(idx,1);renderInvBarang();toast('Barang dihapus','success');
 }
 function invBarangAdd(){
@@ -6834,7 +6834,7 @@ async function saveKasRowToDB(d){
   };
   try{
     if(d._db_id){
-      await sbPatch('kas_transactions',`id=eq.${+d._db_id}`,body);
+      await sbPatch('kas_transactions',+d._db_id,body);
     } else {
       const res = await sbPost('kas_transactions',body);
       if(res&&res[0]){ d._db_id=res[0].id; _DB_KAS_READY=true; }
@@ -6847,7 +6847,7 @@ async function saveKasRowToDB(d){
 
 async function deleteKasRowFromDB(dbId){
   if(!dbId) return;
-  try{ await sbDelete('kas_transactions',`id=eq.${+dbId}`); }
+  try{ await sbDelete('kas_transactions',+dbId); }
   catch(e){ console.warn('deleteKasRow error:', e.message); }
 }
 
@@ -6903,7 +6903,7 @@ async function saveInvProductToDB(p){
   };
   try{
     if(p._db_id){
-      await sbPatch('inv_products',`id=eq.${p._db_id}`,body);
+      await sbPatch('inv_products',+p._db_id,body);
     } else {
       const res=await sbPost('inv_products',body);
       if(res&&res[0]) p._db_id=res[0].id;
@@ -6925,7 +6925,7 @@ async function saveInvActivityToDB(d){
   };
   try{
     if(d._db_id){
-      await sbPatch('inv_activities',`id=eq.${+d._db_id}`,body);
+      await sbPatch('inv_activities',+d._db_id,body);
     } else {
       const res=await sbPost('inv_activities',body);
       if(res&&res[0]){ 
@@ -6948,7 +6948,7 @@ async function saveInvActivityToDB(d){
 
 async function deleteInvActivityFromDB(dbId){
   if(!dbId) return;
-  try{ await sbDelete('inv_activities',`id=eq.${+dbId}`); }
+  try{ await sbDelete('inv_activities',+dbId); }
   catch(e){ console.warn('deleteInvActivity error:',e.message); }
 }
 
