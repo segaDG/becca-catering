@@ -6274,23 +6274,22 @@ function invEdit(idx,field,val){
   if(field==='stock_out'){
     if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     d.stock_out=+val||0;
-    // Auto-fill harga from FIFO (blended price if multi-layer)
+    // FIFO harga: only recalc when user stops typing (avoid mid-typing corruption)
     if(d.stock_out>0 && d.nama){
-      // Always recalc FIFO value, update harga display
       const fifoVal = _calcFifoValue(d.nama, d.stock_out, d);
-      const fifoH = d.stock_out>0 ? Math.round(fifoVal/d.stock_out) : 0;
-      if(fifoH){
+      if(fifoVal>0){
+        const fifoH = Math.round(fifoVal/d.stock_out);
         d.harga=fifoH; d.value=fifoVal;
         const disp=document.getElementById('invh-disp-'+idx);
         const inp=document.getElementById('invh-inp-'+idx);
         if(disp)disp.textContent=_IRP(fifoH);
         if(inp)inp.value=fifoH;
-        // Show value immediately
         const velEl=document.getElementById('invval-'+idx);
         if(velEl)velEl.innerHTML=`<span style="color:#1d4ed8;">${_IRP(fifoVal)}</span>`;
       }
+    } else if(d.stock_out===0){
+      d.value=0;
     }
-    invRecalcValue(idx);
     _invInstantBadge(idx,d);
   }
   // Recalc product stocks live so Daftar Barang stays in sync
@@ -6410,9 +6409,9 @@ function invRecalcValue(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   // FIFO value: split qty across layers (oldest first)
   if(d.stock_out>0 && d.nama){
-    d.value = _calcFifoValue(d.nama, d.stock_out, d);
-    // Update harga to blended FIFO price
-    if(d.value && d.stock_out){ d.harga = Math.round(d.value/d.stock_out); }
+    const fv = _calcFifoValue(d.nama, d.stock_out, d);
+    if(fv>0) d.value = fv;
+    else d.value = (d.stock_out||0) * (d.harga||0);
   } else if(d.stock_in>0){
     d.value = (d.stock_in||0) * (d.harga||0);
   } else {
@@ -7446,7 +7445,7 @@ async function _silentReloadInv(){
         }
         // Also keep local edits if recently edited (5s window) or save pending
         const local = INV_ACTIVITIES.find(l=>l._db_id===r._db_id);
-        if(local && (local._saveTimer || (local._lastEdited && Date.now()-local._lastEdited<5000))) return local;
+        if(local && (local._saveTimer || (local._lastEdited && Date.now()-local._lastEdited<30000))) return local;
         return r;
       });
 
@@ -7472,7 +7471,7 @@ async function _silentReloadInv(){
     // Transaksi tab: only re-render if NO row was recently edited (10s idle)
     else {
       const lastEdit = Math.max(...INV_ACTIVITIES.map(d=>d._lastEdited||0), 0);
-      if(Date.now()-lastEdit > 10000){ filterInv(); }
+      if(Date.now()-lastEdit > 60000){ filterInv(); } // 60s idle before re-render
     }
   } catch(e){ console.warn('INV poll error:',e.message); }
 }
