@@ -5870,17 +5870,17 @@ function invEditNama(idx, val){
   const oldNama = d.nama;
   d.nama = trimmed;
   
-  // Auto-fill harga from last transaction price or product price
+  // Auto-fill harga: FIFO untuk stock_out, last price untuk stock_in
   if(trimmed && trimmed !== oldNama){
-    const lastHarga = _getLastHarga(trimmed);
-    if(lastHarga){
-      d.harga = lastHarga;
+    const isStockIn = d.kode==='STOCK IN' || d.kode==='STOCK OPNAME';
+    const autoHarga = isStockIn ? _getLastHarga(trimmed) : _getFifoCurrentHarga(trimmed);
+    if(autoHarga){
+      d.harga = autoHarga;
       invRecalcValue(idx);
-      // Update harga display
       const disp = document.getElementById('invh-disp-'+idx);
       const inp2 = document.getElementById('invh-inp-'+idx);
-      if(disp) disp.textContent = _IRP(lastHarga);
-      if(inp2) inp2.value = lastHarga;
+      if(disp) disp.textContent = _IRP(autoHarga);
+      if(inp2) inp2.value = autoHarga;
     }
   }
   
@@ -6184,7 +6184,8 @@ function _renderInvTable(){
   let _needsRender=false;
   INV_ACTIVITIES.forEach((d,i)=>{
     if(d.nama && !d.harga){
-      const h2=_getLastHarga(d.nama);
+      const isStockIn = d.kode==='STOCK IN'||d.kode==='STOCK OPNAME';
+      const h2 = isStockIn ? _getLastHarga(d.nama) : _getFifoCurrentHarga(d.nama);
       if(h2){ d.harga=h2; invRecalcValue(i); _needsRender=true;
         clearTimeout(d._saveTimer);
         d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1200);
@@ -6220,17 +6221,46 @@ function invEdit(idx,field,val){
   if(field==='kode'){
     if(val==='STOCK IN'||val==='STOCK OPNAME'){ d.is_hpp=false; }
     else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){
-      // Auto-detect HPP based on product name + learning
       d.is_hpp = _invHppAiGuess(d.nama, val);
+    }
+    // Instant badge color update
+    const _hasQtyNow=(+d.stock_in>0||(+d.stock_out>0));
+    const kodeEl=document.querySelector(`#invrow-${idx} select`);
+    if(kodeEl){
+      const kc2=(_hasQtyNow&&val)?(INV_KODE_COLOR[val]||'#f3f4f6'):'#f3f4f6';
+      const ktc2=(_hasQtyNow&&val)?(INV_KODE_TC[val]||'#374151'):'#9ca3af';
+      kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
+    }
+    // Instant HPP badge update
+    const hppEl=document.getElementById('invhpp-'+idx);
+    if(hppEl){
+      const isHppNow=d.is_hpp&&val!=='STOCK IN'&&val!=='STOCK OPNAME';
+      hppEl.style.background=(!_hasQtyNow||val==='STOCK IN'||val==='STOCK OPNAME')?'transparent':(isHppNow?'#fef3c7':'#f3f4f6');
+      hppEl.style.color=(!_hasQtyNow||val==='STOCK IN'||val==='STOCK OPNAME')?'#d1d5db':(isHppNow?'#92400e':'#9ca3af');
+      hppEl.style.borderColor=(!_hasQtyNow||val==='STOCK IN'||val==='STOCK OPNAME')?'transparent':(isHppNow?'#fde68a':'#e5e7eb');
+      hppEl.textContent=(!_hasQtyNow||val==='STOCK IN'||val==='STOCK OPNAME')?'—':(isHppNow?'HPP':'—');
+    }
+    // Also update harga: switch to FIFO or last price based on kode
+    if(d.nama && d.harga){
+      const isStockIn2=val==='STOCK IN'||val==='STOCK OPNAME';
+      const newH=isStockIn2?_getLastHarga(d.nama):_getFifoCurrentHarga(d.nama);
+      if(newH && newH!==d.harga){
+        d.harga=newH; invRecalcValue(idx);
+        const disp=document.getElementById('invh-disp-'+idx);
+        const inp3=document.getElementById('invh-inp-'+idx);
+        if(disp)disp.textContent=_IRP(newH);
+        if(inp3)inp3.value=newH;
+      }
     }
   }
   if(field==='is_hpp'){
-    // User manually corrected → learn from it
     _invHppLearn(d.nama, d.kode, val);
   }
   if(field==='stock_in'){
+    d.stock_in=+val||0;
     if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
     invRecalcValue(idx);
+    _invInstantBadge(idx,d);
     // Don't call filterInv() here — it re-renders table mid-edit
   }
   // Auto-set kode: if stock_out > 0 and kode was STOCK IN, clear it
@@ -6243,6 +6273,7 @@ function invEdit(idx,field,val){
       if(fh){ d.harga=fh; const disp=document.getElementById('invh-disp-'+idx); const inp=document.getElementById('invh-inp-'+idx); if(disp)disp.textContent=_IRP(fh); if(inp)inp.value=fh; }
     }
     invRecalcValue(idx);
+    _invInstantBadge(idx,d);
   }
   // Recalc product stocks live so Daftar Barang stays in sync
   _recalcProductStocks();
@@ -6337,6 +6368,24 @@ function invRefreshHpp(idx){
   d.is_hpp=['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(d.kode);
   filterInv();
 }
+function _invInstantBadge(idx, d){
+  const _hasQtyNow=(+d.stock_in>0||(+d.stock_out>0));
+  const kodeEl=document.querySelector(`#invrow-${idx} select`);
+  if(kodeEl && d.kode){
+    const kc2=(_hasQtyNow&&d.kode)?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
+    const ktc2=(_hasQtyNow&&d.kode)?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
+    kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
+  }
+  const hppEl=document.getElementById('invhpp-'+idx);
+  if(hppEl){
+    const isHppNow=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME';
+    hppEl.style.background=(!_hasQtyNow||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(isHppNow?'#fef3c7':'#f3f4f6');
+    hppEl.style.color=(!_hasQtyNow||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'#d1d5db':(isHppNow?'#92400e':'#9ca3af');
+    hppEl.style.borderColor=(!_hasQtyNow||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(isHppNow?'#fde68a':'#e5e7eb');
+    hppEl.textContent=(!_hasQtyNow||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'—':(isHppNow?'HPP':'—');
+  }
+}
+
 function invRecalcValue(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   d.value=(d.stock_out||0)*d.harga;
