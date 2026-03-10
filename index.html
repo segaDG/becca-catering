@@ -5869,6 +5869,7 @@ function invEditNama(idx, val){
   
   const oldNama = d.nama;
   d.nama = trimmed;
+  d._lastEdited=Date.now();
   
   // Auto-fill harga: FIFO untuk stock_out, last price untuk stock_in
   if(trimmed && trimmed !== oldNama){
@@ -6216,6 +6217,7 @@ function invPageSizeChange(){
 
 function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
+  d._lastEdited=Date.now();
   d[field]=val;
   // Auto-set kode: if stock_in > 0, force kode = STOCK IN
   if(field==='kode'){
@@ -7219,7 +7221,7 @@ async function saveInvActivityToDB(d){
   const body={
     tgl:d.tgl, nama:d.nama, stock_in:d.stock_in||0, stock_out:d.stock_out||0,
     pengambil:d.pengambil||'', pjawab:d.pjawab||'',
-    kode:d.kode||'STOCK IN', catatan:d.catatan||'',
+    kode:d.kode||'', catatan:d.catatan||'',
     is_hpp:!!d.is_hpp, harga:d.harga||0, value_out:d.value||0,
     locked:!!d.locked, updated_at:new Date().toISOString()
   };
@@ -7277,7 +7279,7 @@ let _invRefreshInterval = null;
 let _kasLastUpdated = null;
 let _invLastUpdated = null;
 const _KAS_POLL_MS = 10000;  // 10 detik
-const _INV_POLL_MS = 3000;  // 3 detik
+const _INV_POLL_MS = 1000;  // 1 detik
 
 function _startKasPolling(){
   _stopKasPolling();
@@ -7376,9 +7378,9 @@ async function _silentReloadInv(){
           const local = INV_ACTIVITIES.find(l=>l._db_id===r._db_id);
           return local || r;
         }
-        // Also keep local edits if save timer is pending
+        // Also keep local edits if recently edited (5s window) or save pending
         const local = INV_ACTIVITIES.find(l=>l._db_id===r._db_id);
-        if(local && local._saveTimer) return local;
+        if(local && (local._saveTimer || (local._lastEdited && Date.now()-local._lastEdited<5000))) return local;
         return r;
       });
 
