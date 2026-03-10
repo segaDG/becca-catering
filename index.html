@@ -6989,7 +6989,7 @@ let _invRefreshInterval = null;
 let _kasLastUpdated = null;
 let _invLastUpdated = null;
 const _KAS_POLL_MS = 10000;  // 10 detik
-const _INV_POLL_MS = 10000;
+const _INV_POLL_MS = 3000;  // 3 detik
 
 function _startKasPolling(){
   _stopKasPolling();
@@ -7111,10 +7111,10 @@ async function _silentReloadInv(){
     const isEditingInv = focused && focused.closest('#inv-tbody');
     const isEditingKas = focused && focused.closest('#kas-tbody');
     if(isEditingInv){ console.log('INV poll: skip render (user editing)'); return; }
-    // Re-render current inv tab
+    // Re-render current inv tab + always keep barang in sync
     const activeTab = document.querySelector('.rtab.active[id^="invtab-"]')?.id?.replace('invtab-','');
-    if(activeTab==='transaksi'||!activeTab) filterInv();
-    else if(activeTab==='barang') renderInvBarang();
+    if(activeTab==='transaksi'||!activeTab){ filterInv(); }
+    else if(activeTab==='barang'){ _recalcProductStocks(); renderInvBarang(); }
     else if(activeTab==='laporan') renderInvLaporan();
     else if(activeTab==='summary') renderInvSummary();
   } catch(e){ console.warn('INV poll error:',e.message); }
