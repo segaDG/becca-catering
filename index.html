@@ -5845,12 +5845,121 @@ const INV_KODE_COLOR={'STOCK IN':'#dcfce7','SHIFT 1':'#dbeafe','SHIFT 2':'#e0f2f
 const INV_KODE_TC={'STOCK IN':'#166534','SHIFT 1':'#1e40af','SHIFT 2':'#0e7490','SHIFT 3':'#166534','EVENT':'#92400e','STOCK OPNAME':'#6b7280'};
 
 // ── TAB 1: TRANSAKSI ─────────────────────────────────────────────────────────
+// ── NAMA VALIDATION + HARGA AUTO-FILL ────────────────────────────────────────
+function invEditNama(idx, val){
+  const d = INV_ACTIVITIES[idx]; if(!d) return;
+  const trimmed = val.trim();
+  
+  // Validate: must exist in INV_PRODUCTS
+  const prod = INV_PRODUCTS.find(p => p.nama === trimmed);
+  if(trimmed && !prod){
+    // Flash red border on input
+    const inp = document.querySelector(`#invrow-${idx} input[list="inv-nama-list"]`);
+    if(inp){ inp.style.border='2px solid #dc2626'; inp.value = d.nama||''; 
+      setTimeout(()=>{ inp.style.border=''; },1200); }
+    toast(`"${trimmed}" tidak ada di Daftar Barang. Tambahkan dulu di tab Daftar Barang.`,'error');
+    return;
+  }
+  
+  const oldNama = d.nama;
+  d.nama = trimmed;
+  
+  // Auto-fill harga from last transaction price or product price
+  if(trimmed && trimmed !== oldNama){
+    const lastHarga = _getLastHarga(trimmed);
+    if(lastHarga){
+      d.harga = lastHarga;
+      invRecalcValue(idx);
+      // Update harga display
+      const disp = document.getElementById('invh-disp-'+idx);
+      const inp2 = document.getElementById('invh-inp-'+idx);
+      if(disp) disp.textContent = _IRP(lastHarga);
+      if(inp2) inp2.value = lastHarga;
+    }
+  }
+  
+  _recalcProductStocks();
+  if(field==='harga') _checkHargaChange(idx);
+  if(!d.nama || d.nama.trim()==='') return;
+  if(d._pending){ d._pending=false; }
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),600);
+}
+
+// Get last known harga for a product (from activities or product table)
+function _getLastHarga(nama){
+  // Find most recent transaction with this nama that has harga
+  const rows = INV_ACTIVITIES
+    .filter(a => a.nama===nama && a.harga>0)
+    .sort((a,b) => (b.tgl||'').localeCompare(a.tgl||'')||b.id-a.id);
+  if(rows.length) return rows[0].harga;
+  // Fallback to product master price
+  const prod = INV_PRODUCTS.find(p=>p.nama===nama);
+  return prod ? prod.harga||0 : 0;
+}
+
+// ── FIFO STOCK CALCULATION ────────────────────────────────────────────────────
+// Returns FIFO layers for a product: [{harga, qty_remaining}, ...]
+function _getFifoLayers(nama){
+  // Get all STOCK IN transactions sorted by date asc (oldest first)
+  const ins = INV_ACTIVITIES
+    .filter(a => a.nama===nama && (a.kode==='STOCK IN'||a.stock_in>0) && a.stock_in>0)
+    .sort((a,b) => (a.tgl||'').localeCompare(b.tgl||'')||a.id-b.id);
+  
+  // Get all STOCK OUT transactions sorted by date asc
+  const outs = INV_ACTIVITIES
+    .filter(a => a.nama===nama && a.stock_out>0 && a.kode!=='STOCK IN')
+    .sort((a,b) => (a.tgl||'').localeCompare(b.tgl||'')||a.id-b.id);
+  
+  // Build layers
+  let layers = ins.map(a=>({ harga:a.harga||0, qty:+a.stock_in, remaining:+a.stock_in, tgl:a.tgl }));
+  
+  // Apply outs FIFO
+  let outTotal = outs.reduce((s,a)=>s+(+a.stock_out||0), 0);
+  for(let layer of layers){
+    if(outTotal <= 0) break;
+    const used = Math.min(layer.remaining, outTotal);
+    layer.remaining -= used;
+    outTotal -= used;
+  }
+  
+  return layers.filter(l => l.remaining > 0);
+}
+
+// Get effective current harga using FIFO (oldest layer with stock)
+function _getFifoCurrentHarga(nama){
+  const layers = _getFifoLayers(nama);
+  if(layers.length) return layers[0].harga; // oldest remaining layer
+  return _getLastHarga(nama);
+}
+
+// ── HARGA CHANGE HANDLER ──────────────────────────────────────────────────────
+// When harga in transaksi differs from product master → check if new product entry needed
+function _checkHargaChange(idx){
+  const d = INV_ACTIVITIES[idx]; if(!d||!d.nama||!d.harga) return;
+  if(d.kode!=='STOCK IN' && d.stock_in<=0) return; // only on stock-in
+  
+  const prod = INV_PRODUCTS.find(p=>p.nama===d.nama);
+  if(!prod) return;
+  
+  // If same harga, no action needed
+  if(prod.harga === d.harga) return;
+  
+  // Different harga on STOCK IN → update product master harga
+  // (FIFO is handled automatically via _getFifoLayers)
+  prod.harga = d.harga;
+  saveInvProductToDB(prod);
+  toast(`Harga ${d.nama} diupdate ke ${_IRP(d.harga)}`, 'info');
+}
+
+
 function _recalcProductStocks(){
   INV_PRODUCTS.forEach(p=>{
     const rows=INV_ACTIVITIES.filter(a=>a.nama===p.nama);
     p.stock_in=rows.reduce((s,a)=>s+(+a.stock_in||0),0);
     p.stock_out=rows.reduce((s,a)=>s+(+a.stock_out||0),0);
     p.balance=p.stock_in-p.stock_out;
+    p.harga_fifo=_getFifoCurrentHarga(p.nama)||p.harga||0;
   });
 }
 
@@ -5922,7 +6031,8 @@ function _renderInvTable(){
         ${locked?`<span style="font-size:11px;">${d.nama}</span>`:
         `<input type="text" value="${(d.nama||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:160px;padding:2px;"
-          onchange="invEdit(${idx},'nama',this.value)" list="inv-nama-list">`}
+          onchange="invEditNama(${idx},this.value)" list="inv-nama-list"
+          placeholder="Ketik nama produk...">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</span>`:
@@ -5953,12 +6063,13 @@ function _renderInvTable(){
         <div style="display:flex;gap:2px;align-items:center;justify-content:center;">
           <span id="invhpp-${idx}" style="background:${d.is_hpp?'#fef3c7':'#f3f4f6'};color:${d.is_hpp?'#92400e':'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:pointer;user-select:none;border:1px solid ${d.is_hpp?'#fde68a':'#e5e7eb'};"
             onclick="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':'invToggleHpp('+idx+')'}" title="${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'STOCK IN/OPNAME tidak dihitung HPP':'Klik untuk toggle HPP'}">${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'<span style="color:#9ca3af">—</span>':(d.is_hpp?'HPP':'—')}</span>
-          ${(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'':('<button style="background:none;border:none;cursor:pointer;font-size:11px;padding:0 1px;" onclick="invAiHpp('+idx+')" title="AI: auto-detect HPP">🤖</button>')}
+
         </div>
       </td>
       <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;${locked?'':'cursor:pointer;'}" onclick="${locked?'':'invToggleHarga('+idx+')'}">
         ${locked?`<span>${d.harga?_IRP(d.harga):'—'}</span>`:
-        `<span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
+        `${d.nama&&!d.harga?`<button onclick="event.stopPropagation();invAutoHarga(${idx})" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:3px;font-size:9px;padding:1px 4px;cursor:pointer;color:#1d4ed8;margin-right:2px;">AI</button>`:''}
+        <span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
         <input type="number" id="invh-inp-${idx}" value="${d.harga||0}" onclick="event.stopPropagation()" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
           onchange="invEdit(${idx},'harga',+this.value);invRecalcValue(${idx})"
           onblur="invHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${idx})">`}
@@ -6121,6 +6232,21 @@ function invRecalcValue(idx){
   const el=document.getElementById('invval-'+idx);
   if(el)el.innerHTML=d.value?_IRP(d.value):'';
 }
+function invAutoHarga(idx){
+  const d=INV_ACTIVITIES[idx]; if(!d||!d.nama) return;
+  const h=_getLastHarga(d.nama);
+  if(!h){ toast('Tidak ada data harga untuk '+d.nama,'info'); return; }
+  d.harga=h;
+  invRecalcValue(idx);
+  const disp=document.getElementById('invh-disp-'+idx);
+  const inp=document.getElementById('invh-inp-'+idx);
+  if(disp) disp.textContent=_IRP(h);
+  if(inp) inp.value=h;
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),600);
+  toast('Harga '+d.nama+' → '+_IRP(h),'success');
+}
+
 function invToggleHarga(idx){
   document.getElementById('invh-disp-'+idx)?.style.setProperty('display','none');
   const inp=document.getElementById('invh-inp-'+idx);if(inp){inp.style.display='inline';inp.focus();inp.select();}
@@ -6168,12 +6294,14 @@ function renderInvBarang(){
   const loc=document.getElementById('inv-barang-loc')?.value||'';
   const stat=document.getElementById('inv-barang-stat')?.value||'';
 
-  // Recalc stocks from activities
+  // Recalc stocks from activities (with FIFO current harga)
   INV_PRODUCTS.forEach(p=>{
     const rows=INV_ACTIVITIES.filter(a=>a.nama===p.nama);
-    p.stock_in=rows.reduce((s,a)=>s+(a.stock_in||0),0);
-    p.stock_out=rows.reduce((s,a)=>s+(a.stock_out||0),0);
+    p.stock_in=rows.reduce((s,a)=>s+(+a.stock_in||0),0);
+    p.stock_out=rows.reduce((s,a)=>s+(+a.stock_out||0),0);
     p.balance=p.stock_in-p.stock_out;
+    // FIFO: current effective harga = oldest remaining stock layer
+    p.harga_fifo = _getFifoCurrentHarga(p.nama) || p.harga || 0;
   });
 
   let prods=[...INV_PRODUCTS].filter(p=>{
@@ -6219,7 +6347,7 @@ function renderInvBarang(){
       <td style="padding:2px 6px;font-size:11px;text-align:center;">${p.satuan}</td>
       <td style="padding:2px 6px;font-size:11px;text-align:right;font-family:monospace;">
         ${locked?`<span style="cursor:pointer;color:var(--accent);">${_IRP(p.harga)}</span>`:
-        `<span id="invbh-disp-${idx}" style="cursor:pointer;color:var(--accent);" onclick="invBarangToggleHarga(${idx})">${_IRP(p.harga)}</span>
+        `<span id="invbh-disp-${idx}" style="cursor:pointer;color:var(--accent);" onclick="invBarangToggleHarga(${idx})">${_IRP(p.harga)}</span>${p.harga_fifo&&p.harga_fifo!==p.harga?`<br><span style="font-size:9px;color:#f59e0b;" title="FIFO: harga stok tertua tersisa">FIFO:${_IRP(p.harga_fifo)}</span>`:''}
         <input type="number" id="invbh-inp-${idx}" value="${p.harga}" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
           onchange="invProdEdit(${idx},'harga',+this.value)"
           onblur="invBarangHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invBarangHideHarga(${idx})">`}
