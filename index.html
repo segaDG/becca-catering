@@ -1638,7 +1638,6 @@
 <script>
 
 // ── DATA LOADER ──────────────────────────────────
-// Fetch data JSON dari folder data/ lalu assign ke variabel app
 async function _loadBeccaData() {
   const files = [
     ['EMP_DATA',         'data/emp_data.json'],
@@ -1653,14 +1652,13 @@ async function _loadBeccaData() {
       const r = await fetch(url);
       if (!r.ok) return;
       const data = await r.json();
-      // Assign ke variabel global yang sudah dideklarasikan
-      if (varName === 'EMP_DATA')        { EMP_DATA.length=0; EMP_DATA.push(...data); }
-      else if (varName === 'LOG_DATA')   { LOG_DATA.length=0; LOG_DATA.push(...data); }
-      else if (varName === '_KD')        { _KD.length=0; _KD.push(...data); }
-      else if (varName === '_INV_PROD')  { _INV_PROD.length=0; _INV_PROD.push(...data); }
-      else if (varName === '_INV_ACT')   { _INV_ACT.length=0; _INV_ACT.push(...data); }
-      else if (varName === '_KAS_MASUK_EXCEL') { _KAS_MASUK_EXCEL.length=0; _KAS_MASUK_EXCEL.push(...data); }
-    } catch(e) { /* silent fail jika file tidak ada */ }
+      if (varName === 'EMP_DATA')             { EMP_DATA.length=0; EMP_DATA.push(...data); }
+      else if (varName === 'LOG_DATA')        { LOG_DATA.length=0; LOG_DATA.push(...data); }
+      else if (varName === '_KD')             { _KD.length=0; _KD.push(...data); }
+      else if (varName === '_INV_PROD')       { _INV_PROD.length=0; _INV_PROD.push(...data); }
+      else if (varName === '_INV_ACT')        { _INV_ACT.length=0; _INV_ACT.push(...data); }
+      else if (varName === '_KAS_MASUK_EXCEL'){ _KAS_MASUK_EXCEL.length=0; _KAS_MASUK_EXCEL.push(...data); }
+    } catch(e) { /* silent */ }
   }));
 }
 
@@ -1880,7 +1878,36 @@ function buildNav(){
     nav.appendChild(w);
   });
 }
-function navigateTo(pg){
+
+// Flush semua pending save timer sebelum navigasi
+async function flushPendingSaves() {
+  const flushArr = async (arr) => {
+    if (!arr || !arr.length) return;
+    const pending = arr.filter(d => d._saveTimer);
+    for (const d of pending) {
+      clearTimeout(d._saveTimer);
+      d._saveTimer = null;
+      if (d.nama && d.nama.trim()) {
+        if (typeof saveInvActivityToDB === 'function') await saveInvActivityToDB(d);
+      }
+    }
+  };
+  const flushKas = async (arr) => {
+    if (!arr || !arr.length) return;
+    const pending = arr.filter(d => d._saveTimer);
+    for (const d of pending) {
+      clearTimeout(d._saveTimer);
+      d._saveTimer = null;
+      if (typeof saveKasRowToDB === 'function') await saveKasRowToDB(d);
+    }
+  };
+  await Promise.all([
+    flushArr(typeof INV_ACTIVITIES !== 'undefined' ? INV_ACTIVITIES : []),
+    flushKas(typeof KAS_DATA !== 'undefined' ? KAS_DATA : []),
+  ]);
+}
+
+async function navigateTo(pg){
   if(!allowedPages().includes(pg)){toast('Akses ditolak','error');return;}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1889,6 +1916,7 @@ function navigateTo(pg){
   document.getElementById('pgtitle').textContent=ALL_PAGES[pg]?.label||pg;
   // Close sidebar on mobile after nav
   if(window.innerWidth<=768){const sb=document.getElementById('sidebar');sb.classList.remove('open');const ov=document.getElementById('sb-ov');if(ov)ov.style.display='none';}
+  await flushPendingSaves();
   renderPage(pg);
   // Scroll to top after render
   const ct=document.querySelector('.content');
