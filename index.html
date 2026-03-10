@@ -959,7 +959,7 @@ tr:hover td{background:var(--bg);}
           <div class="card" style="padding:10px;">
             <div class="card-head" style="margin-bottom:8px;">
               <span class="card-title">📋 Activity Line — Transaksi Inventory</span>
-              <span id="inv-refresh-badge" onclick="_silentReloadInv()" title="Klik untuk refresh data" style="font-size:10px;color:#6b7280;cursor:pointer;padding:2px 8px;background:#f3f4f6;border-radius:99px;user-select:none;">↺ --:--:--</span>
+              <span id="inv-refresh-badge" title="Auto-sync aktif" style="font-size:9px;color:#9ca3af;user-select:none;"></span>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" id="inv-add-btn" onclick="invAddRow()"><span class="btn-plus">+</span>Baris</button>
                 <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;" onclick="invAiHppAll()" title="AI auto-detect semua HPP">🤖 AI HPP</button>
@@ -5853,12 +5853,19 @@ function invEditNama(idx, val){
   // Validate: must exist in INV_PRODUCTS
   const prod = INV_PRODUCTS.find(p => p.nama === trimmed);
   if(trimmed && !prod){
-    // Flash red border on input
     const inp = document.querySelector(`#invrow-${idx} input[list="inv-nama-list"]`);
     if(inp){ inp.style.border='2px solid #dc2626'; inp.value = d.nama||''; 
       setTimeout(()=>{ inp.style.border=''; },1200); }
     toast(`"${trimmed}" tidak ada di Daftar Barang. Tambahkan dulu di tab Daftar Barang.`,'error');
     return;
+  }
+  // If nama cleared → clear harga too
+  if(!trimmed){
+    d.harga=0; d.value=0;
+    const disp=document.getElementById('invh-disp-'+idx);
+    const inp2=document.getElementById('invh-inp-'+idx);
+    if(disp) disp.textContent='—';
+    if(inp2) inp2.value=0;
   }
   
   const oldNama = d.nama;
@@ -6068,8 +6075,7 @@ function _renderInvTable(){
       </td>
       <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;${locked?'':'cursor:pointer;'}" onclick="${locked?'':'invToggleHarga('+idx+')'}">
         ${locked?`<span>${d.harga?_IRP(d.harga):'—'}</span>`:
-        `${d.nama&&!d.harga?`<button onclick="event.stopPropagation();invAutoHarga(${idx})" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:3px;font-size:9px;padding:1px 4px;cursor:pointer;color:#1d4ed8;margin-right:2px;">AI</button>`:''}
-        <span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
+        `<span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
         <input type="number" id="invh-inp-${idx}" value="${d.harga||0}" onclick="event.stopPropagation()" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
           onchange="invEdit(${idx},'harga',+this.value);invRecalcValue(${idx})"
           onblur="invHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${idx})">`}
@@ -6093,6 +6099,18 @@ function _renderInvTable(){
   let dl=document.getElementById('inv-nama-list');
   if(!dl){dl=document.createElement('datalist');dl.id='inv-nama-list';document.body.appendChild(dl);}
   dl.innerHTML=names.map(n=>`<option value="${n}">`).join('');
+
+  // Auto-fill harga for rows with nama but no harga (silent, no toast)
+  let _needsRender=false;
+  INV_ACTIVITIES.forEach((d,i)=>{
+    if(d.nama && !d.harga){
+      const h2=_getLastHarga(d.nama);
+      if(h2){ d.harga=h2; invRecalcValue(i); _needsRender=true;
+        clearTimeout(d._saveTimer);
+        d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1200);
+      }
+    }
+  });
 }
 
 function _renderInvPagination(){
@@ -7250,11 +7268,19 @@ async function _silentReloadInv(){
 
 function _updateKasRefreshBadge(){
   const el=document.getElementById('kas-refresh-badge');
-  if(el&&_kasLastUpdated) el.textContent=`↺ ${_kasLastUpdated.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  if(el&&_kasLastUpdated){
+    const sec=Math.round((Date.now()-_kasLastUpdated)/1000);
+    el.textContent=sec<5?'● synced':sec<60?`synced ${sec}s ago`:'';
+    el.style.color=sec<5?'#16a34a':'#9ca3af';
+  }
 }
 function _updateInvRefreshBadge(){
   const el=document.getElementById('inv-refresh-badge');
-  if(el&&_invLastUpdated) el.textContent=`↺ ${_invLastUpdated.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  if(el&&_invLastUpdated){
+    const sec=Math.round((Date.now()-_invLastUpdated)/1000);
+    el.textContent=sec<5?'● synced':sec<60?`synced ${sec}s ago`:'';
+    el.style.color=sec<5?'#16a34a':'#9ca3af';
+  }
 }
 
 
