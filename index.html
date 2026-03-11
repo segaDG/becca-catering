@@ -472,28 +472,31 @@
               <span class="card-title">💰 Kas Kecil 2026</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" id="kas-add-btn" onclick="kasAddRow()"><span class="btn-plus">+</span>Baris</button>
-                
-                <input type="text" class="sel" id="kas-search" placeholder="🔍 Cari nama/vendor..." oninput="filterKas()" style="min-width:150px;"><input type="date" class="sel" id="kas-f-dari" onchange="filterKas()" title="Dari tanggal"><span style="font-size:11px;color:var(--muted);padding:0 2px;">s/d</span><input type="date" class="sel" id="kas-f-sampai" onchange="filterKas()" title="Sampai tanggal"><button class="btn btn-secondary btn-sm" onclick="kasResetFilter()" title="Reset semua filter">↺ Reset</button>
-                
-                <select class="sel" id="kas-f-type" onchange="filterKas()">
-                  <option value="">Semua Type</option>
-                  <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
-                  <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
-                  <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
-                  <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
-                  <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
-                  <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
-                </select>
-                <select class="sel" id="kas-f-status" onchange="filterKas()">
-                  <option value="">Semua Status</option>
-                  <option value="DONE">DONE</option><option value="TBC">TBC</option>
-                </select>
+                <button class="btn btn-secondary btn-sm" onclick="kasResetFilter()" title="Reset filter" style="padding:4px 8px;font-size:14px;">↺</button>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-left:4px;">
+                  <input type="text" class="sel" id="kas-search" placeholder="🔍 Nama/vendor..." oninput="filterKas()" style="width:140px;padding:4px 8px;font-size:12px;">
+                  <input type="date" class="sel" id="kas-f-dari" onchange="filterKas()" title="Dari tanggal" style="width:128px;padding:4px 6px;font-size:12px;">
+                  <span style="font-size:11px;color:var(--muted);">s/d</span>
+                  <input type="date" class="sel" id="kas-f-sampai" onchange="filterKas()" title="Sampai tanggal" style="width:128px;padding:4px 6px;font-size:12px;">
+                  <select class="sel" id="kas-f-type" onchange="filterKas()" style="width:110px;padding:4px 6px;font-size:12px;">
+                    <option value="">Semua Type</option>
+                    <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
+                    <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
+                    <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
+                    <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
+                    <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
+                    <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
+                  </select>
+                  <select class="sel" id="kas-f-status" onchange="filterKas()" style="width:90px;padding:4px 6px;font-size:12px;">
+                    <option value="">Semua Status</option>
+                    <option value="DONE">DONE</option><option value="TBC">TBC</option>
+                  </select>
+                </div>
               </div>
             </div>
             <!-- Current Balance Bar -->
             <div id="kas-balance-bar" style="display:flex;gap:20px;flex-wrap:wrap;padding:8px 16px;background:linear-gradient(135deg,#1e4d6b,#2d6a8a);color:#fff;align-items:center;font-size:12px;"></div>
-            <!-- Stats bar -->
-            <div id="kas-stats" style="display:flex;gap:14px;flex-wrap:wrap;padding:7px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;align-items:center;"></div>
+            
             <!-- Table -->
             <div class="tw" style="max-height:calc(100vh - 320px);overflow:auto;" id="kas-table-wrap">
               <table id="kas-table" style="min-width:1080px;border-collapse:collapse;">
@@ -1633,11 +1636,8 @@
 <script>
 
 async function _loadBeccaData(){
-  const files=[
-    ['EMP_DATA','data/emp_data.json'],['LOG_DATA','data/log_data.json'],
-    ['_KD','data/kas_data.json'],['_INV_PROD','data/inv_prod.json'],
-    ['_INV_ACT','data/inv_act.json'],
-  ];
+  const files=[['EMP_DATA','data/emp_data.json'],['LOG_DATA','data/log_data.json'],
+    ['_KD','data/kas_data.json'],['_INV_PROD','data/inv_prod.json'],['_INV_ACT','data/inv_act.json']];
   await Promise.all(files.map(async([k,u])=>{
     try{const r=await fetch(u);if(!r.ok)return;const d=await r.json();
       if(k==='EMP_DATA'){EMP_DATA.length=0;EMP_DATA.push(...d);}
@@ -5774,66 +5774,29 @@ function _renderInvStats(){
 
 async function _flushInvPending(){
   if(typeof INV_ACTIVITIES==='undefined'||!INV_ACTIVITIES.length)return;
-  const pending=INV_ACTIVITIES.filter(d=>d._saveTimer);
-  if(!pending.length)return;
-  await Promise.all(pending.map(async d=>{
-    clearTimeout(d._saveTimer);d._saveTimer=null;
+  const pending=INV_ACTIVITIES.filter(d=>d._saveTimer);if(!pending.length)return;
+  await Promise.all(pending.map(async d=>{clearTimeout(d._saveTimer);d._saveTimer=null;
     if(d.nama&&d.nama.trim())try{await saveInvActivityToDB(d);}catch(e){}
   }));
 }
 async function _flushKasPending(){
   if(typeof KAS_DATA==='undefined'||!KAS_DATA.length)return;
-  const pending=KAS_DATA.filter(d=>d._saveTimer);
-  if(!pending.length)return;
-  await Promise.all(pending.map(async d=>{
-    clearTimeout(d._saveTimer);d._saveTimer=null;
+  const pending=KAS_DATA.filter(d=>d._saveTimer);if(!pending.length)return;
+  await Promise.all(pending.map(async d=>{clearTimeout(d._saveTimer);d._saveTimer=null;
     try{await saveKasRowToDB(d);}catch(e){}
   }));
 }
-async function _flushAllPending(){
-  await Promise.all([_flushInvPending(),_flushKasPending()]);
-}
-function invEditById(rowId,field,val){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),field,val);
-}
-function invEditNamaById(rowId,val){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;const idx=INV_ACTIVITIES.indexOf(d);
-  if(typeof invEditNama==='function')invEditNama(idx,val);else invEdit(idx,'nama',val);
-}
-function invToggleHppById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;invToggleHpp(INV_ACTIVITIES.indexOf(d));
-}
-function invToggleLockById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;invToggleLock(INV_ACTIVITIES.indexOf(d));
-}
-function deleteInvRowById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;deleteInvRow(INV_ACTIVITIES.indexOf(d));
-}
-function invRefreshHppById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;if(typeof invRefreshHpp==='function')invRefreshHpp(INV_ACTIVITIES.indexOf(d));
-}
-function invToggleHargaById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;if(typeof invToggleHarga==='function')invToggleHarga(INV_ACTIVITIES.indexOf(d));
-}
-function invHideHargaById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;if(typeof invHideHarga==='function')invHideHarga(INV_ACTIVITIES.indexOf(d));
-}
-function invRecalcValueById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;invRecalcValue(INV_ACTIVITIES.indexOf(d));
-}
-function _invLastEditedById(rowId){
-  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(d)d._lastEdited=Date.now();
-}
+async function _flushAllPending(){await Promise.all([_flushInvPending(),_flushKasPending()]);}
+function invEditById(rowId,field,val){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),field,val);}
+function invEditNamaById(rowId,val){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;const idx=INV_ACTIVITIES.indexOf(d);if(typeof invEditNama==='function')invEditNama(idx,val);else invEdit(idx,'nama',val);}
+function invToggleHppById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invToggleHpp(INV_ACTIVITIES.indexOf(d));}
+function invToggleLockById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invToggleLock(INV_ACTIVITIES.indexOf(d));}
+function deleteInvRowById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;deleteInvRow(INV_ACTIVITIES.indexOf(d));}
+function invRefreshHppById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;if(typeof invRefreshHpp==='function')invRefreshHpp(INV_ACTIVITIES.indexOf(d));}
+function invToggleHargaById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;if(typeof invToggleHarga==='function')invToggleHarga(INV_ACTIVITIES.indexOf(d));}
+function invHideHargaById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;if(typeof invHideHarga==='function')invHideHarga(INV_ACTIVITIES.indexOf(d));}
+function invRecalcValueById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invRecalcValue(INV_ACTIVITIES.indexOf(d));}
+function _invLastEditedById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(d)d._lastEdited=Date.now();}
 
 function _renderInvTable(){
   const tbody=document.getElementById('inv-tbody');if(!tbody)return;
@@ -5960,62 +5923,47 @@ function invPageSizeChange(){
 
 function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
-  const rowId=d._db_id||d.id||idx;
-  d._lastEdited=Date.now();
+  const rowId=d._db_id||d.id||idx; d._lastEdited=Date.now();
   if(field==='stock_in'||field==='stock_out'){const n=parseFloat(val);if(isNaN(n)||n<0)return;val=n;}
   d[field]=val;
   if(field==='kode'){
     if(val==='STOCK IN'||val==='STOCK OPNAME'){d.is_hpp=false;}
     else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){d.is_hpp=_invHppAiGuess(d.nama,val);}
-    if(d.nama){
-      const isStockIn2=val==='STOCK IN'||val==='STOCK OPNAME';
-      const newH=isStockIn2?_getLastHarga(d.nama):_getFifoCurrentHarga(d.nama);
-      if(newH&&newH!==d.harga){
-        d.harga=newH;invRecalcValue(idx);
-        const disp=document.getElementById('invh-disp-'+rowId);
-        const inp3=document.getElementById('invh-inp-'+rowId);
-        if(disp)disp.textContent=_IRP(newH);if(inp3)inp3.value=newH;
-      }
-    }
-    _invInstantBadge(idx,d);
-  }
+    if(d.nama){const isIn=val==='STOCK IN'||val==='STOCK OPNAME';
+      const newH=isIn?_getLastHarga(d.nama):_getFifoCurrentHarga(d.nama);
+      if(newH&&newH!==d.harga){d.harga=newH;invRecalcValue(idx);
+        const disp=document.getElementById('invh-disp-'+rowId),inp3=document.getElementById('invh-inp-'+rowId);
+        if(disp)disp.textContent=_IRP(newH);if(inp3)inp3.value=newH;}}
+    _invInstantBadge(idx,d);}
   if(field==='is_hpp'){_invHppLearn(d.nama,d.kode,val);}
-  if(field==='stock_in'){
-    d.stock_in=+val||0;
+  if(field==='stock_in'){d.stock_in=+val||0;
     if(d.stock_in>0){d.kode='STOCK IN';d.stock_out=0;d.is_hpp=false;
       if(d.nama&&!d.harga){const h=_getLastHarga(d.nama);if(h)d.harga=h;}}
     invRecalcValue(idx);_invInstantBadge(idx,d);
-    const disp=document.getElementById('invh-disp-'+rowId);
-    const inp=document.getElementById('invh-inp-'+rowId);
-    if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;
-  }
+    const disp=document.getElementById('invh-disp-'+rowId),inp=document.getElementById('invh-inp-'+rowId);
+    if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;}
   if(field==='stock_out'){
     if(+val>0&&d.kode==='STOCK IN'){d.kode='SHIFT 1';d.is_hpp=true;}
     d.stock_out=+val||0;
-    if(d.stock_out>0&&d.nama){
-      const fifoVal=_calcFifoValue(d.nama,d.stock_out,d);
-      if(fifoVal>0){const fifoH=Math.round(fifoVal/d.stock_out);d.harga=fifoH;d.value=fifoVal;}
+    if(d.stock_out>0&&d.nama){const fv=_calcFifoValue(d.nama,d.stock_out,d);
+      if(fv>0){const fh=Math.round(fv/d.stock_out);d.harga=fh;d.value=fv;}
       else if(!d.harga){const h=_getFifoCurrentHarga(d.nama)||_getLastHarga(d.nama);if(h){d.harga=h;d.value=d.stock_out*h;}}
       invRecalcValue(idx);
-      const disp=document.getElementById('invh-disp-'+rowId);
-      const inp=document.getElementById('invh-inp-'+rowId);
+      const disp=document.getElementById('invh-disp-'+rowId),inp=document.getElementById('invh-inp-'+rowId);
       if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;
     } else if(d.stock_out===0){d.value=0;}
-    _invInstantBadge(idx,d);
-  }
+    _invInstantBadge(idx,d);}
   if(field==='harga'){d.harga=+val||0;invRecalcValue(idx);}
   _recalcProductStocks();
   if(!d.nama||d.nama.trim()==='')return;
   if(d._pending){d._pending=false;}
-  clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1000);
+  clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1000);
 }
 
 function invToggleHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d||d.locked)return;
   if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')return;
-  const rowId=d._db_id||d.id||idx;
-  d.is_hpp=!d.is_hpp;
+  const rowId=d._db_id||d.id||idx; d.is_hpp=!d.is_hpp;
   const el=document.getElementById('invhpp-'+rowId);
   if(el){el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';el.style.color=d.is_hpp?'#92400e':'#9ca3af';
     el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';el.textContent=d.is_hpp?'HPP':'—';}
@@ -6094,21 +6042,16 @@ function _invInstantBadge(idx,d){
   const rowId=d._db_id||d.id||idx;
   const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
   const kodeEl=document.querySelector(`#invrow-${rowId} select`);
-  if(kodeEl){
-    if(kodeEl.value!==d.kode)kodeEl.value=d.kode;
-    const kc2=d.kode?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
-    const ktc2=d.kode?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
-    kodeEl.style.background=kc2;kodeEl.style.color=ktc2;
-  }
+  if(kodeEl){if(kodeEl.value!==d.kode)kodeEl.value=d.kode;
+    kodeEl.style.background=d.kode?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
+    kodeEl.style.color=d.kode?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';}
   const hppEl=document.getElementById('invhpp-'+rowId);
-  if(hppEl){
-    const isHppNow=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME'&&_hasQty;
-    const hideHpp=!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME'||!d.kode;
-    hppEl.style.background=hideHpp?'transparent':(isHppNow?'#fef3c7':'#f3f4f6');
-    hppEl.style.color=hideHpp?'#d1d5db':(isHppNow?'#92400e':'#9ca3af');
-    hppEl.style.borderColor=hideHpp?'transparent':(isHppNow?'#fde68a':'#e5e7eb');
-    hppEl.textContent=hideHpp?'—':(isHppNow?'HPP':'—');
-  }
+  if(hppEl){const isHppNow=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME'&&_hasQty;
+    const hide=!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME'||!d.kode;
+    hppEl.style.background=hide?'transparent':(isHppNow?'#fef3c7':'#f3f4f6');
+    hppEl.style.color=hide?'#d1d5db':(isHppNow?'#92400e':'#9ca3af');
+    hppEl.style.borderColor=hide?'transparent':(isHppNow?'#fde68a':'#e5e7eb');
+    hppEl.textContent=hide?'—':(isHppNow?'HPP':'—');}
 }
 
 function invRecalcValue(idx){
@@ -7075,8 +7018,7 @@ async function _silentReloadKas(){
     const rows=await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
     if(!rows||!rows.length)return;
     const _BULAN=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const now=Date.now();
-    const localMap={};KAS_DATA.forEach(d=>{if(d._db_id)localMap[d._db_id]=d;});
+    const now=Date.now();const localMap={};KAS_DATA.forEach(d=>{if(d._db_id)localMap[d._db_id]=d;});
     KAS_DATA=rows.map(r=>{
       const local=localMap[r.id];
       if(local&&local._lastEdited&&(now-local._lastEdited)<3000)return local;
@@ -7235,8 +7177,7 @@ function _kasApplyType(idx, type) {
 }
 function _kasApplyTypeById(rowId,type){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;
-  _kasApplyType(KAS_DATA.indexOf(d),type);
+  if(!d)return;_kasApplyType(KAS_DATA.indexOf(d),type);
 }
 
 // Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
@@ -7253,46 +7194,23 @@ function filterKas(){
   const fs=document.getElementById('kas-f-status')?.value||'';
   const fd=document.getElementById('kas-f-dari')?.value||'';
   const fsd=document.getElementById('kas-f-sampai')?.value||'';
-  _kasFiltered=[...KAS_DATA]
-    .filter(d=>{
-      if(ft&&d.type!==ft)return false;
-      if(fs&&d.status!==fs)return false;
-      if(fd&&(d.tgl||'')<fd)return false;
-      if(fsd&&(d.tgl||'')>fsd)return false;
-      if(q&&!(d.nama_barang||'').toLowerCase().includes(q)&&!(d.vendor||'').toLowerCase().includes(q))return false;
-      return true;
-    })
-    .sort((a,b)=>b.tgl.localeCompare(a.tgl)||b.id-a.id);
-  _renderBalanceBar();
-  _renderKasStats();_renderKasTable();_renderKasPagination();
+  _kasFiltered=[...KAS_DATA].filter(d=>{
+    if(ft&&d.type!==ft)return false;
+    if(fs&&d.status!==fs)return false;
+    if(fd&&(d.tgl||'')<fd)return false;
+    if(fsd&&(d.tgl||'')>fsd)return false;
+    if(q&&!(d.nama_barang||'').toLowerCase().includes(q)&&!(d.vendor||'').toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>b.tgl.localeCompare(a.tgl)||b.id-a.id);
+  _renderBalanceBar();_renderKasStats();_renderKasTable();_renderKasPagination();
 }
 function kasResetFilter(){
-  const el=id=>document.getElementById(id);
-  if(el('kas-search'))el('kas-search').value='';
-  if(el('kas-f-dari'))el('kas-f-dari').value='';
-  if(el('kas-f-sampai'))el('kas-f-sampai').value='';
-  if(el('kas-f-type'))el('kas-f-type').value='';
-  if(el('kas-f-status'))el('kas-f-status').value='';
+  ['kas-search','kas-f-dari','kas-f-sampai','kas-f-type','kas-f-status']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   filterKas();
 }
 
-function _renderKasStats(){
-  const totalDebit=_kasFiltered.reduce((s,d)=>s+(d.debit||0),0);
-  const totalKredit=_kasFiltered.reduce((s,d)=>s+(d.kredit||0),0);
-  const done=_kasFiltered.filter(d=>d.status==='DONE').length;
-  const tbc=_kasFiltered.filter(d=>d.status==='TBC').length;
-  const empty=_kasFiltered.filter(d=>!d.status).length;
-  const el=document.getElementById('kas-stats');if(!el)return;
-  const byType={};_kasFiltered.forEach(d=>{byType[d.type]=(byType[d.type]||0)+(d.debit||d.kredit||0);});
-  const top=Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,4);
-  el.innerHTML=`<span style="font-weight:700;">${_kasFiltered.length.toLocaleString()} baris</span>
-    <span style="color:#dc2626;font-weight:700;">Debit: ${_KRP(totalDebit)}</span>
-    <span style="color:var(--green);font-weight:700;">Kredit: ${_KRP(totalKredit)}</span>
-    <span style="color:var(--green);background:var(--green-bg);padding:1px 7px;border-radius:99px;">✔ ${done}</span>
-    <span style="color:#b45309;background:#fef3c7;padding:1px 7px;border-radius:99px;">TBC ${tbc}</span>
-    ${empty?`<span style="color:#6b7280;background:#f3f4f6;padding:1px 7px;border-radius:99px;">— ${empty}</span>`:''}
-    ${top.map(([t,v])=>`<span style="color:${(KAS_TC[t]||{c:'#666'}).c};font-size:11px;">${t}: ${_KRP(v)}</span>`).join('')}`;
-}
+function _renderKasStats(){}
 
 function _renderKasTable(){
   const tbody=document.getElementById('kas-tbody');if(!tbody)return;
@@ -7397,20 +7315,16 @@ function _renderKasTable(){
 
 // Harga toggle: klik teks → tampil input
 function kasToggleHarga(rowId){
-  const disp=document.getElementById('kh-disp-'+rowId);
-  const inp=document.getElementById('kh-inp-'+rowId);
+  const disp=document.getElementById('kh-disp-'+rowId),inp=document.getElementById('kh-inp-'+rowId);
   if(!disp||!inp)return;
   disp.style.display='none';inp.style.display='inline-block';inp.focus();inp.select();
 }
 function kasHideHarga(rowId){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
-  const disp=document.getElementById('kh-disp-'+rowId);
-  const inp=document.getElementById('kh-inp-'+rowId);
+  const disp=document.getElementById('kh-disp-'+rowId),inp=document.getElementById('kh-inp-'+rowId);
   if(!disp||!inp)return;
-  d.harga=+inp.value||0;
-  disp.textContent=d.harga?_KRP(d.harga):'—';
-  disp.style.display='';inp.style.display='none';
-  kasRecalcTotal(rowId);
+  d.harga=+inp.value||0;disp.textContent=d.harga?_KRP(d.harga):'—';
+  disp.style.display='';inp.style.display='none';kasRecalcTotal(rowId);
 }
 
 function kasRefreshTypeCell(rowId,sel){
@@ -7420,13 +7334,10 @@ function kasRefreshTypeCell(rowId,sel){
 
 function kasEditDebitKredit(rowId){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
-  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
-  else{d.debit=d.total;d.kredit=0;}
+  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}else{d.debit=d.total;d.kredit=0;}
   const jml=document.getElementById('kjml-'+rowId);
   if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
-  _renderBalanceBar();
-  clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+  _renderBalanceBar();clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
 }
 
 function kasRowColor(rowId){
@@ -7437,11 +7348,9 @@ function kasRowColor(rowId){
 }
 function kasChangeTgl(rowId,val){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
-  const oldTgl=d.tgl;
-  d.tgl=val; d._lastEdited=Date.now();
-  kasAutoMonth(rowId); kasRowColor(rowId);
-  clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+  const oldTgl=d.tgl; d.tgl=val; d._lastEdited=Date.now();
+  kasAutoMonth(rowId);kasRowColor(rowId);
+  clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
   const oldM=oldTgl?(new Date(oldTgl+'T00:00').getMonth()):-1;
   const newM=val?(new Date(val+'T00:00').getMonth()):-1;
   if(oldTgl&&val&&oldM!==newM){
@@ -7452,29 +7361,22 @@ function kasChangeTgl(rowId,val){
 
 function kasAutoMonth(rowId){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d||!d.tgl)return;
-  d.bulan=_KAUTO(d.tgl)||d.bulan;
+  if(!d||!d.tgl)return;d.bulan=_KAUTO(d.tgl)||d.bulan;
 }
 
 function kasRecalcTotal(rowId){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
-  d.total=Math.round((d.qty||0)*(d.harga||0));
-  d.jumlah=d.total;
-  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
-  else{d.debit=d.total;d.kredit=0;}
+  d.total=Math.round((d.qty||0)*(d.harga||0));d.jumlah=d.total;
+  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}else{d.debit=d.total;d.kredit=0;}
   const jml=document.getElementById('kjml-'+rowId);
   if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
-  _renderBalanceBar();
-  clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+  _renderBalanceBar();clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
 }
 
 function kasEdit(rowId,field,val){
-  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;
-  d[field]=val; d._lastEdited=Date.now();
-  clearTimeout(d._saveTimer);
-  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
+  d[field]=val;d._lastEdited=Date.now();
+  clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
 }
 
 function _kasKeyNav(){
@@ -7510,7 +7412,7 @@ function kasAddRow(){
   saveKasRowToDB(newRow);
   // Clear filters agar baris baru keliatan
   const srch=document.getElementById('kas-search');if(srch)srch.value='';
-  const fb=document.getElementById('kas-f-bulan');if(fb)fb.value='';
+  // filter bulan dihapus
   const ft=document.getElementById('kas-f-type');if(ft)ft.value='';
   const fs=document.getElementById('kas-f-status');if(fs)fs.value='';
   _kasPage=1;
@@ -7530,17 +7432,10 @@ function kasAddRow(){
 
 async function deleteKas(rowId){
   if(!confirm('Hapus baris ini?'))return;
-  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;
-  // Hapus dari memory dulu (UI langsung update)
-  const idx=KAS_DATA.indexOf(d);
-  if(idx>=0)KAS_DATA.splice(idx,1);
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
+  const idx=KAS_DATA.indexOf(d);if(idx>=0)KAS_DATA.splice(idx,1);
   filterKas();
-  // Hapus dari DB (tidak blokir UI)
-  if(d._db_id){
-    try{ await sbDelete('kas_transactions',d._db_id); }
-    catch(e){ console.warn('deleteKas DB error:',e.message); }
-  }
+  if(d._db_id)try{await sbDelete('kas_transactions',d._db_id);}catch(e){console.warn('deleteKas:',e.message);}
   toast('Baris dihapus','success');
 }
 
@@ -7587,7 +7482,7 @@ function renderKasSummary(){
   el.innerHTML=`
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:16px;">
     ${usedMonths.map(m=>{const md=monthStats[m]||{};const net=md.kredit-md.debit;return`
-      <div class="card" style="padding:14px 16px;cursor:pointer;" onclick="document.getElementById('kas-f-bulan').value='${m}';setKasTab('transaksi')">
+      <div class="card" style="padding:14px 16px;cursor:pointer;" onclick="setKasTab('transaksi')">
         <div style="font-weight:700;font-size:13px;color:var(--accent);">${m} 2026</div>
         <div style="font-size:16px;font-weight:800;font-family:monospace;color:#dc2626;margin-top:4px;">${_KRP(md.debit)}</div>
         <div style="font-size:11px;color:#16a34a;font-family:monospace;">Kredit: ${_KRP(md.kredit)}</div>
@@ -7633,7 +7528,7 @@ function renderKasSummary(){
           <th style="padding:7px 10px;text-align:right;font-size:11px;">Net</th>
         </tr></thead>
         <tbody>${usedMonths.map((m,i)=>{const md=monthStats[m]||{};const net=md.kredit-md.debit;return`
-          <tr style="${i%2?'background:var(--bg2)':''};cursor:pointer;" onclick="document.getElementById('kas-f-bulan').value='${m}';setKasTab('transaksi')">
+          <tr style="${i%2?'background:var(--bg2)':''};cursor:pointer;" onclick="setKasTab('transaksi')">
             <td style="padding:7px 10px;font-weight:600;font-size:12px;">${m}</td>
             <td style="padding:7px 10px;text-align:right;font-family:monospace;font-size:11px;color:#dc2626;">${_KRP(md.debit)}</td>
             <td style="padding:7px 10px;text-align:right;font-family:monospace;font-size:11px;color:#16a34a;">${_KRP(md.kredit)}</td>
