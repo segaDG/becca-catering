@@ -1637,28 +1637,21 @@
 
 <script>
 
-// ── DATA LOADER ──────────────────────────────────
 async function _loadBeccaData() {
   const files = [
-    ['EMP_DATA',         'data/emp_data.json'],
-    ['LOG_DATA',         'data/log_data.json'],
-    ['_KD',              'data/kas_data.json'],
-    ['_INV_PROD',        'data/inv_prod.json'],
-    ['_INV_ACT',         'data/inv_act.json'],
-    ['_KAS_MASUK_EXCEL', 'data/kas_masuk_excel.json'],
+    ['EMP_DATA','data/emp_data.json'],['LOG_DATA','data/log_data.json'],
+    ['_KD','data/kas_data.json'],['_INV_PROD','data/inv_prod.json'],
+    ['_INV_ACT','data/inv_act.json'],['_KAS_MASUK_EXCEL','data/kas_masuk_excel.json'],
   ];
-  await Promise.all(files.map(async ([varName, url]) => {
-    try {
-      const r = await fetch(url);
-      if (!r.ok) return;
-      const data = await r.json();
-      if (varName === 'EMP_DATA')             { EMP_DATA.length=0; EMP_DATA.push(...data); }
-      else if (varName === 'LOG_DATA')        { LOG_DATA.length=0; LOG_DATA.push(...data); }
-      else if (varName === '_KD')             { _KD.length=0; _KD.push(...data); }
-      else if (varName === '_INV_PROD')       { _INV_PROD.length=0; _INV_PROD.push(...data); }
-      else if (varName === '_INV_ACT')        { _INV_ACT.length=0; _INV_ACT.push(...data); }
-      else if (varName === '_KAS_MASUK_EXCEL'){ _KAS_MASUK_EXCEL.length=0; _KAS_MASUK_EXCEL.push(...data); }
-    } catch(e) { /* silent */ }
+  await Promise.all(files.map(async ([k,u])=>{
+    try{const r=await fetch(u);if(!r.ok)return;const d=await r.json();
+      if(k==='EMP_DATA'){EMP_DATA.length=0;EMP_DATA.push(...d);}
+      else if(k==='LOG_DATA'){LOG_DATA.length=0;LOG_DATA.push(...d);}
+      else if(k==='_KD'){_KD.length=0;_KD.push(...d);}
+      else if(k==='_INV_PROD'){_INV_PROD.length=0;_INV_PROD.push(...d);}
+      else if(k==='_INV_ACT'){_INV_ACT.length=0;_INV_ACT.push(...d);}
+      else if(k==='_KAS_MASUK_EXCEL'){_KAS_MASUK_EXCEL.length=0;_KAS_MASUK_EXCEL.push(...d);}
+    }catch(e){}
   }));
 }
 
@@ -1878,36 +1871,7 @@ function buildNav(){
     nav.appendChild(w);
   });
 }
-
-// Flush semua pending save timer sebelum navigasi
-async function flushPendingSaves() {
-  const flushArr = async (arr) => {
-    if (!arr || !arr.length) return;
-    const pending = arr.filter(d => d._saveTimer);
-    for (const d of pending) {
-      clearTimeout(d._saveTimer);
-      d._saveTimer = null;
-      if (d.nama && d.nama.trim()) {
-        if (typeof saveInvActivityToDB === 'function') await saveInvActivityToDB(d);
-      }
-    }
-  };
-  const flushKas = async (arr) => {
-    if (!arr || !arr.length) return;
-    const pending = arr.filter(d => d._saveTimer);
-    for (const d of pending) {
-      clearTimeout(d._saveTimer);
-      d._saveTimer = null;
-      if (typeof saveKasRowToDB === 'function') await saveKasRowToDB(d);
-    }
-  };
-  await Promise.all([
-    flushArr(typeof INV_ACTIVITIES !== 'undefined' ? INV_ACTIVITIES : []),
-    flushKas(typeof KAS_DATA !== 'undefined' ? KAS_DATA : []),
-  ]);
-}
-
-async function navigateTo(pg){
+function navigateTo(pg){
   if(!allowedPages().includes(pg)){toast('Akses ditolak','error');return;}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1916,8 +1880,7 @@ async function navigateTo(pg){
   document.getElementById('pgtitle').textContent=ALL_PAGES[pg]?.label||pg;
   // Close sidebar on mobile after nav
   if(window.innerWidth<=768){const sb=document.getElementById('sidebar');sb.classList.remove('open');const ov=document.getElementById('sb-ov');if(ov)ov.style.display='none';}
-  await flushPendingSaves();
-  renderPage(pg);
+  _flushInvPending().then(()=>renderPage(pg));
   // Scroll to top after render
   const ct=document.querySelector('.content');
   if(ct){ct.scrollTop=0;requestAnimationFrame(()=>ct.scrollTop=0);}
@@ -5510,12 +5473,27 @@ function kasEditSaldoAwal(){
 
 // INVENTORY MODULE
 
+// Flush semua baris INV yang pending save sebelum reload/navigasi
+async function _flushInvPending() {
+  if(typeof INV_ACTIVITIES === 'undefined') return;
+  const pending = INV_ACTIVITIES.filter(d => d._saveTimer);
+  if(!pending.length) return;
+  // Hapus semua timer, lalu save langsung
+  await Promise.all(pending.map(async d => {
+    clearTimeout(d._saveTimer);
+    d._saveTimer = null;
+    if(d.nama && d.nama.trim()) {
+      try { await saveInvActivityToDB(d); } catch(e) {}
+    }
+  }));
+}
+
 function renderInventoryPage(){
   setInvTab(document.querySelector('.rtab.active[id^="invtab-"]')?.id.replace('invtab-','') || 'transaksi');
   setTimeout(()=>showDbSetupBanner('inv-content'),200);
   // Start realtime polling
   _startInvPolling();
-  if(_DB_INV_READY!==false) _silentReloadInv();
+  if(_DB_INV_READY!==false){ _flushInvPending().then(()=>_silentReloadInv()); }
 }
 
 function setInvTab(tab){
@@ -7021,6 +6999,7 @@ async function saveInvActivityToDB(d){
       }
     }
     d._lastSaved=Date.now();
+    d._saveTimer=null;
   } catch(e){ 
     console.warn('saveInvActivity error:',e.message);
     if(e.message.includes('relation')||e.message.includes('does not exist')) _DB_INV_READY=false;
