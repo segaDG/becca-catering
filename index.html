@@ -1637,13 +1637,13 @@
 
 <script>
 
-async function _loadBeccaData() {
-  const files = [
+async function _loadBeccaData(){
+  const files=[
     ['EMP_DATA','data/emp_data.json'],['LOG_DATA','data/log_data.json'],
     ['_KD','data/kas_data.json'],['_INV_PROD','data/inv_prod.json'],
     ['_INV_ACT','data/inv_act.json'],['_KAS_MASUK_EXCEL','data/kas_masuk_excel.json'],
   ];
-  await Promise.all(files.map(async ([k,u])=>{
+  await Promise.all(files.map(async([k,u])=>{
     try{const r=await fetch(u);if(!r.ok)return;const d=await r.json();
       if(k==='EMP_DATA'){EMP_DATA.length=0;EMP_DATA.push(...d);}
       else if(k==='LOG_DATA'){LOG_DATA.length=0;LOG_DATA.push(...d);}
@@ -5780,56 +5780,56 @@ function _renderInvStats(){
 }
 
 
-async function _flushInvPending() {
-  if (typeof INV_ACTIVITIES === 'undefined' || !INV_ACTIVITIES.length) return;
-  const pending = INV_ACTIVITIES.filter(d => d._saveTimer);
-  if (!pending.length) return;
-  await Promise.all(pending.map(async d => {
-    clearTimeout(d._saveTimer); d._saveTimer = null;
-    if (d.nama && d.nama.trim()) try { await saveInvActivityToDB(d); } catch(e) {}
+async function _flushInvPending(){
+  if(typeof INV_ACTIVITIES==='undefined'||!INV_ACTIVITIES.length)return;
+  const pending=INV_ACTIVITIES.filter(d=>d._saveTimer);
+  if(!pending.length)return;
+  await Promise.all(pending.map(async d=>{
+    clearTimeout(d._saveTimer); d._saveTimer=null;
+    if(d.nama&&d.nama.trim()) try{await saveInvActivityToDB(d);}catch(e){}
   }));
 }
-function invEditById(rowId, field, val) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; invEdit(INV_ACTIVITIES.indexOf(d), field, val);
+function invEditById(rowId,field,val){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; invEdit(INV_ACTIVITIES.indexOf(d),field,val);
 }
-function invEditNamaById(rowId, val) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return;
-  const idx = INV_ACTIVITIES.indexOf(d);
-  if (typeof invEditNama === 'function') invEditNama(idx, val); else invEdit(idx, 'nama', val);
+function invEditNamaById(rowId,val){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return;
+  const idx=INV_ACTIVITIES.indexOf(d);
+  if(typeof invEditNama==='function')invEditNama(idx,val);else invEdit(idx,'nama',val);
 }
-function invToggleHppById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; invToggleHpp(INV_ACTIVITIES.indexOf(d));
+function invToggleHppById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; invToggleHpp(INV_ACTIVITIES.indexOf(d));
 }
-function invToggleLockById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; invToggleLock(INV_ACTIVITIES.indexOf(d));
+function invToggleLockById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; invToggleLock(INV_ACTIVITIES.indexOf(d));
 }
-function deleteInvRowById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; deleteInvRow(INV_ACTIVITIES.indexOf(d));
+function deleteInvRowById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; deleteInvRow(INV_ACTIVITIES.indexOf(d));
 }
-function invRefreshHppById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; if (typeof invRefreshHpp==='function') invRefreshHpp(INV_ACTIVITIES.indexOf(d));
+function invRefreshHppById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; if(typeof invRefreshHpp==='function')invRefreshHpp(INV_ACTIVITIES.indexOf(d));
 }
-function invToggleHargaById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; if (typeof invToggleHarga==='function') invToggleHarga(INV_ACTIVITIES.indexOf(d));
+function invToggleHargaById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; if(typeof invToggleHarga==='function')invToggleHarga(INV_ACTIVITIES.indexOf(d));
 }
-function invHideHargaById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; if (typeof invHideHarga==='function') invHideHarga(INV_ACTIVITIES.indexOf(d));
+function invHideHargaById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; if(typeof invHideHarga==='function')invHideHarga(INV_ACTIVITIES.indexOf(d));
 }
-function invRecalcValueById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (!d) return; invRecalcValue(INV_ACTIVITIES.indexOf(d));
+function invRecalcValueById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return; invRecalcValue(INV_ACTIVITIES.indexOf(d));
 }
-function _invLastEditedById(rowId) {
-  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
-  if (d) d._lastEdited = Date.now();
+function _invLastEditedById(rowId){
+  const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
+  if(d)d._lastEdited=Date.now();
 }
 
 function _renderInvTable(){
@@ -5865,15 +5865,17 @@ function _renderInvTable(){
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</span>`:
         `<input type="number" value="${d.stock_in||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#166534;"
           onfocus="_invLastEditedById(${rowId})"
-          oninput="invEditById(${rowId},'stock_in',+this.value)"
-          onchange="invEditById(${rowId},'stock_in',+this.value)">`}
+          onkeydown="if(!/^[0-9.]$/.test(event.key)&&event.key!=='Backspace'&&event.key!=='Delete'&&event.key!=='Tab'&&event.key!=='ArrowLeft'&&event.key!=='ArrowRight'&&!event.ctrlKey)event.preventDefault()"
+          oninput="this.value=this.value.replace(/[^0-9.]/g,'');invEditById(${rowId},'stock_in',+this.value||0)"
+          onchange="invEditById(${rowId},'stock_in',+this.value||0)">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#dc2626;">${d.stock_out?_IRN(d.stock_out):''}</span>`:
         `<input type="number" value="${d.stock_out||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#dc2626;"
           onfocus="_invLastEditedById(${rowId})"
-          oninput="invEditById(${rowId},'stock_out',+this.value)"
-          onchange="invEditById(${rowId},'stock_out',+this.value)">`}
+          onkeydown="if(!/^[0-9.]$/.test(event.key)&&event.key!=='Backspace'&&event.key!=='Delete'&&event.key!=='Tab'&&event.key!=='ArrowLeft'&&event.key!=='ArrowRight'&&!event.ctrlKey)event.preventDefault()"
+          oninput="this.value=this.value.replace(/[^0-9.]/g,'');invEditById(${rowId},'stock_out',+this.value||0)"
+          onchange="invEditById(${rowId},'stock_out',+this.value||0)">`}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;">${d.pengambil}</span>`:
@@ -5961,16 +5963,25 @@ function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   const rowId=d._db_id||d.id||idx;
   d._lastEdited=Date.now();
+
+  // Reject non-numeric for stock fields
+  if(field==='stock_in'||field==='stock_out'){
+    const n=parseFloat(val);
+    if(isNaN(n)||n<0) return;
+    val=n;
+  }
+
   d[field]=val;
+
   if(field==='kode'){
     if(val==='STOCK IN'||val==='STOCK OPNAME'){ d.is_hpp=false; }
     else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){
-      d.is_hpp = _invHppAiGuess(d.nama, val);
+      d.is_hpp=_invHppAiGuess(d.nama,val);
     }
-    if(d.nama && d.harga){
+    if(d.nama){
       const isStockIn2=val==='STOCK IN'||val==='STOCK OPNAME';
       const newH=isStockIn2?_getLastHarga(d.nama):_getFifoCurrentHarga(d.nama);
-      if(newH && newH!==d.harga){
+      if(newH&&newH!==d.harga){
         d.harga=newH; invRecalcValue(idx);
         const disp=document.getElementById('invh-disp-'+rowId);
         const inp3=document.getElementById('invh-inp-'+rowId);
@@ -5980,33 +5991,58 @@ function invEdit(idx,field,val){
     }
     _invInstantBadge(idx,d);
   }
-  if(field==='is_hpp'){ _invHppLearn(d.nama, d.kode, val); }
+
+  if(field==='is_hpp'){ _invHppLearn(d.nama,d.kode,val); }
+
   if(field==='stock_in'){
     d.stock_in=+val||0;
-    if((+val)>0){ d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false; }
+    if(d.stock_in>0){
+      d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false;
+      // Auto-fill harga dari last known price
+      if(d.nama&&!d.harga){
+        const h=_getLastHarga(d.nama);
+        if(h){ d.harga=h; }
+      }
+    }
     invRecalcValue(idx);
     _invInstantBadge(idx,d);
+    // Update harga display
+    const disp=document.getElementById('invh-disp-'+rowId);
+    const inp=document.getElementById('invh-inp-'+rowId);
+    if(disp) disp.textContent=d.harga?_IRP(d.harga):'—';
+    if(inp)  inp.value=d.harga||0;
   }
+
   if(field==='stock_out'){
-    if((+val)>0 && d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
+    if(+val>0&&d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
     d.stock_out=+val||0;
-    if(d.stock_out>0 && d.nama){
-      const fifoVal = _calcFifoValue(d.nama, d.stock_out, d);
+    if(d.stock_out>0&&d.nama){
+      const fifoVal=_calcFifoValue(d.nama,d.stock_out,d);
       if(fifoVal>0){
-        const fifoH = Math.round(fifoVal/d.stock_out);
+        const fifoH=Math.round(fifoVal/d.stock_out);
         d.harga=fifoH; d.value=fifoVal;
-        const disp=document.getElementById('invh-disp-'+rowId);
-        const inp=document.getElementById('invh-inp-'+rowId);
-        if(disp)disp.textContent=_IRP(fifoH);
-        if(inp)inp.value=fifoH;
-        const velEl=document.getElementById('invval-'+rowId);
-        if(velEl)velEl.innerHTML=`<span style="color:#1d4ed8;">${_IRP(fifoVal)}</span>`;
+      } else if(!d.harga){
+        // fallback: last known harga
+        const h=_getFifoCurrentHarga(d.nama)||_getLastHarga(d.nama);
+        if(h){ d.harga=h; d.value=d.stock_out*h; }
       }
+      invRecalcValue(idx);
+      // Update harga display
+      const disp=document.getElementById('invh-disp-'+rowId);
+      const inp=document.getElementById('invh-inp-'+rowId);
+      if(disp) disp.textContent=d.harga?_IRP(d.harga):'—';
+      if(inp)  inp.value=d.harga||0;
     } else if(d.stock_out===0){ d.value=0; }
     _invInstantBadge(idx,d);
   }
+
+  if(field==='harga'){
+    d.harga=+val||0;
+    invRecalcValue(idx);
+  }
+
   _recalcProductStocks();
-  if(!d.nama || d.nama.trim()==='') return;
+  if(!d.nama||d.nama.trim()==='') return;
   if(d._pending){ d._pending=false; }
   clearTimeout(d._saveTimer);
   d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1000);
@@ -6024,7 +6060,7 @@ function invToggleHpp(idx){
     el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';
     el.textContent=d.is_hpp?'HPP':'—';
   }
-  _invHppLearn(d.nama, d.kode, d.is_hpp);
+  _invHppLearn(d.nama,d.kode,d.is_hpp);
   saveInvActivityToDB(d);
 }
 
@@ -6093,15 +6129,15 @@ function invAiHppAll(){
 function invRefreshHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME'){ d.is_hpp=false; }
-  else { d.is_hpp=_invHppAiGuess(d.nama, d.kode); }
+  else { d.is_hpp=_invHppAiGuess(d.nama,d.kode); }
   _invInstantBadge(idx,d);
 }
-function _invInstantBadge(idx, d){
-  const rowId = d._db_id || d.id || idx;
+function _invInstantBadge(idx,d){
+  const rowId=d._db_id||d.id||idx;
   const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
   const kodeEl=document.querySelector(`#invrow-${rowId} select`);
   if(kodeEl){
-    if(kodeEl.value !== d.kode) kodeEl.value = d.kode;
+    if(kodeEl.value!==d.kode) kodeEl.value=d.kode;
     const kc2=d.kode?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
     const ktc2=d.kode?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
     kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
@@ -6120,12 +6156,12 @@ function _invInstantBadge(idx, d){
 function invRecalcValue(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   const rowId=d._db_id||d.id||idx;
-  if(d.stock_out>0 && d.nama){
-    const fv = _calcFifoValue(d.nama, d.stock_out, d);
-    d.value = fv>0 ? fv : (d.stock_out||0)*(d.harga||0);
+  if(d.stock_out>0&&d.nama){
+    const fv=_calcFifoValue(d.nama,d.stock_out,d);
+    d.value=fv>0?fv:(d.stock_out||0)*(d.harga||0);
   } else if(d.stock_in>0){
-    d.value = (d.stock_in||0)*(d.harga||0);
-  } else { d.value = 0; }
+    d.value=(d.stock_in||0)*(d.harga||0);
+  } else { d.value=0; }
   const el=document.getElementById('invval-'+rowId);
   if(el)el.innerHTML=d.value?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'};">${_IRP(d.value)}</span>`:'';
 }
