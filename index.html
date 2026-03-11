@@ -1871,7 +1871,8 @@ function buildNav(){
     nav.appendChild(w);
   });
 }
-function navigateTo(pg){
+async function navigateTo(pg){
+  await _flushInvPending();
   if(!allowedPages().includes(pg)){toast('Akses ditolak','error');return;}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1880,7 +1881,7 @@ function navigateTo(pg){
   document.getElementById('pgtitle').textContent=ALL_PAGES[pg]?.label||pg;
   // Close sidebar on mobile after nav
   if(window.innerWidth<=768){const sb=document.getElementById('sidebar');sb.classList.remove('open');const ov=document.getElementById('sb-ov');if(ov)ov.style.display='none';}
-  _flushInvPending().then(()=>renderPage(pg));
+  renderPage(pg);
   // Scroll to top after render
   const ct=document.querySelector('.content');
   if(ct){ct.scrollTop=0;requestAnimationFrame(()=>ct.scrollTop=0);}
@@ -5473,27 +5474,12 @@ function kasEditSaldoAwal(){
 
 // INVENTORY MODULE
 
-// Flush semua baris INV yang pending save sebelum reload/navigasi
-async function _flushInvPending() {
-  if(typeof INV_ACTIVITIES === 'undefined') return;
-  const pending = INV_ACTIVITIES.filter(d => d._saveTimer);
-  if(!pending.length) return;
-  // Hapus semua timer, lalu save langsung
-  await Promise.all(pending.map(async d => {
-    clearTimeout(d._saveTimer);
-    d._saveTimer = null;
-    if(d.nama && d.nama.trim()) {
-      try { await saveInvActivityToDB(d); } catch(e) {}
-    }
-  }));
-}
-
 function renderInventoryPage(){
   setInvTab(document.querySelector('.rtab.active[id^="invtab-"]')?.id.replace('invtab-','') || 'transaksi');
   setTimeout(()=>showDbSetupBanner('inv-content'),200);
   // Start realtime polling
   _startInvPolling();
-  if(_DB_INV_READY!==false){ _flushInvPending().then(()=>_silentReloadInv()); }
+  if(_DB_INV_READY!==false) _silentReloadInv(); // _flushInvPending called inside
 }
 
 function setInvTab(tab){
@@ -5793,13 +5779,76 @@ function _renderInvStats(){
   `;
 }
 
+// ── FLUSH: save semua pending inventory rows sebelum navigasi/reload ──
+async function _flushInvPending() {
+  if (typeof INV_ACTIVITIES === 'undefined' || !INV_ACTIVITIES.length) return;
+  const pending = INV_ACTIVITIES.filter(d => d._saveTimer);
+  if (!pending.length) return;
+  await Promise.all(pending.map(async d => {
+    clearTimeout(d._saveTimer);
+    d._saveTimer = null;
+    if (d.nama && d.nama.trim() && typeof saveInvActivityToDB === 'function') {
+      try { await saveInvActivityToDB(d); } catch(e) {}
+    }
+  }));
+}
+
+// ── SAFE EDIT by stable row ID (prevents index-shift bugs) ──
+function invEditById(rowId, field, val) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return;
+  invEdit(INV_ACTIVITIES.indexOf(d), field, val);
+}
+function invEditNamaById(rowId, val) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return;
+  const idx = INV_ACTIVITIES.indexOf(d);
+  if (typeof invEditNama === 'function') invEditNama(idx, val);
+  else invEdit(idx, 'nama', val);
+}
+function invToggleHppById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return; invToggleHpp(INV_ACTIVITIES.indexOf(d));
+}
+function invToggleLockById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return; invToggleLock(INV_ACTIVITIES.indexOf(d));
+}
+function deleteInvRowById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return; deleteInvRow(INV_ACTIVITIES.indexOf(d));
+}
+function invRefreshHppById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return;
+  if (typeof invRefreshHpp === 'function') invRefreshHpp(INV_ACTIVITIES.indexOf(d));
+}
+function invToggleHargaById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return;
+  if (typeof invToggleHarga === 'function') invToggleHarga(INV_ACTIVITIES.indexOf(d));
+}
+function invHideHargaById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return;
+  if (typeof invHideHarga === 'function') invHideHarga(INV_ACTIVITIES.indexOf(d));
+}
+function invRecalcValueById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (!d) return; invRecalcValue(INV_ACTIVITIES.indexOf(d));
+}
+function _invLastEditedById(rowId) {
+  const d = INV_ACTIVITIES.find(r => r._db_id === rowId || r.id === rowId);
+  if (d) d._lastEdited = Date.now();
+}
+
 function _renderInvTable(){
   const tbody=document.getElementById('inv-tbody');if(!tbody)return;
   const canDel=canDo('manage_inventory')||['superadmin','admin'].includes(CU?.role);
   const start=(_invPage-1)*_invPageSize;
   const rows=_invFiltered.slice(start,start+_invPageSize);
   tbody.innerHTML=rows.map((d,i)=>{
-    const idx=INV_ACTIVITIES.findIndex(r=>(r._db_id&&d._db_id&&r._db_id===d._db_id)||r.id===d.id);
+    const rowId = d._db_id || d.id;
     const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
     const kc=(_hasQty&&d.kode)?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
     const ktc=(_hasQty&&d.kode)?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
@@ -5807,74 +5856,74 @@ function _renderInvTable(){
     const isRealHpp=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME';
     const rowBg=isRealHpp?'#fffbeb':'';
     const lockIcon=locked?'🔒':'🔓';
-    return `<tr id="invrow-${idx}" style="background:${rowBg};border-bottom:1px solid #e5e7eb;">
+    return `<tr id="invrow-${rowId}" style="background:${rowBg};border-bottom:1px solid #e5e7eb;">
       <td style="text-align:center;font-size:10px;color:#888;padding:2px 4px;">${start+i+1}</td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;font-family:monospace;">${d.tgl}</span>`:
         `<input type="date" value="${d.tgl}" style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:108px;padding:2px;"
-          onchange="invEdit(${idx},'tgl',this.value)">`}
+          onchange="invEdit(${rowId},'tgl',this.value)">`}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;">${d.nama}</span>`:
         `<input type="text" value="${(d.nama||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:160px;padding:2px;"
-          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
-          onchange="invEditNama(${idx},this.value)" list="inv-nama-list"
+          onfocus="INV_ACTIVITIES[${rowId}]&&(INV_ACTIVITIES[${rowId}]._lastEdited=Date.now())"
+          onchange="invEditNama(${rowId},this.value)" list="inv-nama-list"
           placeholder="Ketik nama produk...">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</span>`:
         `<input type="number" value="${d.stock_in||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#166534;"
-          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
-          oninput="invEdit(${idx},'stock_in',+this.value)"
-          onchange="invEdit(${idx},'stock_in',+this.value)">`}
+          onfocus="INV_ACTIVITIES[${rowId}]&&(INV_ACTIVITIES[${rowId}]._lastEdited=Date.now())"
+          oninput="invEdit(${rowId},'stock_in',+this.value)"
+          onchange="invEdit(${rowId},'stock_in',+this.value)">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#dc2626;">${d.stock_out?_IRN(d.stock_out):''}</span>`:
         `<input type="number" value="${d.stock_out||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#dc2626;"
-          onfocus="INV_ACTIVITIES[${idx}]&&(INV_ACTIVITIES[${idx}]._lastEdited=Date.now())"
-          oninput="invEdit(${idx},'stock_out',+this.value)"
-          onchange="invEdit(${idx},'stock_out',+this.value)">`}
+          onfocus="INV_ACTIVITIES[${rowId}]&&(INV_ACTIVITIES[${rowId}]._lastEdited=Date.now())"
+          oninput="invEdit(${rowId},'stock_out',+this.value)"
+          onchange="invEdit(${rowId},'stock_out',+this.value)">`}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;">${d.pengambil}</span>`:
-        `<input type="text" value="${(d.pengambil||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:80px;padding:2px;" onchange="invEdit(${idx},'pengambil',this.value)">`}
+        `<input type="text" value="${(d.pengambil||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:80px;padding:2px;" onchange="invEdit(${rowId},'pengambil',this.value)">`}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;">${d.pjawab}</span>`:
-        `<input type="text" value="${(d.pjawab||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:80px;padding:2px;" onchange="invEdit(${idx},'pjawab',this.value)">`}
+        `<input type="text" value="${(d.pjawab||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:80px;padding:2px;" onchange="invEdit(${rowId},'pjawab',this.value)">`}
       </td>
       <td style="padding:1px 3px;text-align:center;">
         ${locked?`<span style="background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;">${d.kode||'—'}</span>`:
         `<select style="border:none;background:${d.kode?kc:'#f3f4f6'};color:${d.kode?ktc:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;"
-          onchange="invEdit(${idx},'kode',this.value);invRefreshHpp(${idx})">
+          onchange="invEdit(${rowId},'kode',this.value);invRefreshHpp(${rowId})">
           ${INV_KODES.map(k=>`<option value="${k}" ${d.kode===k?'selected':''}>${k||'— Pilih —'}</option>`).join('')}
         </select>`}
       </td>
       <td style="padding:1px 3px;text-align:center;">
         <div style="display:flex;gap:2px;align-items:center;justify-content:center;">
-          <span id="invhpp-${idx}" style="background:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fef3c7':'#f3f4f6')};color:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'#d1d5db':(d.is_hpp?'#92400e':'#9ca3af')};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:${(_hasQty&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME')?'pointer':'default'};user-select:none;border:1px solid ${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fde68a':'#e5e7eb')};"
+          <span id="invhpp-${rowId}" style="background:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fef3c7':'#f3f4f6')};color:${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'#d1d5db':(d.is_hpp?'#92400e':'#9ca3af')};font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;cursor:${(_hasQty&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME')?'pointer':'default'};user-select:none;border:1px solid ${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'transparent':(d.is_hpp?'#fde68a':'#e5e7eb')};"
             onclick="${(_hasQty&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME')?'invToggleHpp('+idx+')':''}" title="${(!_hasQty)?'Isi qty dulu':(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'STOCK IN/OPNAME tidak dihitung HPP':'Klik untuk toggle HPP'}">${(!_hasQty||d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')?'<span style="color:#d1d5db">—</span>':(d.is_hpp?'HPP':'—')}</span>
 
         </div>
       </td>
       <td style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;${locked?'':'cursor:pointer;'}" onclick="${locked?'':'invToggleHarga('+idx+')'}">
         ${locked?`<span>${d.harga?_IRP(d.harga):'—'}</span>`:
-        `<span id="invh-disp-${idx}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
-        <input type="number" id="invh-inp-${idx}" value="${d.harga||0}" onclick="event.stopPropagation()" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
-          onchange="invEdit(${idx},'harga',+this.value);invRecalcValue(${idx})"
-          onblur="invHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${idx})">`}
+        `<span id="invh-disp-${rowId}" style="color:${d.harga?'var(--accent)':'#9ca3af'};">${d.harga?_IRP(d.harga):'—'}</span>
+        <input type="number" id="invh-inp-${rowId}" value="${d.harga||0}" onclick="event.stopPropagation()" style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
+          onchange="invEdit(${rowId},'harga',+this.value);invRecalcValue(${rowId})"
+          onblur="invHideHarga(${rowId})" onkeydown="if(event.key==='Enter'||event.key==='Escape')invHideHarga(${rowId})">`}
       </td>
-      <td id="invval-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:#1e40af;">
+      <td id="invval-${rowId}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:#1e40af;">
         ${(()=>{const v=d.value||(d.stock_in>0?d.stock_in*d.harga:d.stock_out>0?d.stock_out*d.harga:0);return v?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'}">${_IRP(v)}</span>`:'';})()}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;color:var(--muted);">${d.catatan}</span>`:
-        `<input type="text" value="${(d.catatan||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:130px;padding:2px;" onchange="invEdit(${idx},'catatan',this.value)" placeholder="catatan...">`}
+        `<input type="text" value="${(d.catatan||'').replace(/"/g,'&quot;')}" style="border:none;background:transparent;font-size:11px;width:130px;padding:2px;" onchange="invEdit(${rowId},'catatan',this.value)" placeholder="catatan...">`}
       </td>
       <td style="padding:1px 2px;text-align:center;white-space:nowrap;">
-        <button style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;" onclick="invToggleLock(${idx})" title="${locked?'Unlock':'Lock'}">${lockIcon}</button>
-        ${canDel&&!locked?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:1px 4px;" onclick="deleteInvRow(${idx})">🗑</button>`:''}
+        <button style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;" onclick="invToggleLock(${rowId})" title="${locked?'Unlock':'Lock'}">${lockIcon}</button>
+        ${canDel&&!locked?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:1px 4px;" onclick="deleteInvRow(${rowId})">🗑</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -5891,9 +5940,8 @@ function _renderInvTable(){
     if(d.nama && !d.harga){
       const isStockIn = d.kode==='STOCK IN'||d.kode==='STOCK OPNAME';
       const h2 = isStockIn ? _getLastHarga(d.nama) : _getFifoCurrentHarga(d.nama);
-      if(h2){ d.harga=h2; invRecalcValue(i); _needsRender=true;
-        clearTimeout(d._saveTimer);
-        d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1200);
+      if(h2){ d.harga=h2; invRecalcValue(INV_ACTIVITIES.indexOf(d)); _needsRender=true;
+        if(!d._saveTimer){ clearTimeout(d._saveTimer); d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),2000); }
       }
     }
   });
@@ -6081,7 +6129,7 @@ function _invInstantBadge(idx, d){
     const ktc2=d.kode?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
     kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
   }
-  const hppEl=document.getElementById('invhpp-'+idx);
+  const hppEl=document.getElementById('invhpp-'+(d._db_id||d.id));
   if(hppEl){
     // HPP badge: only show when there IS stock_out and kode bukan STOCK IN/OPNAME
     const isHppNow=d.is_hpp&&d.kode!=='STOCK IN'&&d.kode!=='STOCK OPNAME'&&_hasQty;
@@ -6105,7 +6153,7 @@ function invRecalcValue(idx){
   } else {
     d.value = 0;
   }
-  const el=document.getElementById('invval-'+idx);
+  const _rrid=(d&&(d._db_id||d.id))||idx; const el=document.getElementById('invval-'+_rrid);
   if(el)el.innerHTML=d.value?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'};">${_IRP(d.value)}</span>`:'';
 }
 
@@ -7086,8 +7134,8 @@ let _kasRefreshInterval = null;
 let _invRefreshInterval = null;
 let _kasLastUpdated = null;
 let _invLastUpdated = null;
-const _KAS_POLL_MS = 10000;  // 10 detik
-const _INV_POLL_MS = 1000;  // 1 detik
+const _KAS_POLL_MS = 30000;  // 10 detik
+const _INV_POLL_MS = 30000;  // 1 detik
 
 function _startKasPolling(){
   _stopKasPolling();
@@ -7152,6 +7200,8 @@ async function _silentReloadKas(){
 }
 
 async function _silentReloadInv(){
+  // Flush any pending saves first so DB has latest data before merge
+  await _flushInvPending();
   try{
     const [acts, opname] = await Promise.all([
       sbGetAll('inv_activities','select=*&order=tgl.asc,id.asc'),
