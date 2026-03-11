@@ -1641,7 +1641,7 @@ async function _loadBeccaData(){
   const files=[
     ['EMP_DATA','data/emp_data.json'],['LOG_DATA','data/log_data.json'],
     ['_KD','data/kas_data.json'],['_INV_PROD','data/inv_prod.json'],
-    ['_INV_ACT','data/inv_act.json'],['_KAS_MASUK_EXCEL','data/kas_masuk_excel.json'],
+    ['_INV_ACT','data/inv_act.json'],
   ];
   await Promise.all(files.map(async([k,u])=>{
     try{const r=await fetch(u);if(!r.ok)return;const d=await r.json();
@@ -1650,7 +1650,6 @@ async function _loadBeccaData(){
       else if(k==='_KD'){_KD.length=0;_KD.push(...d);}
       else if(k==='_INV_PROD'){_INV_PROD.length=0;_INV_PROD.push(...d);}
       else if(k==='_INV_ACT'){_INV_ACT.length=0;_INV_ACT.push(...d);}
-      else if(k==='_KAS_MASUK_EXCEL'){_KAS_MASUK_EXCEL.length=0;_KAS_MASUK_EXCEL.push(...d);}
     }catch(e){}
   }));
 }
@@ -5785,47 +5784,46 @@ async function _flushInvPending(){
   const pending=INV_ACTIVITIES.filter(d=>d._saveTimer);
   if(!pending.length)return;
   await Promise.all(pending.map(async d=>{
-    clearTimeout(d._saveTimer); d._saveTimer=null;
-    if(d.nama&&d.nama.trim()) try{await saveInvActivityToDB(d);}catch(e){}
+    clearTimeout(d._saveTimer);d._saveTimer=null;
+    if(d.nama&&d.nama.trim())try{await saveInvActivityToDB(d);}catch(e){}
   }));
 }
 function invEditById(rowId,field,val){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; invEdit(INV_ACTIVITIES.indexOf(d),field,val);
+  if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),field,val);
 }
 function invEditNamaById(rowId,val){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;
-  const idx=INV_ACTIVITIES.indexOf(d);
+  if(!d)return;const idx=INV_ACTIVITIES.indexOf(d);
   if(typeof invEditNama==='function')invEditNama(idx,val);else invEdit(idx,'nama',val);
 }
 function invToggleHppById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; invToggleHpp(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;invToggleHpp(INV_ACTIVITIES.indexOf(d));
 }
 function invToggleLockById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; invToggleLock(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;invToggleLock(INV_ACTIVITIES.indexOf(d));
 }
 function deleteInvRowById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; deleteInvRow(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;deleteInvRow(INV_ACTIVITIES.indexOf(d));
 }
 function invRefreshHppById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; if(typeof invRefreshHpp==='function')invRefreshHpp(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;if(typeof invRefreshHpp==='function')invRefreshHpp(INV_ACTIVITIES.indexOf(d));
 }
 function invToggleHargaById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; if(typeof invToggleHarga==='function')invToggleHarga(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;if(typeof invToggleHarga==='function')invToggleHarga(INV_ACTIVITIES.indexOf(d));
 }
 function invHideHargaById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; if(typeof invHideHarga==='function')invHideHarga(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;if(typeof invHideHarga==='function')invHideHarga(INV_ACTIVITIES.indexOf(d));
 }
 function invRecalcValueById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return; invRecalcValue(INV_ACTIVITIES.indexOf(d));
+  if(!d)return;invRecalcValue(INV_ACTIVITIES.indexOf(d));
 }
 function _invLastEditedById(rowId){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
@@ -5865,17 +5863,13 @@ function _renderInvTable(){
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#166534;">${d.stock_in?_IRN(d.stock_in):''}</span>`:
         `<input type="number" value="${d.stock_in||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#166534;"
           onfocus="_invLastEditedById(${rowId})"
-          onkeydown="if(!/^[0-9.]$/.test(event.key)&&event.key!=='Backspace'&&event.key!=='Delete'&&event.key!=='Tab'&&event.key!=='ArrowLeft'&&event.key!=='ArrowRight'&&!event.ctrlKey)event.preventDefault()"
-          oninput="this.value=this.value.replace(/[^0-9.]/g,'');invEditById(${rowId},'stock_in',+this.value||0)"
-          onchange="invEditById(${rowId},'stock_in',+this.value||0)">`}
+          onkeydown="if(!/^[0-9.]$/.test(event.key)&&![\'Backspace\',\'Delete\',\'Tab\',\'ArrowLeft\',\'ArrowRight\'].includes(event.key)&&!event.ctrlKey)event.preventDefault()" oninput="this.value=this.value.replace(/[^0-9.]/g,\'\');invEditById(${rowId},\'stock_in\',+this.value||0)" onchange="invEditById(${rowId},\'stock_in\',+this.value||0)">`}
       </td>
       <td style="padding:1px 4px;text-align:right;">
         ${locked?`<span style="font-size:11px;font-family:monospace;color:#dc2626;">${d.stock_out?_IRN(d.stock_out):''}</span>`:
         `<input type="number" value="${d.stock_out||0}" min="0" style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:64px;padding:2px;color:#dc2626;"
           onfocus="_invLastEditedById(${rowId})"
-          onkeydown="if(!/^[0-9.]$/.test(event.key)&&event.key!=='Backspace'&&event.key!=='Delete'&&event.key!=='Tab'&&event.key!=='ArrowLeft'&&event.key!=='ArrowRight'&&!event.ctrlKey)event.preventDefault()"
-          oninput="this.value=this.value.replace(/[^0-9.]/g,'');invEditById(${rowId},'stock_out',+this.value||0)"
-          onchange="invEditById(${rowId},'stock_out',+this.value||0)">`}
+          onkeydown="if(!/^[0-9.]$/.test(event.key)&&![\'Backspace\',\'Delete\',\'Tab\',\'ArrowLeft\',\'ArrowRight\'].includes(event.key)&&!event.ctrlKey)event.preventDefault()" oninput="this.value=this.value.replace(/[^0-9.]/g,\'\');invEditById(${rowId},\'stock_out\',+this.value||0)" onchange="invEditById(${rowId},\'stock_out\',+this.value||0)">`}
       </td>
       <td style="padding:1px 3px;">
         ${locked?`<span style="font-size:11px;">${d.pengambil}</span>`:
@@ -5933,7 +5927,7 @@ function _renderInvTable(){
       const isStockIn = d.kode==='STOCK IN'||d.kode==='STOCK OPNAME';
       const h2 = isStockIn ? _getLastHarga(d.nama) : _getFifoCurrentHarga(d.nama);
       if(h2){ d.harga=h2; invRecalcValue(INV_ACTIVITIES.indexOf(d)); _needsRender=true;
-        if(!d._saveTimer){ d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),2000); }
+        if(!d._saveTimer){d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),2000);}
       }
     }
   });
@@ -5963,105 +5957,64 @@ function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   const rowId=d._db_id||d.id||idx;
   d._lastEdited=Date.now();
-
-  // Reject non-numeric for stock fields
-  if(field==='stock_in'||field==='stock_out'){
-    const n=parseFloat(val);
-    if(isNaN(n)||n<0) return;
-    val=n;
-  }
-
+  if(field==='stock_in'||field==='stock_out'){const n=parseFloat(val);if(isNaN(n)||n<0)return;val=n;}
   d[field]=val;
-
   if(field==='kode'){
-    if(val==='STOCK IN'||val==='STOCK OPNAME'){ d.is_hpp=false; }
-    else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){
-      d.is_hpp=_invHppAiGuess(d.nama,val);
-    }
+    if(val==='STOCK IN'||val==='STOCK OPNAME'){d.is_hpp=false;}
+    else if(['SHIFT 1','SHIFT 2','SHIFT 3','EVENT'].includes(val)){d.is_hpp=_invHppAiGuess(d.nama,val);}
     if(d.nama){
       const isStockIn2=val==='STOCK IN'||val==='STOCK OPNAME';
       const newH=isStockIn2?_getLastHarga(d.nama):_getFifoCurrentHarga(d.nama);
       if(newH&&newH!==d.harga){
-        d.harga=newH; invRecalcValue(idx);
+        d.harga=newH;invRecalcValue(idx);
         const disp=document.getElementById('invh-disp-'+rowId);
         const inp3=document.getElementById('invh-inp-'+rowId);
-        if(disp)disp.textContent=_IRP(newH);
-        if(inp3)inp3.value=newH;
+        if(disp)disp.textContent=_IRP(newH);if(inp3)inp3.value=newH;
       }
     }
     _invInstantBadge(idx,d);
   }
-
-  if(field==='is_hpp'){ _invHppLearn(d.nama,d.kode,val); }
-
+  if(field==='is_hpp'){_invHppLearn(d.nama,d.kode,val);}
   if(field==='stock_in'){
     d.stock_in=+val||0;
-    if(d.stock_in>0){
-      d.kode='STOCK IN'; d.stock_out=0; d.is_hpp=false;
-      // Auto-fill harga dari last known price
-      if(d.nama&&!d.harga){
-        const h=_getLastHarga(d.nama);
-        if(h){ d.harga=h; }
-      }
-    }
-    invRecalcValue(idx);
-    _invInstantBadge(idx,d);
-    // Update harga display
+    if(d.stock_in>0){d.kode='STOCK IN';d.stock_out=0;d.is_hpp=false;
+      if(d.nama&&!d.harga){const h=_getLastHarga(d.nama);if(h)d.harga=h;}}
+    invRecalcValue(idx);_invInstantBadge(idx,d);
     const disp=document.getElementById('invh-disp-'+rowId);
     const inp=document.getElementById('invh-inp-'+rowId);
-    if(disp) disp.textContent=d.harga?_IRP(d.harga):'—';
-    if(inp)  inp.value=d.harga||0;
+    if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;
   }
-
   if(field==='stock_out'){
-    if(+val>0&&d.kode==='STOCK IN'){ d.kode='SHIFT 1'; d.is_hpp=true; }
+    if(+val>0&&d.kode==='STOCK IN'){d.kode='SHIFT 1';d.is_hpp=true;}
     d.stock_out=+val||0;
     if(d.stock_out>0&&d.nama){
       const fifoVal=_calcFifoValue(d.nama,d.stock_out,d);
-      if(fifoVal>0){
-        const fifoH=Math.round(fifoVal/d.stock_out);
-        d.harga=fifoH; d.value=fifoVal;
-      } else if(!d.harga){
-        // fallback: last known harga
-        const h=_getFifoCurrentHarga(d.nama)||_getLastHarga(d.nama);
-        if(h){ d.harga=h; d.value=d.stock_out*h; }
-      }
+      if(fifoVal>0){const fifoH=Math.round(fifoVal/d.stock_out);d.harga=fifoH;d.value=fifoVal;}
+      else if(!d.harga){const h=_getFifoCurrentHarga(d.nama)||_getLastHarga(d.nama);if(h){d.harga=h;d.value=d.stock_out*h;}}
       invRecalcValue(idx);
-      // Update harga display
       const disp=document.getElementById('invh-disp-'+rowId);
       const inp=document.getElementById('invh-inp-'+rowId);
-      if(disp) disp.textContent=d.harga?_IRP(d.harga):'—';
-      if(inp)  inp.value=d.harga||0;
-    } else if(d.stock_out===0){ d.value=0; }
+      if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;
+    } else if(d.stock_out===0){d.value=0;}
     _invInstantBadge(idx,d);
   }
-
-  if(field==='harga'){
-    d.harga=+val||0;
-    invRecalcValue(idx);
-  }
-
+  if(field==='harga'){d.harga=+val||0;invRecalcValue(idx);}
   _recalcProductStocks();
-  if(!d.nama||d.nama.trim()==='') return;
-  if(d._pending){ d._pending=false; }
+  if(!d.nama||d.nama.trim()==='')return;
+  if(d._pending){d._pending=false;}
   clearTimeout(d._saveTimer);
   d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1000);
 }
 
 function invToggleHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d||d.locked)return;
-  if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME') return;
+  if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')return;
   const rowId=d._db_id||d.id||idx;
   d.is_hpp=!d.is_hpp;
   const el=document.getElementById('invhpp-'+rowId);
-  if(el){
-    el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';
-    el.style.color=d.is_hpp?'#92400e':'#9ca3af';
-    el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';
-    el.textContent=d.is_hpp?'HPP':'—';
-  }
-  _invHppLearn(d.nama,d.kode,d.is_hpp);
-  saveInvActivityToDB(d);
+  if(el){el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';el.style.color=d.is_hpp?'#92400e':'#9ca3af';
+    el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';el.textContent=d.is_hpp?'HPP':'—';}
+  _invHppLearn(d.nama,d.kode,d.is_hpp);saveInvActivityToDB(d);
 }
 
 // ── HPP AI: keyword rules + learned overrides ─────────────────────────────────
@@ -6128,8 +6081,8 @@ function invAiHppAll(){
 }
 function invRefreshHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
-  if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME'){ d.is_hpp=false; }
-  else { d.is_hpp=_invHppAiGuess(d.nama,d.kode); }
+  if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME'){d.is_hpp=false;}
+  else{d.is_hpp=_invHppAiGuess(d.nama,d.kode);}
   _invInstantBadge(idx,d);
 }
 function _invInstantBadge(idx,d){
@@ -6137,10 +6090,10 @@ function _invInstantBadge(idx,d){
   const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
   const kodeEl=document.querySelector(`#invrow-${rowId} select`);
   if(kodeEl){
-    if(kodeEl.value!==d.kode) kodeEl.value=d.kode;
+    if(kodeEl.value!==d.kode)kodeEl.value=d.kode;
     const kc2=d.kode?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
     const ktc2=d.kode?(INV_KODE_TC[d.kode]||'#374151'):'#9ca3af';
-    kodeEl.style.background=kc2; kodeEl.style.color=ktc2;
+    kodeEl.style.background=kc2;kodeEl.style.color=ktc2;
   }
   const hppEl=document.getElementById('invhpp-'+rowId);
   if(hppEl){
@@ -6156,12 +6109,8 @@ function _invInstantBadge(idx,d){
 function invRecalcValue(idx){
   const d=INV_ACTIVITIES[idx];if(!d)return;
   const rowId=d._db_id||d.id||idx;
-  if(d.stock_out>0&&d.nama){
-    const fv=_calcFifoValue(d.nama,d.stock_out,d);
-    d.value=fv>0?fv:(d.stock_out||0)*(d.harga||0);
-  } else if(d.stock_in>0){
-    d.value=(d.stock_in||0)*(d.harga||0);
-  } else { d.value=0; }
+  if(d.stock_out>0&&d.nama){const fv=_calcFifoValue(d.nama,d.stock_out,d);d.value=fv>0?fv:(d.stock_out||0)*(d.harga||0);}
+  else if(d.stock_in>0){d.value=(d.stock_in||0)*(d.harga||0);}else{d.value=0;}
   const el=document.getElementById('invval-'+rowId);
   if(el)el.innerHTML=d.value?`<span style="color:${d.stock_out>0?'#1d4ed8':'#166534'};">${_IRP(d.value)}</span>`:'';
 }
@@ -7090,7 +7039,7 @@ async function saveOpnameToDB(nama,bulan,tahun,fisik){
 // REALTIME POLLING — KAS & INVENTORY
 
 // ── IMPORT KAS MASUK FROM EXCEL ──────────────────────────────────────────────
-let _KAS_MASUK_EXCEL = [];
+const _KAS_MASUK_EXCEL = [{"tgl": "2026-01-04", "kredit": 30000000}, {"tgl": "2026-01-05", "kredit": 94445642}, {"tgl": "2026-01-07", "kredit": 30000000}, {"tgl": "2026-01-08", "kredit": 49759779}, {"tgl": "2026-01-11", "kredit": 30000000}, {"tgl": "2026-01-12", "kredit": 30000000}, {"tgl": "2026-01-13", "kredit": 41596936}, {"tgl": "2026-01-13", "kredit": 600000}, {"tgl": "2026-01-14", "kredit": 30000000}, {"tgl": "2026-01-16", "kredit": 23598114}, {"tgl": "2026-01-18", "kredit": 30000000}, {"tgl": "2026-01-19", "kredit": 49948660}, {"tgl": "2026-01-21", "kredit": 30000000}, {"tgl": "2026-01-22", "kredit": 45158445}, {"tgl": "2026-01-25", "kredit": 30000000}, {"tgl": "2026-01-26", "kredit": 53086468}, {"tgl": "2026-01-27", "kredit": 30000000}, {"tgl": "2026-01-28", "kredit": 30000000}, {"tgl": "2026-01-29", "kredit": 34284099}, {"tgl": "2026-02-01", "kredit": 30000000}, {"tgl": "2026-02-02", "kredit": 55703639}, {"tgl": "2026-02-04", "kredit": 30000000}, {"tgl": "2026-02-05", "kredit": 59314925}, {"tgl": "2026-02-08", "kredit": 30000000}, {"tgl": "2026-02-10", "kredit": 28971593}, {"tgl": "2026-02-11", "kredit": 30000000}, {"tgl": "2026-02-12", "kredit": 53281751}, {"tgl": "2026-02-14", "kredit": 30000000}, {"tgl": "2026-02-16", "kredit": 30000000}, {"tgl": "2026-02-18", "kredit": 30000000}, {"tgl": "2026-02-19", "kredit": 58395695}, {"tgl": "2026-02-21", "kredit": 30000000}, {"tgl": "2026-02-23", "kredit": 42680856}, {"tgl": "2026-02-25", "kredit": 30000000}, {"tgl": "2026-02-26", "kredit": 59708997}, {"tgl": "2026-02-27", "kredit": 10000000}, {"tgl": "2026-02-28", "kredit": 10000000}, {"tgl": "2026-03-01", "kredit": 30000000}, {"tgl": "2026-03-02", "kredit": 67933461}, {"tgl": "2026-03-04", "kredit": 30000000}, {"tgl": "2026-03-05", "kredit": 55075033}, {"tgl": "2026-03-07", "kredit": 30000000}];
 
 function importKasMasukFromExcel(){
   const data = _KAS_MASUK_EXCEL;
@@ -7167,46 +7116,42 @@ function _stopInvPolling(){ clearInterval(_invRefreshInterval); _invRefreshInter
 
 async function _silentReloadKas(){
   try{
-    const rows = await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
-    if(!rows||!rows.length) return;
+    const rows=await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
+    if(!rows||!rows.length)return;
     const _BULAN_NAMES=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    // MERGE: keep rows being edited (pending _saveTimer), replace rest from DB
-    const _dbKasMap={};
-    rows.forEach(r=>{ _dbKasMap[r.id]=r; });
-    const _focused2=document.activeElement;
-    const _focusedKasRow=_focused2?.closest('tr[id^="krow-"]');
-    const _focusedKasIdx=_focusedKasRow?parseInt(_focusedKasRow.id.replace('krow-','')):-1;
-    const _focusedKasDbId=_focusedKasIdx>=0?KAS_DATA[_focusedKasIdx]?._db_id:null;
-    KAS_DATA = rows.map(r=>({
-      id:r.id, tgl:r.tgl, nama_barang:r.nama_barang||'', type:r.type||'',
-      vendor:r.vendor||'', qty:+r.qty||0, satuan:r.satuan||'',
-      harga:+r.harga||0, penerima:r.penerima||'',
-      debit:+r.debit||0, kredit:+r.kredit||0, jumlah:+r.jumlah||0,
-      total:(+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
-      status:r.status||'', catatan:r.catatan||'', locked:!!r.locked,
-      _db_id:r.id,
-      bulan:_BULAN_NAMES[+(r.tgl||'').slice(5,7)]||''
-    })).map(r=>{
-      // Keep local version if row is being edited or has pending save
-      if(_focusedKasDbId && r._db_id===_focusedKasDbId){
-        const local=KAS_DATA.find(l=>l._db_id===r._db_id); return local||r;
-      }
-      const local=KAS_DATA.find(l=>l._db_id===r._db_id);
-      if(local&&local._saveTimer) return local;
-      return r;
+    // Flush pending saves first
+    const pending=KAS_DATA.filter(d=>d._saveTimer);
+    await Promise.all(pending.map(async d=>{
+      clearTimeout(d._saveTimer);d._saveTimer=null;
+      try{await saveKasRowToDB(d);}catch(e){}
+    }));
+    // Merge: keep local row jika _lastEdited < 3 detik (user masih ngetik)
+    const now=Date.now();
+    const localMap={};
+    KAS_DATA.forEach(d=>{ if(d._db_id) localMap[d._db_id]=d; });
+    KAS_DATA=rows.map(r=>{
+      const local=localMap[r.id];
+      if(local&&local._lastEdited&&(now-local._lastEdited)<3000) return local;
+      return {
+        id:r.id,tgl:r.tgl,nama_barang:r.nama_barang||'',type:r.type||'',
+        vendor:r.vendor||'',qty:+r.qty||0,satuan:r.satuan||'',
+        harga:+r.harga||0,penerima:r.penerima||'',
+        debit:+r.debit||0,kredit:+r.kredit||0,jumlah:+r.jumlah||0,
+        total:(+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
+        status:r.status||'',catatan:r.catatan||'',locked:!!r.locked,
+        _db_id:r.id,bulan:_BULAN_NAMES[+(r.tgl||'').slice(5,7)]||''
+      };
     });
-    _kasLastUpdated = new Date();
+    _kasLastUpdated=new Date();
     _updateKasRefreshBadge();
-    // Don't re-render if user is actively editing a cell
-    const _focused = document.activeElement;
-    const _isEditingKas = _focused && _focused.closest('#kas-tbody');
-    if(_isEditingKas){ console.log('KAS poll: skip render (user editing)'); return; }
-    // Re-render current kas tab
-    const activeTab = document.querySelector('.kas-tab.active')?.dataset?.tab;
-    if(activeTab==='transaksi'||!activeTab) filterKas();
-    else if(activeTab==='summary') renderKasSummary?.();
-    else if(activeTab==='monthly') renderKasMonthly?.();
-  } catch(e){ console.warn('KAS poll error:',e.message); }
+    // Skip re-render jika user sedang fokus di kas-tbody
+    const _focused=document.activeElement;
+    if(_focused&&_focused.closest('#kas-tbody'))return;
+    const activeTab=document.querySelector('.kas-tab.active')?.dataset?.tab;
+    if(activeTab==='transaksi'||!activeTab)filterKas();
+    else if(activeTab==='summary')renderKasSummary?.();
+    else if(activeTab==='monthly')renderKasMonthly?.();
+  }catch(e){console.warn('KAS poll error:',e.message);}
 }
 
 async function _silentReloadInv(){
@@ -7318,20 +7263,20 @@ const KAS_TYPE_RULES = {
 };
 const _KAS_AI_CACHE = {};
 
-function kasAIAutoType(idx, nama, force) {
-  const d = KAS_DATA[idx];
+function kasAIAutoType(rowId, nama, force) {
+  const d = KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
   if (!d || !nama || nama.trim().length < 3) return;
   // force=true saat edit nama (onblur) — selalu refresh type
   // force=false/undefined saat baris baru — skip jika sudah ada type
   if (!force && d.type && d.type !== '') return;
   const key = nama.trim().toLowerCase();
-  if (_KAS_AI_CACHE[key]) { _kasApplyType(idx, _KAS_AI_CACHE[key]); toast('Auto-type: "'+_KAS_AI_CACHE[key]+'"','info'); return; }
+  if (_KAS_AI_CACHE[key]) { _kasApplyTypeById(rowId, _KAS_AI_CACHE[key]); toast('Auto-type: "'+_KAS_AI_CACHE[key]+'"','info'); return; }
   const hits = [];
   for (const [type, kws] of Object.entries(KAS_TYPE_RULES))
     for (const kw of kws) if (key.includes(kw)) hits.push({type, len:kw.length});
   const found = hits.length ? hits.sort((a,b)=>b.len-a.len)[0].type : 'Lain-lain';
   _KAS_AI_CACHE[key] = found;
-  _kasApplyType(idx, found);
+  _kasApplyTypeById(rowId, found);
   toast('Auto-type: "'+found+'" -> "'+(nama.length>28?nama.slice(0,28)+'...':nama)+'"','info');
 }
 
@@ -7344,6 +7289,11 @@ function _kasApplyType(idx, type) {
   if (sel) { sel.value = type; const tc = KAS_TC[type]||{c:'#6b7280',bg:'#f3f4f6'}; sel.style.background=tc.bg; sel.style.color=tc.c; }
   kasRowColor(idx);
   _renderBalanceBar();
+}
+function _kasApplyTypeById(rowId, type){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return;
+  _kasApplyType(KAS_DATA.indexOf(d), type);
 }
 
 // Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
@@ -7403,7 +7353,7 @@ function _renderKasTable(){
   allSorted.forEach(d=>{bal+=((d.kredit||0)-(d.debit||0));balMap[d.id]=bal;});
 
   tbody.innerHTML=rows.map((d,i)=>{
-    const idx=KAS_DATA.findIndex(r=>r.id===d.id);
+    const rowId=d._db_id||d.id;
     const tc=KAS_TC[d.type]||{c:'#6b7280',bg:'#f3f4f6'};
     const isDone=d.status==='DONE';
     const isKredit=_kasIsKredit(d.type);
@@ -7413,23 +7363,23 @@ function _renderKasTable(){
     const hargaFmt=d.harga?_KRP(d.harga):'—';
     const rowBal=balMap[d.id]||0;
     const balColor=rowBal>=0?'#15803d':'#dc2626';
-    return `<tr id="krow-${idx}" style="${rowStyle}">
+    return `<tr id="krow-${rowId}" style="${rowStyle}">
       <td style="text-align:center;font-size:10px;color:#888;font-family:monospace;padding:2px 4px;">${start+i+1}</td>
       <td style="padding:1px 3px;">
         <input type="date" value="${d.tgl||''}"
           style="border:none;background:transparent;font-size:11px;font-family:monospace;color:var(--text);width:106px;padding:2px;"
-          onchange="kasEdit(${idx},'tgl',this.value);kasAutoMonth(${idx});kasRowColor(${idx});filterKas()">
+          onchange="kasEdit(${rowId},'tgl',this.value);kasAutoMonth(${rowId});kasRowColor(${rowId});filterKas()">
       </td>
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.nama_barang||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:100%;min-width:190px;padding:2px;"
-          onchange="kasEdit(${idx},'nama_barang',this.value)"
-          onblur="kasAIAutoType(${idx},this.value,true)"
+          onchange="kasEdit(${rowId},'nama_barang',this.value)"
+          onblur="kasAIAutoType(${rowId},this.value,true)"
           placeholder="Nama barang...">
       </td>
       <td style="padding:1px 3px;">
-        <select id="ktype-${idx}" style="border:none;background:${d.type?tc.bg:'#f3f4f6'};color:${d.type?tc.c:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;max-width:112px;"
-          onchange="kasEdit(${idx},'type',this.value);kasEditDebitKredit(${idx});kasRefreshTypeCell(${idx},this)">
+        <select id="ktype-${rowId}" style="border:none;background:${d.type?tc.bg:'#f3f4f6'};color:${d.type?tc.c:'#9ca3af'};font-size:10px;font-weight:600;border-radius:99px;padding:2px 5px;cursor:pointer;max-width:112px;"
+          onchange="kasEdit(${rowId},'type',this.value);kasEditDebitKredit(${rowId});kasRefreshTypeCell(${rowId},this)">
           <option value="" ${!d.type?'selected':''}>— pilih type —</option>
           ${KAS_TYPES.map(t=>`<option value="${t}" ${d.type===t?'selected':''}>${t}</option>`).join('')}
         </select>
@@ -7437,49 +7387,49 @@ function _renderKasTable(){
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.vendor||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--muted);width:96px;padding:2px;"
-          onchange="kasEdit(${idx},'vendor',this.value)" placeholder="vendor...">
+          onchange="kasEdit(${rowId},'vendor',this.value)" placeholder="vendor...">
       </td>
       <td style="padding:1px 3px;text-align:right;">
         <input type="number" value="${d.qty||0}"
           style="border:none;background:transparent;font-size:11px;font-family:monospace;text-align:right;width:48px;padding:2px;"
-          onchange="kasEdit(${idx},'qty',+this.value);kasRecalcTotal(${idx})">
+          onchange="kasEdit(${rowId},'qty',+this.value);kasRecalcTotal(${rowId})">
       </td>
       <td style="padding:1px 4px;text-align:center;">
         <input type="text" value="${d.satuan||''}" list="kas-satuan-list"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:48px;text-align:center;padding:2px;"
-          onchange="kasEdit(${idx},'satuan',this.value)" placeholder="Sat.">
+          onchange="kasEdit(${rowId},'satuan',this.value)" placeholder="Sat.">
       </td>
-      <td style="padding:1px 3px;text-align:right;cursor:pointer;" onclick="kasToggleHarga(${idx})">
-        <span id="kh-disp-${idx}" style="font-size:11px;font-family:monospace;color:var(--accent);pointer-events:none;">${hargaFmt}</span>
-        <input type="number" id="kh-inp-${idx}" value="${d.harga||0}"
+      <td style="padding:1px 3px;text-align:right;cursor:pointer;" onclick="kasToggleHarga(${rowId})">
+        <span id="kh-disp-${rowId}" style="font-size:11px;font-family:monospace;color:var(--accent);pointer-events:none;">${hargaFmt}</span>
+        <input type="number" id="kh-inp-${rowId}" value="${d.harga||0}"
           style="display:none;border:1px solid var(--border);background:var(--bg);font-size:11px;font-family:monospace;text-align:right;width:88px;padding:2px;border-radius:4px;"
           onclick="event.stopPropagation()"
-          onchange="kasEdit(${idx},'harga',+this.value);kasRecalcTotal(${idx})"
-          onblur="kasHideHarga(${idx})" onkeydown="if(event.key==='Enter'||event.key==='Escape')kasHideHarga(${idx})">
+          onchange="kasEdit(${rowId},'harga',+this.value);kasRecalcTotal(${rowId})"
+          onblur="kasHideHarga(${rowId})" onkeydown="if(event.key==='Enter'||event.key==='Escape')kasHideHarga(${rowId})">
       </td>
       <td style="padding:1px 3px;">
         <input type="text" value="${(d.penerima||'').replace(/"/g,'&quot;')}"
           style="border:none;background:transparent;font-size:11px;color:var(--text);width:68px;padding:2px;text-align:right;"
-          onchange="kasEdit(${idx},'penerima',this.value)">
+          onchange="kasEdit(${rowId},'penerima',this.value)">
       </td>
-      <td id="kjml-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${isKredit?'#16a34a':'#dc2626'};white-space:nowrap;">
+      <td id="kjml-${rowId}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${isKredit?'#16a34a':'#dc2626'};white-space:nowrap;">
         ${(()=>{const t=d.total||(+d.debit||0)||(+d.kredit||0);return t?_KRP(t):'';})()}
       </td>
-      <td id="kbal-${idx}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${balColor};white-space:nowrap;">
+      <td id="kbal-${rowId}" style="padding:1px 6px;text-align:right;font-size:11px;font-family:monospace;font-weight:700;color:${balColor};white-space:nowrap;">
         ${_KRP(rowBal)}
       </td>
       <td style="padding:1px 3px;text-align:center;">
         <select style="border:none;font-size:9px;font-weight:700;border-radius:99px;padding:2px 4px;cursor:pointer;
           background:${isDone?'#9e9e9e':d.status==='TBC'?'#fef3c7':'#f3f4f6'};color:${isDone?'#fff':d.status==='TBC'?'#b45309':'#6b7280'};
           border:1px solid ${isDone?'#757575':d.status==='TBC'?'#f9a825':'#d1d5db'};"
-          onchange="kasEdit(${idx},'status',this.value);kasRowColor(${idx});">
+          onchange="kasEdit(${rowId},'status',this.value);kasRowColor(${rowId});">
           <option value="" ${d.status===''||d.status===undefined?'selected':''}>—</option>
           <option value="TBC" ${d.status==='TBC'?'selected':''}>TBC</option>
           <option value="DONE" ${isDone?'selected':''}>DONE</option>
         </select>
       </td>
       <td style="padding:1px 2px;white-space:nowrap;text-align:center;">
-        ${canDel?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:1px 4px;" onclick="deleteKas(${idx})" title="Hapus">🗑</button>`:''}
+        ${canDel?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:1px 4px;" onclick="deleteKas(${rowId})" title="Hapus">🗑</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -7487,65 +7437,74 @@ function _renderKasTable(){
 }
 
 // Harga toggle: klik teks → tampil input
-function kasToggleHarga(idx){
-  const disp=document.getElementById('kh-disp-'+idx);
-  const inp=document.getElementById('kh-inp-'+idx);
+function kasToggleHarga(rowId){
+  const disp=document.getElementById('kh-disp-'+rowId);
+  const inp=document.getElementById('kh-inp-'+rowId);
   if(!disp||!inp)return;
   disp.style.display='none';inp.style.display='inline-block';inp.focus();inp.select();
 }
-function kasHideHarga(idx){
-  const d=KAS_DATA[idx];if(!d)return;
-  const disp=document.getElementById('kh-disp-'+idx);
-  const inp=document.getElementById('kh-inp-'+idx);
+function kasHideHarga(rowId){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
+  const disp=document.getElementById('kh-disp-'+rowId);
+  const inp=document.getElementById('kh-inp-'+rowId);
   if(!disp||!inp)return;
   d.harga=+inp.value||0;
   disp.textContent=d.harga?_KRP(d.harga):'—';
   disp.style.display='';inp.style.display='none';
-  kasRecalcTotal(idx);
+  kasRecalcTotal(rowId);
 }
 
-function kasRefreshTypeCell(idx,sel){
+function kasRefreshTypeCell(rowId,sel){
   const tc=KAS_TC[sel.value]||{c:'#6b7280',bg:'#f3f4f6'};
   sel.style.background=tc.bg;sel.style.color=tc.c;
 }
 
-function kasEditDebitKredit(idx){
-  const d=KAS_DATA[idx];if(!d)return;
+function kasEditDebitKredit(rowId){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
   if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
   else{d.debit=d.total;d.kredit=0;}
-  const jml=document.getElementById('kjml-'+idx);
+  const jml=document.getElementById('kjml-'+rowId);
   if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
   _renderBalanceBar();
-}
-
-function kasRowColor(idx){
-  const d=KAS_DATA[idx];if(!d)return;
-  const row=document.getElementById('krow-'+idx);if(!row)return;
-  const isDone=d.status==='DONE';
-  row.style.background=_kasRowBg(d);
-  row.style.borderBottomColor=isDone?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
-}
-
-function kasAutoMonth(idx){
-  const d=KAS_DATA[idx];if(!d||!d.tgl)return;
-  d.bulan=_KAUTO(d.tgl)||d.bulan;
-}
-
-function kasRecalcTotal(idx){
-  const d=KAS_DATA[idx];if(!d)return;
-  d.total=Math.round((d.qty||0)*(d.harga||0));
-  d.jumlah=d.total;
-  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
-  else{d.debit=d.total;d.kredit=0;}
-  const jml=document.getElementById('kjml-'+idx);
-  if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
-  _renderBalanceBar();
-  // Save to DB after recalc
   clearTimeout(d._saveTimer);
   d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
 }
 
-function kasEdit(idx,field,val){if(KAS_DATA[idx])KAS_DATA[idx][field]=val;}
+function kasRowColor(rowId){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return;
+  const row=document.getElementById('krow-'+rowId);if(!row)return;
+  row.style.background=_kasRowBg(d);
+  row.style.borderBottomColor=d.status==='DONE'?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
+}
+
+function kasAutoMonth(rowId){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d||!d.tgl)return;
+  d.bulan=_KAUTO(d.tgl)||d.bulan;
+}
+
+function kasRecalcTotal(rowId){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
+  d.total=Math.round((d.qty||0)*(d.harga||0));
+  d.jumlah=d.total;
+  if(_kasIsKredit(d.type)){d.kredit=d.total;d.debit=0;}
+  else{d.debit=d.total;d.kredit=0;}
+  const jml=document.getElementById('kjml-'+rowId);
+  if(jml){jml.style.color=_kasIsKredit(d.type)?'#16a34a':'#dc2626';jml.innerHTML=d.total?_KRP(d.total):'';}
+  _renderBalanceBar();
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+}
+
+function kasEdit(rowId,field,val){
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
+  if(!d)return;
+  d[field]=val;
+  d._lastEdited=Date.now();
+  clearTimeout(d._saveTimer);
+  d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
+}
 
 function _kasKeyNav(){
   const tbl=document.getElementById('kas-table');if(!tbl)return;
@@ -7598,10 +7557,10 @@ function kasAddRow(){
   toast('Baris baru ditambahkan — isi data di baris teratas','info');
 }
 
-function deleteKas(idx){
+function deleteKas(rowId){
   if(!confirm('Hapus baris ini?'))return;
-  // idx is real KAS_DATA index (from findIndex), safe to splice
-  if(idx>=0&&idx<KAS_DATA.length)KAS_DATA.splice(idx,1);
+  const idx=KAS_DATA.findIndex(r=>r._db_id===rowId||r.id===rowId);
+  if(idx>=0) KAS_DATA.splice(idx,1);
   filterKas();toast('Baris dihapus','success');
 }
 
