@@ -176,7 +176,7 @@
               <span class="card-title">👷 Data Karyawan BPS</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" onclick="openAddKaryawan()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Karyawan Baru</button>
-                <div class="sbox"><span>🔍</span><input type="text" id="k-search" placeholder="Cari nama / divisi..." oninput="filterKaryawan()"></div>
+                <input type="text" class="sel" id="k-search" placeholder="🔍 Cari nama/divisi..." oninput="filterKaryawan()" style="width:170px;font-size:12px;padding:4px 8px;">
                 <select class="sel" id="k-divisi" onchange="filterKaryawan()">
                   <option value="">Semua Divisi</option>
                   <option>Management</option><option>Service</option><option>Kitchen</option>
@@ -216,15 +216,14 @@
               <span class="card-title">📒 Log Book Karyawan</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" onclick="openAddLogbook()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Log Baru</button>
-                <div class="sbox"><span>🔍</span><input type="text" id="lb-search" placeholder="Cari nama / keterangan..." oninput="filterLogbook()"></div>
-                <select class="sel" id="lb-nama" onchange="filterLogbook()"><option value="">Semua Karyawan</option></select>
-                <select class="sel" id="lb-bulan" onchange="filterLogbook()">
+                <input type="text" class="sel" id="lb-search" placeholder="🔍 Cari nama/keterangan..." oninput="filterLogbook()" style="width:180px;font-size:12px;padding:4px 8px;">
+                <select class="sel" id="lb-nama" onchange="filterLogbook()" style="width:140px;font-size:12px;padding:4px 8px;"><option value="">Semua Karyawan</option></select>
+                <select class="sel" id="lb-bulan" onchange="filterLogbook()" style="width:100px;font-size:12px;padding:4px 8px;">
                   <option value="">Semua Bulan</option>
                   <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
                   <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
                   <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-                  <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-                </select>
+                  <option value="10">Oktober</option>
                 <select class="sel" id="lb-jenis" onchange="filterLogbook()">
                   <option value="">Semua Jenis</option>
                   <option value="hutang">💸 Berhutang</option>
@@ -268,7 +267,7 @@
             <div class="card-head" style="flex-wrap:wrap;gap:8px;">
               <span class="card-title">📦 Arsip Karyawan</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
-                <div class="sbox"><span>🔍</span><input type="text" id="arsip-search" placeholder="Cari nama / divisi..." oninput="renderArsipKaryawan()"></div>
+                <input type="text" class="sel" id="arsip-search" placeholder="🔍 Cari nama/divisi..." oninput="renderArsipKaryawan()" style="width:170px;font-size:12px;padding:4px 8px;">
                 <select class="sel" id="arsip-status-f" onchange="renderArsipKaryawan()">
                   <option value="">RESIGN & FIRED</option>
                   <option value="RESIGN">RESIGN</option>
@@ -295,7 +294,7 @@
       <div id="page-tasks" class="page">
         <div class="card">
           <div class="card-head">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
               <select id="task-f-assign" class="sel" style="font-size:12px;" onchange="renderTasks()"><option value="">Semua Assignee</option></select>
               <select id="task-f-priority" class="sel" style="font-size:12px;" onchange="renderTasks()">
                 <option value="">Semua Prioritas</option>
@@ -356,14 +355,14 @@
               <span class="card-title">💳 Transaksi Account Payable</span>
               <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" onclick="openAddAP()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Tambah Transaksi</button>
-                <div class="sbox"><span>🔍</span><input type="text" id="ap-search" placeholder="Cari vendor / item..." oninput="filterAP()"></div>
-                <select class="sel" id="ap-f-bulan" onchange="filterAP()">
+                <input type="text" class="sel" id="ap-search" placeholder="🔍 Cari vendor/item..." oninput="filterAP()" style="width:160px;font-size:12px;padding:4px 8px;">
+                <select class="sel" id="ap-f-bulan" onchange="filterAP()" style="width:100px;font-size:12px;padding:4px 8px;">
                   <option value="">Semua Bulan</option>
                   <option>JANUARI</option><option>FEBUARI</option><option>MARET</option><option>APRIL</option>
                   <option>MEI</option><option>JUNI</option><option>JULI</option><option>AGUSTUS</option>
                   <option>SEPTEMBER</option><option>OKTOBER</option><option>NOVEMBER</option><option>DESEMBER</option>
                 </select>
-                <select class="sel" id="ap-f-status" onchange="filterAP()">
+                <select class="sel" id="ap-f-status" onchange="filterAP()" style="width:100px;font-size:12px;padding:4px 8px;">
                   <option value="">Semua Status</option>
                   <option value="LUNAS">LUNAS</option>
                   <option value="UNPAID">UNPAID</option>
@@ -439,7 +438,7 @@
               <span class="card-title">🏢 Data Supplier</span>
               <div style="display:flex;gap:7px;align-items:center;">
                 <button class="btn btn-primary btn-sm" onclick="openAddSupplier()" style="font-size:11px;padding:4px 12px;"><span class="btn-plus">+</span>Tambah Supplier</button>
-                <div class="sbox"><span>🔍</span><input type="text" id="sup-search" placeholder="Cari supplier..." oninput="filterSupplier()"></div>
+                <input type="text" class="sel" id="sup-search" placeholder="🔍 Cari supplier..." oninput="filterSupplier()" style="width:160px;font-size:12px;padding:4px 8px;">
               </div>
             </div>
             <div class="tw">
@@ -472,31 +471,32 @@
               <span class="card-title">💰 Kas Kecil 2026</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" id="kas-add-btn" onclick="kasAddRow()"><span class="btn-plus">+</span>Baris</button>
-                <button class="btn btn-secondary btn-sm" onclick="kasResetFilter()" title="Reset filter" style="padding:4px 8px;font-size:14px;">↺</button>
-                <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-left:4px;">
-                  <input type="text" class="sel" id="kas-search" placeholder="🔍 Nama/vendor..." oninput="filterKas()" style="width:140px;padding:4px 8px;font-size:12px;">
-                  <input type="date" class="sel" id="kas-f-dari" onchange="filterKas()" title="Dari tanggal" style="width:128px;padding:4px 6px;font-size:12px;">
-                  <span style="font-size:11px;color:var(--muted);">s/d</span>
-                  <input type="date" class="sel" id="kas-f-sampai" onchange="filterKas()" title="Sampai tanggal" style="width:128px;padding:4px 6px;font-size:12px;">
-                  <select class="sel" id="kas-f-type" onchange="filterKas()" style="width:110px;padding:4px 6px;font-size:12px;">
-                    <option value="">Semua Type</option>
-                    <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
-                    <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
-                    <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
-                    <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
-                    <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
-                    <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
-                  </select>
-                  <select class="sel" id="kas-f-status" onchange="filterKas()" style="width:90px;padding:4px 6px;font-size:12px;">
-                    <option value="">Semua Status</option>
-                    <option value="DONE">DONE</option><option value="TBC">TBC</option>
-                  </select>
-                </div>
+                <button class="btn btn-secondary btn-sm" onclick="kasResetFilter()" title="Reset filter" style="padding:4px 9px;">↺</button>
+                <input type="date" class="sel" id="kas-f-dari" onchange="filterKas()" title="Dari tanggal" style="width:125px;font-size:12px;padding:4px 8px;">
+                <span style="font-size:11px;color:var(--muted);">s/d</span>
+                <input type="date" class="sel" id="kas-f-sampai" onchange="filterKas()" title="Sampai tanggal" style="width:125px;font-size:12px;padding:4px 8px;">
+                
+                <input type="text" class="sel" id="kas-search" placeholder="🔍 Nama/vendor..." oninput="filterKas()" style="width:150px;font-size:12px;padding:4px 8px;">
+                
+                <select class="sel" id="kas-f-type" onchange="filterKas()" style="width:110px;font-size:12px;padding:4px 8px;">
+                  <option value="">Semua Type</option>
+                  <option>Raw Food</option><option>Sayuran</option><option>Buah segar</option>
+                  <option>Raw Materials</option><option>Minuman</option><option>Snack</option>
+                  <option>Kasbon</option><option>Gaji</option><option>Bensin</option>
+                  <option>Maintenance</option><option>OP.Expense</option><option>B.Logistik</option>
+                  <option>Listrik PLN</option><option>PDAM</option><option>Pulsa</option>
+                  <option>Pajak</option><option>Kas</option><option>Lain-lain</option>
+                </select>
+                <select class="sel" id="kas-f-status" onchange="filterKas()" style="width:90px;font-size:12px;padding:4px 8px;">
+                  <option value="">Semua Status</option>
+                  <option value="DONE">DONE</option><option value="TBC">TBC</option>
+                </select>
               </div>
             </div>
             <!-- Current Balance Bar -->
             <div id="kas-balance-bar" style="display:flex;gap:20px;flex-wrap:wrap;padding:8px 16px;background:linear-gradient(135deg,#1e4d6b,#2d6a8a);color:#fff;align-items:center;font-size:12px;"></div>
-            
+            <!-- Stats bar -->
+            <div id="kas-stats" style="display:flex;gap:14px;flex-wrap:wrap;padding:7px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;align-items:center;"></div>
             <!-- Table -->
             <div class="tw" style="max-height:calc(100vh - 320px);overflow:auto;" id="kas-table-wrap">
               <table id="kas-table" style="min-width:1080px;border-collapse:collapse;">
@@ -620,8 +620,7 @@
             </div>
             <!-- Filter bar -->
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
-              <input type="text" id="inv-search" placeholder="Cari nama produk..." class="sel"
-                style="width:180px;flex-shrink:0;" oninput="filterInv()">
+              <input type="text" id="inv-search" placeholder="🔍 Cari nama produk..." class="sel" style="width:160px;flex-shrink:0;font-size:12px;padding:4px 8px;" oninput="filterInv()">
               <input type="date" id="inv-f-tgl-from" class="sel" style="width:130px;flex-shrink:0;" onchange="filterInv()" title="Dari tanggal">
               <span style="font-size:11px;color:var(--muted);">s/d</span>
               <input type="date" id="inv-f-tgl-to" class="sel" style="width:130px;flex-shrink:0;" onchange="filterInv()" title="Sampai tanggal">
@@ -845,11 +844,11 @@
         <div class="card">
           <div class="card-head">
             <span class="card-title">📦 Semua Order</span>
-            <div class="fbar">
-              <div class="sbox"><span>🔍</span><input type="text" id="sq" placeholder="Cari..." oninput="filterOrders()"></div>
-              <select class="sel" id="st" onchange="filterOrders()"><option value="">Semua Tipe</option><option value="real orderan">Real</option><option value="estimasi orderan">Estimasi</option></select>
-              <select class="sel" id="sc" onchange="filterOrders()"><option value="">Semua Customer</option></select>
-              <button class="btn btn-secondary btn-sm" onclick="loadOrders().then(filterOrders)">↺</button>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+              <input type="text" class="sel" id="sq" placeholder="🔍 Cari..." oninput="filterOrders()" style="width:150px;font-size:12px;padding:4px 8px;">
+              <select class="sel" id="st" onchange="filterOrders()" style="width:100px;font-size:12px;padding:4px 8px;"><option value="">Semua Tipe</option><option value="real orderan">Real</option><option value="estimasi orderan">Estimasi</option></select>
+              <select class="sel" id="sc" onchange="filterOrders()" style="width:140px;font-size:12px;padding:4px 8px;"><option value="">Semua Customer</option></select>
+              <button class="btn btn-secondary btn-sm" onclick="loadOrders().then(filterOrders)" title="Refresh" style="padding:4px 9px;">↺</button>
             </div>
           </div>
           <!-- Desktop -->
@@ -3430,6 +3429,7 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){e.preventDefault();doUndo();}
   if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();doRedo();}
 });
+// ═══════════════════════════════════════════════════
 
 function isMobile(){return window.innerWidth<=768;}
 
@@ -3873,6 +3873,7 @@ function toggleInvLock(id){
   renderInvoices();
 }
 function isInvLocked(id){return INV_LOCKED.has(String(id));}
+// ═══════════════════════════════════════════════════
 
 // ══ ACTIVITY LOG ═══════════════════════════════════
 const ACT_KEY='becca_activity_log';
@@ -3981,6 +3982,7 @@ function renderActivity(){
     </div>`;
   }
 }
+// ═══════════════════════════════════════════════════
 
 // ══ ONLINE USERS TRACKER ════════════════════════════
 // Realtime presence via Supabase online_sessions table
@@ -4060,6 +4062,7 @@ function stopOnlineTracker(){
   }).catch(()=>{});
   delete _ONLINE_CACHE[CU.username];
 }
+// ═══════════════════════════════════════════════════
 
 // ══ TASK BOARD ══════════════════════════════════════
 const TASK_KEY='becca_tasks';
@@ -4330,6 +4333,7 @@ function renderTasks(){
   });
 }
 // task board uses natural card layout — no JS sizing needed
+// ═══════════════════════════════════════════════════
 
 // ══ NOTIFICATIONS ══════════════════════════════════
 // NOTIF_DISMISSED: stores set of invoice IDs user has manually dismissed
@@ -5312,7 +5316,9 @@ function deleteSupplier(idx){
 
 // ══ DATA KARYAWAN ════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════
 // ─── KAS KECIL ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
 
 // Raw data: [id,tgl,nama,type,vendor,qty,satuan,harga,total,penerima,status,bulan]
 let _KD = [];
@@ -5464,7 +5470,9 @@ function kasEditSaldoAwal(){
   if(!isNaN(n)){KAS_SALDO_AWAL=n;_renderBalanceBar();filterKas();toast('Saldo awal diperbarui','success');}
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // INVENTORY MODULE
+// ══════════════════════════════════════════════════════════════════════════════
 
 function renderInventoryPage(){
   setInvTab(document.querySelector('.rtab.active[id^="invtab-"]')?.id.replace('invtab-','') || 'transaksi');
@@ -5787,8 +5795,8 @@ async function _flushKasPending(){
   }));
 }
 async function _flushAllPending(){await Promise.all([_flushInvPending(),_flushKasPending()]);}
-function invEditById(rowId,field,val){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),field,val);}
-function invEditNamaById(rowId,val){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;const idx=INV_ACTIVITIES.indexOf(d);if(typeof invEditNama==='function')invEditNama(idx,val);else invEdit(idx,'nama',val);}
+function invEditById(rowId,f,v){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),f,v);}
+function invEditNamaById(rowId,v){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;const i=INV_ACTIVITIES.indexOf(d);if(typeof invEditNama==='function')invEditNama(i,v);else invEdit(i,'nama',v);}
 function invToggleHppById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invToggleHpp(INV_ACTIVITIES.indexOf(d));}
 function invToggleLockById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;invToggleLock(INV_ACTIVITIES.indexOf(d));}
 function deleteInvRowById(rowId){const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;deleteInvRow(INV_ACTIVITIES.indexOf(d));}
@@ -5923,7 +5931,7 @@ function invPageSizeChange(){
 
 function invEdit(idx,field,val){
   const d=INV_ACTIVITIES[idx];if(!d)return;
-  const rowId=d._db_id||d.id||idx; d._lastEdited=Date.now();
+  const rowId=d._db_id||d.id||idx;d._lastEdited=Date.now();
   if(field==='stock_in'||field==='stock_out'){const n=parseFloat(val);if(isNaN(n)||n<0)return;val=n;}
   d[field]=val;
   if(field==='kode'){
@@ -5951,19 +5959,18 @@ function invEdit(idx,field,val){
       invRecalcValue(idx);
       const disp=document.getElementById('invh-disp-'+rowId),inp=document.getElementById('invh-inp-'+rowId);
       if(disp)disp.textContent=d.harga?_IRP(d.harga):'—';if(inp)inp.value=d.harga||0;
-    } else if(d.stock_out===0){d.value=0;}
+    }else if(d.stock_out===0){d.value=0;}
     _invInstantBadge(idx,d);}
   if(field==='harga'){d.harga=+val||0;invRecalcValue(idx);}
   _recalcProductStocks();
-  if(!d.nama||d.nama.trim()==='')return;
-  if(d._pending){d._pending=false;}
+  if(!d.nama||d.nama.trim()==='')return;if(d._pending){d._pending=false;}
   clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveInvActivityToDB(d),1000);
 }
 
 function invToggleHpp(idx){
   const d=INV_ACTIVITIES[idx];if(!d||d.locked)return;
   if(d.kode==='STOCK IN'||d.kode==='STOCK OPNAME')return;
-  const rowId=d._db_id||d.id||idx; d.is_hpp=!d.is_hpp;
+  const rowId=d._db_id||d.id||idx;d.is_hpp=!d.is_hpp;
   const el=document.getElementById('invhpp-'+rowId);
   if(el){el.style.background=d.is_hpp?'#fef3c7':'#f3f4f6';el.style.color=d.is_hpp?'#92400e':'#9ca3af';
     el.style.borderColor=d.is_hpp?'#fde68a':'#e5e7eb';el.textContent=d.is_hpp?'HPP':'—';}
@@ -6039,8 +6046,7 @@ function invRefreshHpp(idx){
   _invInstantBadge(idx,d);
 }
 function _invInstantBadge(idx,d){
-  const rowId=d._db_id||d.id||idx;
-  const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
+  const rowId=d._db_id||d.id||idx;const _hasQty=(+d.stock_in>0||(+d.stock_out>0));
   const kodeEl=document.querySelector(`#invrow-${rowId} select`);
   if(kodeEl){if(kodeEl.value!==d.kode)kodeEl.value=d.kode;
     kodeEl.style.background=d.kode?(INV_KODE_COLOR[d.kode]||'#f3f4f6'):'#f3f4f6';
@@ -6055,8 +6061,7 @@ function _invInstantBadge(idx,d){
 }
 
 function invRecalcValue(idx){
-  const d=INV_ACTIVITIES[idx];if(!d)return;
-  const rowId=d._db_id||d.id||idx;
+  const d=INV_ACTIVITIES[idx];if(!d)return;const rowId=d._db_id||d.id||idx;
   if(d.stock_out>0&&d.nama){const fv=_calcFifoValue(d.nama,d.stock_out,d);d.value=fv>0?fv:(d.stock_out||0)*(d.harga||0);}
   else if(d.stock_in>0){d.value=(d.stock_in||0)*(d.harga||0);}else{d.value=0;}
   const el=document.getElementById('invval-'+rowId);
@@ -6766,7 +6771,9 @@ function renderInvSummary(){
   `;
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // DATABASE SYNC — KAS KECIL + INVENTORY
+// ══════════════════════════════════════════════════════════════════════════════
 
 // ── KAS KECIL ─────────────────────────────────────────────────────────────────
 async function sbGetAll(table, query='', pageSize=1000){
@@ -6984,7 +6991,9 @@ async function saveOpnameToDB(nama,bulan,tahun,fisik){
   } catch(e){ console.warn('saveOpname error:',e.message); }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // REALTIME POLLING — KAS & INVENTORY
+// ══════════════════════════════════════════════════════════════════════════════
 
 // ── IMPORT KAS MASUK FROM EXCEL ──────────────────────────────────────────────
 
@@ -7017,27 +7026,26 @@ async function _silentReloadKas(){
   try{
     const rows=await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
     if(!rows||!rows.length)return;
-    const _BULAN=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const now=Date.now();const localMap={};KAS_DATA.forEach(d=>{if(d._db_id)localMap[d._db_id]=d;});
+    const _B=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const now=Date.now();const lm={};KAS_DATA.forEach(d=>{if(d._db_id)lm[d._db_id]=d;});
     KAS_DATA=rows.map(r=>{
-      const local=localMap[r.id];
-      if(local&&local._lastEdited&&(now-local._lastEdited)<3000)return local;
-      if(local&&local._saveTimer)return local;
+      const lo=lm[r.id];
+      if(lo&&lo._lastEdited&&(now-lo._lastEdited)<3000)return lo;
+      if(lo&&lo._saveTimer)return lo;
       return{id:r.id,tgl:r.tgl,nama_barang:r.nama_barang||'',type:r.type||'',
         vendor:r.vendor||'',qty:+r.qty||0,satuan:r.satuan||'',harga:+r.harga||0,
         penerima:r.penerima||'',debit:+r.debit||0,kredit:+r.kredit||0,jumlah:+r.jumlah||0,
         total:(+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
         status:r.status||'',catatan:r.catatan||'',locked:!!r.locked,
-        _db_id:r.id,bulan:_BULAN[+(r.tgl||'').slice(5,7)]||''};
+        _db_id:r.id,bulan:_B[+(r.tgl||'').slice(5,7)]||''};
     });
     _kasLastUpdated=new Date();_updateKasRefreshBadge();
-    const focused=document.activeElement;
-    if(focused&&focused.closest('#kas-tbody'))return;
-    const activeTab=document.querySelector('.kas-tab.active')?.dataset?.tab;
-    if(activeTab==='transaksi'||!activeTab)filterKas();
-    else if(activeTab==='summary')renderKasSummary?.();
-    else if(activeTab==='monthly')renderKasMonthly?.();
-  }catch(e){console.warn('KAS poll error:',e.message);}
+    const focused=document.activeElement;if(focused&&focused.closest('#kas-tbody'))return;
+    const at=document.querySelector('.kas-tab.active')?.dataset?.tab;
+    if(at==='transaksi'||!at)filterKas();
+    else if(at==='summary')renderKasSummary?.();
+    else if(at==='monthly')renderKasMonthly?.();
+  }catch(e){console.warn('KAS poll:',e.message);}
 }
 
 async function _silentReloadInv(){
@@ -7195,10 +7203,8 @@ function filterKas(){
   const fd=document.getElementById('kas-f-dari')?.value||'';
   const fsd=document.getElementById('kas-f-sampai')?.value||'';
   _kasFiltered=[...KAS_DATA].filter(d=>{
-    if(ft&&d.type!==ft)return false;
-    if(fs&&d.status!==fs)return false;
-    if(fd&&(d.tgl||'')<fd)return false;
-    if(fsd&&(d.tgl||'')>fsd)return false;
+    if(ft&&d.type!==ft)return false;if(fs&&d.status!==fs)return false;
+    if(fd&&(d.tgl||'')<fd)return false;if(fsd&&(d.tgl||'')>fsd)return false;
     if(q&&!(d.nama_barang||'').toLowerCase().includes(q)&&!(d.vendor||'').toLowerCase().includes(q))return false;
     return true;
   }).sort((a,b)=>b.tgl.localeCompare(a.tgl)||b.id-a.id);
@@ -7210,7 +7216,23 @@ function kasResetFilter(){
   filterKas();
 }
 
-function _renderKasStats(){}
+function _renderKasStats(){
+  const totalDebit=_kasFiltered.reduce((s,d)=>s+(d.debit||0),0);
+  const totalKredit=_kasFiltered.reduce((s,d)=>s+(d.kredit||0),0);
+  const done=_kasFiltered.filter(d=>d.status==='DONE').length;
+  const tbc=_kasFiltered.filter(d=>d.status==='TBC').length;
+  const el=document.getElementById('kas-stats');if(!el)return;
+  const byType={};_kasFiltered.forEach(d=>{byType[d.type]=(byType[d.type]||0)+(d.debit||d.kredit||0);});
+  const top=Object.entries(byType)
+    .filter(([t])=>t!=='Kas')
+    .sort((a,b)=>b[1]-a[1]).slice(0,4);
+  el.innerHTML=`<span style="font-weight:700;">${_kasFiltered.length.toLocaleString()} baris</span>
+    <span style="color:#dc2626;font-weight:700;">Debit: ${_KRP(totalDebit)}</span>
+    <span style="color:var(--green);font-weight:700;">Kredit: ${_KRP(totalKredit)}</span>
+    <span style="color:var(--green);background:var(--green-bg);padding:1px 7px;border-radius:99px;">✔ ${done}</span>
+    <span style="color:#b45309;background:#fef3c7;padding:1px 7px;border-radius:99px;">TBC ${tbc}</span>
+    ${top.map(([t,v])=>`<span style="color:${(KAS_TC[t]||{c:'#666'}).c};font-size:11px;">${t}: ${_KRP(v)}</span>`).join('')}`;
+}
 
 function _renderKasTable(){
   const tbody=document.getElementById('kas-tbody');if(!tbody)return;
@@ -7316,14 +7338,12 @@ function _renderKasTable(){
 // Harga toggle: klik teks → tampil input
 function kasToggleHarga(rowId){
   const disp=document.getElementById('kh-disp-'+rowId),inp=document.getElementById('kh-inp-'+rowId);
-  if(!disp||!inp)return;
-  disp.style.display='none';inp.style.display='inline-block';inp.focus();inp.select();
+  if(!disp||!inp)return;disp.style.display='none';inp.style.display='inline-block';inp.focus();inp.select();
 }
 function kasHideHarga(rowId){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
   const disp=document.getElementById('kh-disp-'+rowId),inp=document.getElementById('kh-inp-'+rowId);
-  if(!disp||!inp)return;
-  d.harga=+inp.value||0;disp.textContent=d.harga?_KRP(d.harga):'—';
+  if(!disp||!inp)return;d.harga=+inp.value||0;disp.textContent=d.harga?_KRP(d.harga):'—';
   disp.style.display='';inp.style.display='none';kasRecalcTotal(rowId);
 }
 
@@ -7348,7 +7368,7 @@ function kasRowColor(rowId){
 }
 function kasChangeTgl(rowId,val){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
-  const oldTgl=d.tgl; d.tgl=val; d._lastEdited=Date.now();
+  const oldTgl=d.tgl;d.tgl=val;d._lastEdited=Date.now();
   kasAutoMonth(rowId);kasRowColor(rowId);
   clearTimeout(d._saveTimer);d._saveTimer=setTimeout(()=>saveKasRowToDB(d),800);
   const oldM=oldTgl?(new Date(oldTgl+'T00:00').getMonth()):-1;
@@ -7412,8 +7432,7 @@ function kasAddRow(){
   saveKasRowToDB(newRow);
   // Clear filters agar baris baru keliatan
   const srch=document.getElementById('kas-search');if(srch)srch.value='';
-  // filter bulan dihapus
-  const ft=document.getElementById('kas-f-type');if(ft)ft.value='';
+    const ft=document.getElementById('kas-f-type');if(ft)ft.value='';
   const fs=document.getElementById('kas-f-status');if(fs)fs.value='';
   _kasPage=1;
   filterKas();
@@ -8354,6 +8373,7 @@ function printEmployeeCard(){
   <body>${area.innerHTML}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
   w.document.close();
 }
+// ═════════════════════════════════════════════════════
 
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show');}));
 document.getElementById('lip').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
