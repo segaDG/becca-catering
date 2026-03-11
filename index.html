@@ -472,7 +472,7 @@
               <span class="card-title">💰 Kas Kecil 2026</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-primary btn-sm" id="kas-add-btn" onclick="kasAddRow()"><span class="btn-plus">+</span>Baris</button>
-                <button class="btn btn-secondary btn-sm" onclick="importKasMasukFromExcel()" title="Import Kas Masuk dari Excel BPS 2026">📥 Kas Masuk Excel</button>
+                
                 <div class="sbox"><span>🔍</span><input type="text" id="kas-search" placeholder="Cari nama/vendor..." oninput="filterKas()"></div>
                 <select class="sel" id="kas-f-bulan" onchange="filterKas()">
                   <option value="">Semua Bulan</option>
@@ -1871,17 +1871,16 @@ function buildNav(){
   });
 }
 async function navigateTo(pg){
-  await _flushInvPending();
   if(!allowedPages().includes(pg)){toast('Akses ditolak','error');return;}
+  // Flush semua pending saves sebelum pindah halaman
+  await _flushAllPending();
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+pg).classList.add('active');
   const ni=document.getElementById('ni-'+pg);if(ni)ni.classList.add('active');
   document.getElementById('pgtitle').textContent=ALL_PAGES[pg]?.label||pg;
-  // Close sidebar on mobile after nav
   if(window.innerWidth<=768){const sb=document.getElementById('sidebar');sb.classList.remove('open');const ov=document.getElementById('sb-ov');if(ov)ov.style.display='none';}
   renderPage(pg);
-  // Scroll to top after render
   const ct=document.querySelector('.content');
   if(ct){ct.scrollTop=0;requestAnimationFrame(()=>ct.scrollTop=0);}
 }
@@ -5788,6 +5787,18 @@ async function _flushInvPending(){
     if(d.nama&&d.nama.trim())try{await saveInvActivityToDB(d);}catch(e){}
   }));
 }
+async function _flushKasPending(){
+  if(typeof KAS_DATA==='undefined'||!KAS_DATA.length)return;
+  const pending=KAS_DATA.filter(d=>d._saveTimer);
+  if(!pending.length)return;
+  await Promise.all(pending.map(async d=>{
+    clearTimeout(d._saveTimer);d._saveTimer=null;
+    try{await saveKasRowToDB(d);}catch(e){}
+  }));
+}
+async function _flushAllPending(){
+  await Promise.all([_flushInvPending(),_flushKasPending()]);
+}
 function invEditById(rowId,field,val){
   const d=INV_ACTIVITIES.find(r=>r._db_id===rowId||r.id===rowId);
   if(!d)return;invEdit(INV_ACTIVITIES.indexOf(d),field,val);
@@ -7039,55 +7050,6 @@ async function saveOpnameToDB(nama,bulan,tahun,fisik){
 // REALTIME POLLING — KAS & INVENTORY
 
 // ── IMPORT KAS MASUK FROM EXCEL ──────────────────────────────────────────────
-const _KAS_MASUK_EXCEL = [{"tgl": "2026-01-04", "kredit": 30000000}, {"tgl": "2026-01-05", "kredit": 94445642}, {"tgl": "2026-01-07", "kredit": 30000000}, {"tgl": "2026-01-08", "kredit": 49759779}, {"tgl": "2026-01-11", "kredit": 30000000}, {"tgl": "2026-01-12", "kredit": 30000000}, {"tgl": "2026-01-13", "kredit": 41596936}, {"tgl": "2026-01-13", "kredit": 600000}, {"tgl": "2026-01-14", "kredit": 30000000}, {"tgl": "2026-01-16", "kredit": 23598114}, {"tgl": "2026-01-18", "kredit": 30000000}, {"tgl": "2026-01-19", "kredit": 49948660}, {"tgl": "2026-01-21", "kredit": 30000000}, {"tgl": "2026-01-22", "kredit": 45158445}, {"tgl": "2026-01-25", "kredit": 30000000}, {"tgl": "2026-01-26", "kredit": 53086468}, {"tgl": "2026-01-27", "kredit": 30000000}, {"tgl": "2026-01-28", "kredit": 30000000}, {"tgl": "2026-01-29", "kredit": 34284099}, {"tgl": "2026-02-01", "kredit": 30000000}, {"tgl": "2026-02-02", "kredit": 55703639}, {"tgl": "2026-02-04", "kredit": 30000000}, {"tgl": "2026-02-05", "kredit": 59314925}, {"tgl": "2026-02-08", "kredit": 30000000}, {"tgl": "2026-02-10", "kredit": 28971593}, {"tgl": "2026-02-11", "kredit": 30000000}, {"tgl": "2026-02-12", "kredit": 53281751}, {"tgl": "2026-02-14", "kredit": 30000000}, {"tgl": "2026-02-16", "kredit": 30000000}, {"tgl": "2026-02-18", "kredit": 30000000}, {"tgl": "2026-02-19", "kredit": 58395695}, {"tgl": "2026-02-21", "kredit": 30000000}, {"tgl": "2026-02-23", "kredit": 42680856}, {"tgl": "2026-02-25", "kredit": 30000000}, {"tgl": "2026-02-26", "kredit": 59708997}, {"tgl": "2026-02-27", "kredit": 10000000}, {"tgl": "2026-02-28", "kredit": 10000000}, {"tgl": "2026-03-01", "kredit": 30000000}, {"tgl": "2026-03-02", "kredit": 67933461}, {"tgl": "2026-03-04", "kredit": 30000000}, {"tgl": "2026-03-05", "kredit": 55075033}, {"tgl": "2026-03-07", "kredit": 30000000}];
-
-function importKasMasukFromExcel(){
-  const data = _KAS_MASUK_EXCEL;
-  if(!data||!data.length){ toast('Tidak ada data Kas Masuk','error'); return; }
-  
-  let updated=0, created=0, skipped=0;
-  
-  data.forEach(item=>{
-    const tgl = item.tgl;
-    const kredit = item.kredit;
-    const _BULAN_NAMES=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const bulan = _BULAN_NAMES[+(tgl||'').slice(5,7)]||'';
-    
-    // Find existing Kas row on this date
-    const existing = KAS_DATA.find(d=>d.tgl===tgl && d.type==='Kas');
-    
-    if(existing){
-      // Update harga & kredit
-      existing.harga = kredit;
-      existing.total = kredit;
-      existing.kredit = kredit;
-      existing.debit = 0;
-      existing.qty = 1;
-      existing.jumlah = kredit;
-      clearTimeout(existing._saveTimer);
-      existing._saveTimer = setTimeout(()=>saveKasRowToDB(existing), 800);
-      updated++;
-    } else {
-      // Create new Kas Masuk row
-      const newRow = {
-        id: _KID(), tgl, bulan,
-        nama_barang: 'Kas Masuk',
-        type: 'Kas', vendor: '',
-        qty: 1, satuan: 'Kali',
-        harga: kredit, total: kredit,
-        debit: 0, kredit, jumlah: kredit,
-        penerima: '', status: 'DONE',
-        catatan: 'Import dari Excel'
-      };
-      KAS_DATA.push(newRow);
-      saveKasRowToDB(newRow);
-      created++;
-    }
-  });
-  
-  filterKas();
-  toast(`Import selesai: ${updated} diupdate, ${created} baru dibuat`, 'success');
-}
 
 let _kasRefreshInterval = null;
 let _invRefreshInterval = null;
@@ -7118,35 +7080,23 @@ async function _silentReloadKas(){
   try{
     const rows=await sbGetAll('kas_transactions','select=*&order=tgl.asc,id.asc');
     if(!rows||!rows.length)return;
-    const _BULAN_NAMES=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    // Flush pending saves first
-    const pending=KAS_DATA.filter(d=>d._saveTimer);
-    await Promise.all(pending.map(async d=>{
-      clearTimeout(d._saveTimer);d._saveTimer=null;
-      try{await saveKasRowToDB(d);}catch(e){}
-    }));
-    // Merge: keep local row jika _lastEdited < 3 detik (user masih ngetik)
+    const _BULAN=['','Januari','Febuari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     const now=Date.now();
-    const localMap={};
-    KAS_DATA.forEach(d=>{ if(d._db_id) localMap[d._db_id]=d; });
+    const localMap={};KAS_DATA.forEach(d=>{if(d._db_id)localMap[d._db_id]=d;});
     KAS_DATA=rows.map(r=>{
       const local=localMap[r.id];
-      if(local&&local._lastEdited&&(now-local._lastEdited)<3000) return local;
-      return {
-        id:r.id,tgl:r.tgl,nama_barang:r.nama_barang||'',type:r.type||'',
-        vendor:r.vendor||'',qty:+r.qty||0,satuan:r.satuan||'',
-        harga:+r.harga||0,penerima:r.penerima||'',
-        debit:+r.debit||0,kredit:+r.kredit||0,jumlah:+r.jumlah||0,
+      if(local&&local._lastEdited&&(now-local._lastEdited)<3000)return local;
+      if(local&&local._saveTimer)return local;
+      return{id:r.id,tgl:r.tgl,nama_barang:r.nama_barang||'',type:r.type||'',
+        vendor:r.vendor||'',qty:+r.qty||0,satuan:r.satuan||'',harga:+r.harga||0,
+        penerima:r.penerima||'',debit:+r.debit||0,kredit:+r.kredit||0,jumlah:+r.jumlah||0,
         total:(+r.debit||0)||(+r.kredit||0)||(Math.round((+r.qty||0)*(+r.harga||0))),
         status:r.status||'',catatan:r.catatan||'',locked:!!r.locked,
-        _db_id:r.id,bulan:_BULAN_NAMES[+(r.tgl||'').slice(5,7)]||''
-      };
+        _db_id:r.id,bulan:_BULAN[+(r.tgl||'').slice(5,7)]||''};
     });
-    _kasLastUpdated=new Date();
-    _updateKasRefreshBadge();
-    // Skip re-render jika user sedang fokus di kas-tbody
-    const _focused=document.activeElement;
-    if(_focused&&_focused.closest('#kas-tbody'))return;
+    _kasLastUpdated=new Date();_updateKasRefreshBadge();
+    const focused=document.activeElement;
+    if(focused&&focused.closest('#kas-tbody'))return;
     const activeTab=document.querySelector('.kas-tab.active')?.dataset?.tab;
     if(activeTab==='transaksi'||!activeTab)filterKas();
     else if(activeTab==='summary')renderKasSummary?.();
@@ -7155,7 +7105,6 @@ async function _silentReloadKas(){
 }
 
 async function _silentReloadInv(){
-  await _flushInvPending();
   try{
     const [acts, opname] = await Promise.all([
       sbGetAll('inv_activities','select=*&order=tgl.asc,id.asc'),
@@ -7290,10 +7239,10 @@ function _kasApplyType(idx, type) {
   kasRowColor(idx);
   _renderBalanceBar();
 }
-function _kasApplyTypeById(rowId, type){
+function _kasApplyTypeById(rowId,type){
   const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
   if(!d)return;
-  _kasApplyType(KAS_DATA.indexOf(d), type);
+  _kasApplyType(KAS_DATA.indexOf(d),type);
 }
 
 // Row background: DONE = abu tua (priority), Kas = biru, Kasbon = orange, TBC = kuning, '' = putih
@@ -7471,8 +7420,7 @@ function kasEditDebitKredit(rowId){
 }
 
 function kasRowColor(rowId){
-  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);
-  if(!d)return;
+  const d=KAS_DATA.find(r=>r._db_id===rowId||r.id===rowId);if(!d)return;
   const row=document.getElementById('krow-'+rowId);if(!row)return;
   row.style.background=_kasRowBg(d);
   row.style.borderBottomColor=d.status==='DONE'?'#999':d.type==='Kas'?'#93c5fd':d.type==='Kasbon'?'#fdba74':'#e5e7eb';
@@ -7560,7 +7508,7 @@ function kasAddRow(){
 function deleteKas(rowId){
   if(!confirm('Hapus baris ini?'))return;
   const idx=KAS_DATA.findIndex(r=>r._db_id===rowId||r.id===rowId);
-  if(idx>=0) KAS_DATA.splice(idx,1);
+  if(idx>=0)KAS_DATA.splice(idx,1);
   filterKas();toast('Baris dihapus','success');
 }
 
