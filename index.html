@@ -780,9 +780,9 @@
           <div class="card-head">
             <span class="card-title">📋 Activity Log</span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="act-search" placeholder="Cari aktivitas..." oninput="renderActivity()"></div>
-              <select id="act-f-user" class="sel" style="font-size:12px;" onchange="renderActivity()"><option value="">Semua User</option></select>
-              <select id="act-f-type" class="sel" style="font-size:12px;" onchange="renderActivity()">
+              <input type="text" class="sel" id="act-search" placeholder="🔍 Cari aktivitas..." oninput="renderActivity()" style="width:160px;font-size:12px;padding:4px 8px;">
+              <select id="act-f-user" class="sel" style="width:130px;font-size:12px;padding:4px 8px;" onchange="renderActivity()"><option value="">Semua User</option></select>
+              <select id="act-f-type" class="sel" style="width:110px;font-size:12px;padding:4px 8px;" onchange="renderActivity()">
                 <option value="">Semua Tipe</option>
                 <option value="login">Login</option>
                 <option value="logout">Logout</option>
@@ -888,25 +888,25 @@
             <button class="btn btn-primary btn-sm" onclick="openCreateInvoice()"><span class="btn-plus">+</span>Buat Invoice</button>
           </div>
           <!-- FILTER BAR -->
-          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);">
-            <input type="month" id="inv-f-period" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;" placeholder="Periode">
-            <select id="inv-f-coy" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:160px;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 0 4px;">
+            <input type="month" id="inv-f-period" onchange="renderInvoices()" class="sel" style="width:130px;font-size:12px;padding:4px 8px;" placeholder="Periode">
+            <select id="inv-f-coy" onchange="renderInvoices()" class="sel" style="width:150px;font-size:12px;padding:4px 8px;">
               <option value="">Semua Customer</option>
             </select>
-            <select id="inv-f-status" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;">
+            <select id="inv-f-status" onchange="renderInvoices()" class="sel" style="width:95px;font-size:12px;padding:4px 8px;">
               <option value="">Semua Status</option>
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
               <option value="paid">Paid</option>
             </select>
-            <select id="inv-f-due" onchange="renderInvoices()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 24px 6px 10px;font-size:12px;color:var(--text);outline:none;cursor:pointer;">
+            <select id="inv-f-due" onchange="renderInvoices()" class="sel" style="width:130px;font-size:12px;padding:4px 8px;">
               <option value="">Semua Tempo</option>
-              <option value="overdue">🔴 Jatuh Tempo (Overdue)</option>
-              <option value="neardue">⏰ Mendekati Jatuh Tempo (≤7 hari)</option>
+              <option value="overdue">🔴 Jatuh Tempo</option>
+              <option value="neardue">⏰ Mendekati (≤7 hari)</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()">✕ Reset</button>
-            <button id="btn-undo" class="btn btn-secondary btn-sm" onclick="doUndo()" disabled title="Tidak ada yang bisa di-undo" style="font-size:12px;padding:5px 10px;">↩ Undo</button>
-            <button id="btn-redo" class="btn btn-secondary btn-sm" onclick="doRedo()" disabled title="Tidak ada yang bisa di-redo" style="font-size:12px;padding:5px 10px;">↪ Redo</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearInvFilters()" style="padding:4px 9px;">✕</button>
+            <button id="btn-undo" class="btn btn-secondary btn-sm" onclick="doUndo()" disabled title="Undo" style="padding:4px 9px;">↩</button>
+            <button id="btn-redo" class="btn btn-secondary btn-sm" onclick="doRedo()" disabled title="Redo" style="padding:4px 9px;">↪</button>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <span id="inv-f-total-label" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;font-family:var(--mono);">Total Invoice</span>
               <span id="inv-f-total" style="display:none;font-size:11px;font-weight:700;color:#1e4d6b;background:#eef5fb;padding:3px 10px;border-radius:6px;font-family:var(--mono);"></span>
@@ -928,7 +928,7 @@
           <div class="card-head">
             <span class="card-title">🏭 Data Customer</span>
             <div style="display:flex;gap:8px;align-items:center;">
-              <div class="sbox" style="min-width:180px;"><span>🔍</span><input type="text" id="cust-sq" placeholder="Cari customer..." oninput="filterCustomers()"></div>
+              <input type="text" class="sel" id="cust-sq" placeholder="🔍 Cari customer..." oninput="filterCustomers()" style="width:170px;font-size:12px;padding:4px 8px;">
               <button class="btn btn-primary btn-sm" onclick="openAddCust()"><span class="btn-plus">+</span>Tambah</button>
             </div>
           </div>
