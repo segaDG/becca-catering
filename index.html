@@ -24,6 +24,12 @@
 #kas-stats::-webkit-scrollbar{height:4px;}
 #kas-stats::-webkit-scrollbar-track{background:transparent;}
 #kas-stats::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px;}
+
+#kas-stats{display:flex;align-items:center;gap:6px;padding:5px 2px;flex-wrap:nowrap;}
+.kstat-badge{font-size:12px;font-weight:700;font-family:var(--mono);background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;padding:2px 10px;color:var(--text);white-space:nowrap;}
+.kstat-nom{color:var(--accent);border-color:var(--accent-lt);background:var(--accent-bg);}
+.kstat-sep{width:1px;height:14px;background:var(--border);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -7246,72 +7252,24 @@ function kasResetFilter(){
 function _renderKasStats(){
   const el=document.getElementById('kas-stats');
   if(!el)return;
-  const data = typeof _kasFiltered!=='undefined' ? _kasFiltered : KAS_DATA;
+  const data=typeof _kasFiltered!=='undefined'?_kasFiltered:KAS_DATA;
   if(!data||!data.length){el.innerHTML='';el.style.display='none';return;}
   el.style.display='flex';
-
-  // Hitung metrik dari data filtered
-  const total    = data.length;
-  const totalQty = data.reduce((s,d)=>s+(parseFloat(d.qty)||0),0);
-  const totalNom = data.reduce((s,d)=>s+(d.total||d.jumlah||d.debit||d.kredit||0),0);
-  const totalDeb = data.reduce((s,d)=>s+(d.debit||0),0);
-  const totalKrd = data.reduce((s,d)=>s+(d.kredit||0),0);
-  const totDone  = data.filter(d=>d.status==='DONE').length;
-  const totTBC   = data.filter(d=>d.status==='TBC').length;
-
-  // Hitung per-type (top 5)
-  const byType={};
-  data.forEach(d=>{if(!d.type)return;
-    if(!byType[d.type])byType[d.type]={nom:0,qty:0,count:0};
-    byType[d.type].nom+=d.total||d.jumlah||d.debit||d.kredit||0;
-    byType[d.type].qty+=parseFloat(d.qty)||0;
-    byType[d.type].count++;
-  });
-  const topTypes=Object.entries(byType).sort((a,b)=>b[1].nom-a[1].nom).slice(0,5);
-
-  const B=(label,val,sub,color,bg)=>`
-    <div style="display:flex;flex-direction:column;gap:2px;background:${bg||'rgba(255,255,255,.08)'};
-      border-radius:8px;padding:6px 12px;min-width:fit-content;border:1px solid rgba(255,255,255,.12);">
-      <span style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;opacity:.75;">${label}</span>
-      <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:${color||'#fff'};">${val}</span>
-      ${sub?`<span style="font-size:9px;opacity:.6;">${sub}</span>`:''}
-    </div>`;
-
+  const total  = data.length;
+  const totalQ = data.reduce((s,d)=>s+(parseFloat(d.qty)||0),0);
+  const totalN = data.reduce((s,d)=>s+(d.total||d.jumlah||d.debit||d.kredit||0),0);
   const _F=n=>Math.round(n).toLocaleString('id-ID');
   const _Rp=n=>'Rp\u00a0'+_F(n);
   const _Q=n=>n%1===0?_F(n):n.toLocaleString('id-ID',{maximumFractionDigits:2});
-
-  // Divider
-  const DIV=`<div style="width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:0 4px;"></div>`;
-
-  let html=`
-    ${B('📋 Total Baris', _F(total)+' baris', '', '#fff')}
-    ${B('🔢 Total QTY', _Q(totalQty), 'dari semua baris', '#93c5fd')}
-    ${B('💰 Total Nominal', _Rp(totalNom), 'semua transaksi', '#fde68a')}
-    ${DIV}
-    ${B('⬇ Keluar (Debit)', _Rp(totalDeb), _F(data.filter(d=>d.debit>0).length)+' baris', '#f87171')}
-    ${B('⬆ Masuk (Kredit)', _Rp(totalKrd), _F(data.filter(d=>d.kredit>0).length)+' baris', '#4ade80')}
-    ${DIV}
-    ${totDone>0?B('✅ DONE', _F(totDone)+' baris', _Rp(data.filter(d=>d.status==='DONE').reduce((s,d)=>s+(d.total||0),0)), '#86efac'):''}
-    ${totTBC>0?B('⏳ TBC', _F(totTBC)+' baris', _Rp(data.filter(d=>d.status==='TBC').reduce((s,d)=>s+(d.total||0),0)), '#fcd34d'):''}`;
-
-  // Top types
-  if(topTypes.length){
-    html+=DIV;
-    const TC=window.KAS_TC||{};
-    topTypes.forEach(([type,v])=>{
-      const tc=TC[type]||{c:'#e5e7eb',bg:'rgba(255,255,255,.1)'};
-      html+=`
-        <div style="display:flex;flex-direction:column;gap:2px;background:${tc.bg}22;
-          border-radius:8px;padding:6px 12px;border:1px solid ${tc.c}44;min-width:fit-content;">
-          <span style="font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.7px;color:${tc.c};opacity:.9;">${type}</span>
-          <span style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff;">${_Rp(v.nom)}</span>
-          <span style="font-size:9px;opacity:.6;">${_F(v.count)} baris · QTY ${_Q(v.qty)}</span>
-        </div>`;
-    });
-  }
-
-  el.innerHTML=html;
+  el.innerHTML=`
+    <span style="font-size:11px;color:var(--muted);">Filter:</span>
+    <div class="kstat-badge">${_F(total)} baris</div>
+    <div class="kstat-sep"></div>
+    <span style="font-size:10px;color:var(--muted);">Total QTY</span>
+    <div class="kstat-badge">${_Q(totalQ)}</div>
+    <div class="kstat-sep"></div>
+    <span style="font-size:10px;color:var(--muted);">Total Nominal</span>
+    <div class="kstat-badge kstat-nom">${_Rp(totalN)}</div>`;
 }
 
 function _renderKasTable(){
