@@ -2707,7 +2707,17 @@ function openAddCust(){
   document.getElementById('cm-pb1').value='10';document.getElementById('cm-pph').value='2';
   document.getElementById('cm-pb1-aktif').checked=true;document.getElementById('cm-pph-aktif').checked=true;
   toggleTaxField('pb1');toggleTaxField('pph');
-  buildCustPriceFields({});openM('m-cust');
+  buildCustPriceFields({});
+  // Auto-generate kode customer: max numeric kode + 1
+  try{
+    const maxKode = CUSTOMERS.reduce((mx, c) => {
+      const n = parseInt(c.kode_customer, 10);
+      return (!isNaN(n) && n > mx) ? n : mx;
+    }, 0);
+    const newKode = String(maxKode + 1).padStart(3, '0');
+    document.getElementById('cm-kode').value = newKode;
+  } catch(e2) {}
+  openM('m-cust');
 }
 function openEditCust(id){
   editCustId=id;const c=CUSTOMERS.find(x=>x.id==id);if(!c)return;
@@ -5439,9 +5449,9 @@ function setKasTab(tab){
 
 function _renderBalanceBar(){
   const el=document.getElementById('kas-balance-bar');if(!el)return;
-  const totalDebit =KAS_DATA.reduce((s,d)=>s+(d.debit||0),0);
-  const totalKredit=KAS_DATA.reduce((s,d)=>s+(d.kredit||0),0);
-  const balance=KAS_SALDO_AWAL+totalKredit-totalDebit;
+  const totalKeluar=KAS_DATA.reduce((s,d)=>s+(d.debit||0),0);
+  const totalMasuk =KAS_DATA.reduce((s,d)=>s+(d.kredit||0),0);
+  const balance=KAS_SALDO_AWAL+totalMasuk-totalKeluar;
   const balColor=balance>=0?'#4ade80':'#f87171';
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:6px;">
@@ -5451,11 +5461,11 @@ function _renderBalanceBar(){
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
       <span style="font-size:10px;opacity:.8;">Total Masuk (Kredit):</span>
-      <span style="font-weight:700;font-family:monospace;color:#4ade80;">${_KRP(totalKredit)}</span>
+      <span style="font-weight:700;font-family:monospace;color:#4ade80;">${_KRP(totalMasuk)}</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
       <span style="font-size:10px;opacity:.8;">Total Keluar (Debit):</span>
-      <span style="font-weight:700;font-family:monospace;color:#f87171;">${_KRP(totalDebit)}</span>
+      <span style="font-weight:700;font-family:monospace;color:#f87171;">${_KRP(totalKeluar)}</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-left:auto;background:rgba(0,0,0,.2);padding:6px 14px;border-radius:8px;">
       <span style="font-size:11px;opacity:.9;">CURRENT BALANCE:</span>
